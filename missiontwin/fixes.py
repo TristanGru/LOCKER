@@ -15,6 +15,7 @@ import time
 
 from .domain import SHIP_IDS, SHIPS, SYSTEMS, WATCHSTATIONS, COMPONENT_TO_SYSTEM, band, format_dtg, dt_of, parts_index
 from .engine import INF, Scenario, apply_fix, build_world, first_common_port, forecast, inport_place, pval
+from .validation import validate_world
 
 
 def _fid(steps: list) -> str:
@@ -23,9 +24,11 @@ def _fid(steps: list) -> str:
 
 def _single_steps(world, fc: dict, ship_id: str) -> list[dict]:
     """Single-step candidates against the blocking gates of this ship's non-green missions."""
-    bands = fc["bands"]
+    SHIP_IDS, SHIPS, SYSTEMS = world.profile.ship_ids, world.profile.ships, world.profile.systems
+    dt_of = world.profile.dt_of
+    bands = fc['bands']
     sw = world.ships[ship_id]
-    pidx = parts_index()
+    pidx = world.profile.parts_index()
     out, seen = [], set()
 
     def add(step, title, gate, why):
@@ -36,7 +39,7 @@ def _single_steps(world, fc: dict, ship_id: str) -> list[dict]:
         out.append({"step": step, "title": title, "gate": gate, "why": why})
 
     for m in fc["missions"]:
-        if m["ship_id"] != ship_id or m["p_ready"] >= bands["green"]:
+        if m['ship_id'] != ship_id or m['p_assessed'] is None or m['p_assessed'] >= bands['green']:
             continue
         mobj = next(x for x in sw.missions if x.event_id == m["event_id"])
         for g in m["gates"]:
@@ -55,7 +58,7 @@ def _single_steps(world, fc: dict, ship_id: str) -> list[dict]:
                         if d == ship_id:
                             continue
                         stock = world.ships[d].stock.get(niin, {})
-                        if stock.get("on_hand", 0) > 0:
+                        if stock.get('on_hand', 0) > 0 and stock.get('eligible'):
                             note = "drops donor below allowance (X5)" if stock["on_hand"] <= stock["allowance"] else ""
                             add({"kind": "part_transfer", "source_kind": "cross_deck", "niin": niin, "donor": d, "receiver": ship_id,
                                  "item_key": item.key},
@@ -141,14 +144,18 @@ def candidates(world, fc: dict, ship_id: str, max_pairs: int = 30) -> list[dict]
 def rank_fixes(scn: Scenario, ship_id: str, runs: int | None = None) -> dict:
     t0 = time.time()
     base_world = build_world(scn)
+    SHIP_IDS = base_world.profile.ship_ids
     runs = int(runs or pval(base_world.params, "ranking_runs"))
     seed = int(pval(base_world.params, "seed"))
     fc_detail = forecast(base_world)  # memoized; identifies blocking gates and items
     base = forecast(base_world, runs=runs, seed=seed, detail=False)
-    bands = base["bands"]
+    bands = base['bands']
+    if any(m['p_assessed'] is None for m in base['missions']):
+        return {'ship_id': ship_id, 'candidates': [], 'runs_per_candidate': runs, 'rule': 'event interval',
+                'assessment_basis': 'event_interval', 'warning': 'Insufficient source coverage; options withheld to avoid hiding donor risk'}
 
     def summarize(fc):
-        mp = {m["event_id"]: m["p_ready"] for m in fc["missions"]}
+        mp = {m['event_id']: m['p_assessed'] for m in fc['missions']}
         green = sum(1 for p in mp.values() if p >= bands["green"])
         return mp, green
 
@@ -158,7 +165,11 @@ def rank_fixes(scn: Scenario, ship_id: str, runs: int | None = None) -> dict:
     results = []
     for p in plans:
         w = copy.deepcopy(base_world)
-        apply_fix(w, {"fix_id": p["fix_id"], "title": p["title"], "steps": p["steps"]}, base_world.cursor)
+        try:
+            apply_fix(w, {'fix_id': p['fix_id'], 'title': p['title'], 'steps': p['steps']}, base_world.cursor)
+            validate_world(w)
+        except ValueError:
+            continue  # infeasible packages are not offered for approval
         fc = forecast(w, runs=runs, seed=seed, detail=False)
         mp, green = summarize(fc)
         own_uplift = sum(mp[e] - base_mp[e] for e in own_ids)
@@ -166,13 +177,13 @@ def rank_fixes(scn: Scenario, ship_id: str, runs: int | None = None) -> dict:
         for s in SHIP_IDS:
             if s == ship_id:
                 continue
-            dm = sum(mp[e] - base_mp[e] for e in mp if e.startswith(f"EVT-{s}"))
+            dm = sum(mp[m['event_id']] - base_mp[m['event_id']] for m in fc['missions'] if m['ship_id'] == s)
             dc = fc["ships"][s]["capability_mean"] - base["ships"][s]["capability_mean"]
             if abs(dm) > 0.0005 or abs(dc) > 0.0005:
                 donor[s] = {"mission_p_delta": round(dm, 4), "capability_delta": round(dc, 4)}
         donor_cost = sum(min(0.0, v["mission_p_delta"]) + min(0.0, v["capability_delta"]) for v in donor.values())
         missions = [{"event_id": m["event_id"], "label": m["label"], "ship_id": m["ship_id"], "p_before": base_mp[m["event_id"]],
-                     "p_after": m["p_ready"], "band_after": m["band"], "planned": m["planned"]} for m in fc["missions"]]
+                     "p_after": m['p_assessed'], 'start_p_after': m['p_ready'], "band_after": m["band"], "planned": m["planned"]} for m in fc["missions"]]
         results.append({**p, "net_green": green - base_green, "green_after": green, "own_uplift": round(own_uplift, 4),
                         "donor_effects": donor, "donor_cost": round(donor_cost, 4), "missions": missions,
                         "score": [green - base_green, round(own_uplift, 3), round(donor_cost, 3), -len(p["steps"])]})
@@ -181,5 +192,6 @@ def rank_fixes(scn: Scenario, ship_id: str, runs: int | None = None) -> dict:
         r["rank"] = i
     return {"ship_id": ship_id, "runs_per_candidate": runs, "seed": seed, "cursor": base["cursor"], "baseline": base_mp,
             "baseline_green": base_green, "candidates": results, "elapsed_s": round(time.time() - t0, 2),
-            "rule": "net squadron missions in green, then own-ship uplift in P(ready), then lower donor cost, then fewer actions",
+            "rule": "interval readiness: net squadron events green, receiver improvement, donor cost, then fewer actions",
+            'assessment_basis': 'event_interval',
             "common_random_numbers": True}

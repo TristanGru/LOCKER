@@ -26,7 +26,9 @@ from typing import Callable, Optional
 
 from pydantic import ValidationError
 
-from .domain import CACHE_DIR
+from .domain import CACHE_DIR, MONTHS
+from datetime import datetime
+from collections import Counter
 from .models import ActionAdapter, ExtractedFact, LLMFactsOut, action_schema
 
 PROMPT_VERSION = "2026-11-04.1"
@@ -266,7 +268,8 @@ def extract_facts(client: LLMClient, doc_rel: str, ship_id: str, page_text: str,
         method = "rules"
     facts = []
     for i, f in enumerate(raw):
-        span_ok = norm(f["span"]) in hay
+        span_ok = bool(norm(f['span'])) and norm(f['span']) in hay
+        f['hedged'] = bool(f.get('hedged') or HEDGE_RE.search(f['span']))
         status = "VERIFIED"
         reason = ""
         if not span_ok:
@@ -279,6 +282,21 @@ def extract_facts(client: LLMClient, doc_rel: str, ship_id: str, page_text: str,
             if not re.fullmatch(r"M-\d{4}", mtok):
                 status, reason = "NEEDS_REVIEW", "person could not be resolved to a member_id"
                 mtok = None
+        try:
+            for key in ('date', 'until'):
+                if f.get(key):
+                    dd, mon = f[key].split()
+                    datetime(known_at.year, MONTHS.index(mon) + 1, int(dd))
+                    if f[key] not in norm(f['span']):
+                        raise ValueError('Extracted date does not occur in quoted evidence')
+            if f['type'] in ('personnel_transfer', 'personnel_tad'):
+                ids = set(name_index.get(ship_id, {}).get('by_rate', {}).values())
+                if not f.get('date') or not mtok or mtok not in ids or mtok not in f['span']:
+                    raise ValueError('Personnel date/member not supported by quoted evidence')
+            if f['type'] == 'assist_eta' and not f.get('date'):
+                raise ValueError('Assist ETA requires a supported date')
+        except (ValueError, TypeError):
+            status, reason = 'NEEDS_REVIEW', 'Extracted fields do not match valid dates/member evidence'
         try:
             facts.append(ExtractedFact(
                 fact_id=hashlib.sha1(f"{doc_rel}|{page}|{i}|{f['span']}".encode()).hexdigest()[:12],
@@ -322,7 +340,12 @@ def brief_messages(context: dict, draft: str) -> list[dict]:
 
 def llm_brief(client: LLMClient, context: dict, draft: str, n_citations: int, scenario_key: str):
     def validate(d):
-        t = d["text"]
+        t = d.get('text')
+        if not isinstance(t, str):
+            raise ValueError('Brief text must be a string')
+        numbers = lambda text: Counter(re.findall(r'\d+(?:\.\d+)?', text))
+        if numbers(t) != numbers(draft) or Counter(re.findall(r'\[\d+\]', t)) != Counter(re.findall(r'\[\d+\]', draft)):
+            raise ValueError('Brief rewrite changed numbers or citation markers')
         refs = [int(x) for x in re.findall(r"\[(\d+)\]", t)]
         if any(r < 1 or r > n_citations for r in refs):
             raise ValueError("citation out of range")

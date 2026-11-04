@@ -1,0 +1,7 @@
+.readiness-timeline { margin: 18px 0; padding: 20px; }
+.readiness-timeline svg { display: block; width: 100%; height: auto; max-height: 260px; }
+.readiness-timeline details { margin-top: 12px; }
+.readiness-timeline .table-scroll { max-height: 300px; overflow: auto; }
+.source-health details { margin: 16px 0; }
+.source-health .table-scroll { max-height: 400px; overflow: auto; }
+.source-health td { overflow-wrap: anywhere; }

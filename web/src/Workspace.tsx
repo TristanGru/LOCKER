@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { api, StaleError } from "./api";
+import ReadinessTimeline from './ReadinessTimeline';
 import type {
   Dashboard,
   Gate,
@@ -60,8 +61,8 @@ type View =
   | "whatif"
   | "brief"
   | "activity";
-const eventRisk = (mission: Mission) =>
-  Math.min(mission.p_ready, mission.interval_p_ready ?? mission.p_ready);
+const eventRisk = (mission: Mission) => mission.p_assessed;
+const priority = (mission: Mission) => mission.p_assessed ?? -1;
 const navigation = [
   { id: "missions", title: "Mission overview", icon: Layers3 },
   { id: "ship", title: "Ship overview", icon: Ship },
@@ -93,6 +94,7 @@ export default function Workspace() {
     action: () => Promise<unknown>;
   } | null>(null);
   const currentVersion = useRef(-1),
+    currentHealth = useRef(''),
     refreshSequence = useRef(0),
     sourceSequence = useRef(0),
     playRef = useRef(false);
@@ -102,7 +104,10 @@ export default function Workspace() {
       const next = await api.dashboard();
       if (sequence !== refreshSequence.current) return;
       currentVersion.current = next.state.version;
+      currentHealth.current = next.sources.last_attempt.at;
       setData(next);
+      setShip(current => next.forecast.missions.some(item => item.ship_id === current) ? current : next.forecast.missions[0]?.ship_id || '');
+      setEventId(current => next.forecast.missions.some(item => item.event_id === current) ? current : next.forecast.missions[0]?.event_id || '');
     } catch (failure) {
       setPlaying(false);
       setError(String(failure));
@@ -113,7 +118,7 @@ export default function Workspace() {
     const timer = setInterval(async () => {
       try {
         const version = await api.version();
-        if (version.version !== currentVersion.current) await refresh();
+        if (version.version !== currentVersion.current || version.source_health_at !== currentHealth.current) await refresh();
       } catch {
         setError(
           "The local API is unavailable. Existing results may be out of date.",
@@ -179,6 +184,14 @@ export default function Workspace() {
       previous?.focus();
     };
   }, [drawer, Boolean(confirmation)]);
+  useEffect(() => {
+    sourceSequence.current++;
+    setDrawer(false);
+    setSource(null);
+    setSystem(null);
+    setConfirmation(null);
+    setPlaying(false);
+  }, [data?.state.source_revision]);
   async function mutate(action: () => Promise<unknown>) {
     setBusy(true);
     setError("");
@@ -257,7 +270,7 @@ export default function Workspace() {
     selectedShip = data.state.ships.find((item) => item.ship_id === ship)!;
   const staleCount = Object.keys(data.issues.stale).length,
     attention = [...missions].sort(
-      (left, right) => eventRisk(left) - eventRisk(right),
+      (left, right) => priority(left) - priority(right),
     )[0];
   const limiting = attention?.gates.find(
     (item) => item.gate_id === attention.next_domino,
@@ -268,6 +281,7 @@ export default function Workspace() {
     selectedGate = mission?.gates.find(
       (item) => item.gate_id === `system:${selectedSystem}`,
     );
+  if (!attention || !selectedShip) return <Loading text="Selecting active profile events" />;
   return (
     <div className="app-shell">
       <div className="exercise-banner">
@@ -411,6 +425,7 @@ export default function Workspace() {
             </button>
           </div>
         </div>
+        {data.sources.last_attempt.status === 'failed' && <div className="error-banner" role="alert">Source refresh failed. Showing the last usable snapshot ({data.state.source_revision}). Review Evidence & feed.</div>}
         {error && (
           <div className="error-banner" role="alert">
             <TriangleAlert size={18} />
@@ -437,7 +452,7 @@ export default function Workspace() {
                   {selectedShip.hull} / MISSION OVERVIEW
                 </div>
                 <h1>
-                  {eventRisk(attention) < bands.green ? (
+                  {(eventRisk(attention) ?? -1) < bands.green ? (
                     <>
                       <span className={tone(eventRisk(attention), bands)}>
                         {attention.label}
@@ -465,7 +480,7 @@ export default function Workspace() {
               </div>
             </div>
             <div className="mission-summary">
-              {["risk", "watch", "ready"].map((status) => (
+              {['unknown', 'risk', 'watch', 'ready'].map((status) => (
                 <span key={status} className={status}>
                   <strong>
                     {
@@ -484,7 +499,7 @@ export default function Workspace() {
             </div>
             <div className="mission-list">
               {[...missions]
-                .sort((left, right) => eventRisk(left) - eventRisk(right))
+                .sort((left, right) => priority(left) - priority(right))
                 .map((item) => (
                   <MissionRow
                     key={item.event_id}
@@ -495,6 +510,7 @@ export default function Workspace() {
                   />
                 ))}
             </div>
+            <ReadinessTimeline data={data} mission={mission} />
             <section className="squadron-section">
               <div className="section-heading">
                 <h2>Squadron context</h2>
@@ -506,9 +522,9 @@ export default function Workspace() {
                     <tr>
                       <th>Ship / event</th>
                       <th>Start</th>
-                      <th>Start-time odds</th>
+                      <th>Interval status / start odds</th>
                       <th>Interval checks*</th>
-                      <th>Planned case</th>
+                      <th>Planned at start only</th>
                       <th />
                     </tr>
                   </thead>
@@ -521,7 +537,7 @@ export default function Workspace() {
                         </td>
                         <td className="mono">{dateLabel(item.start)}</td>
                         <td>
-                          <Status value={item.p_ready} bands={bands} />{" "}
+                          <Status value={item.p_assessed} bands={bands} />{" "}
                           <span className="mono">{percent(item.p_ready)}</span>
                         </td>
                         <td className={tone(item.interval_p_ready, bands)}>
@@ -582,6 +598,7 @@ export default function Workspace() {
                 <Suspense fallback={<Loading text="Loading visualization" />}>
                   {view === "ship" ? (
                     <ShipView
+                      key={data.state.source_revision}
                       registry={data.visualization}
                       forecast={data.forecast}
                       mission={mission}
@@ -617,7 +634,7 @@ export default function Workspace() {
                   <>
                     <div className="inspector-score">
                       <strong>{percent(selectedGate.p_ok)}</strong>
-                      <span>meets event requirement</span>
+                      <span>meets requirement across event interval</span>
                     </div>
                     <Status value={selectedGate.p_ok} bands={bands} />
                   </>
@@ -680,6 +697,7 @@ export default function Workspace() {
         )}
         {view === "whatif" && (
           <WhatIfPanel
+            key={data.state.source_revision}
             ship={ship}
             mission={mission}
             data={data}
@@ -698,6 +716,11 @@ export default function Workspace() {
             ship={ship}
             data={data}
             onSource={openSource}
+            onRefresh={(reset) => setConfirmation({
+              title: 'Refresh source snapshot?',
+              description: reset ? 'A changed snapshot will reset playback and all what-if decisions. Source records stay read-only.' : 'Validate and activate changed source files. Playback is preserved; existing what-if decisions block activation.',
+              action: () => api.refreshSources(data.state.version, reset),
+            })}
             onConfirmFact={(factId, include) =>
               setConfirmation({
                 title: include
@@ -775,7 +798,7 @@ export default function Workspace() {
           >
             <div className="drawer-header">
               <div>
-                <span className="eyebrow">ORIGINAL EVIDENCE</span>
+                <span className="eyebrow">{source?.meta?.original_file ? 'NORMALIZED SOURCE RECORD' : 'ORIGINAL EVIDENCE'}</span>
                 <h2>
                   {source?.kind === "pdf"
                     ? `Report / page ${source.page}`
@@ -800,6 +823,7 @@ export default function Workspace() {
               source && (
                 <>
                   <p className="source-path mono">{source.file}</p>
+                  {source.meta?.original_file && <p>Mapped by {source.meta.adapter}. <SourceButton source={{file: source.meta.original_file, key: 'Open raw export'}} onOpen={openSource} /></p>}
                   <dl className="source-meta">
                     <dt>Source</dt>
                     <dd>{source.meta?.real_system || "Exercise record"}</dd>
@@ -889,8 +913,8 @@ function MissionRow({
     baseline = data.baseline.missions.find(
       (item) => item.event_id === mission.event_id,
     );
-  const delta = baseline
-      ? Math.round((mission.p_ready - baseline.p_ready) * 100)
+  const delta = baseline?.p_assessed != null && mission.p_assessed != null
+      ? Math.round((mission.p_assessed - baseline.p_assessed) * 100)
       : null,
     days = Math.round(
       (Date.parse(mission.start.slice(0, 10)) -
@@ -911,9 +935,10 @@ function MissionRow({
   return (
     <article className={`mission-row ${status}`}>
       <div className="mission-identity">
-        <Status value={mission.p_ready} bands={data.forecast.bands} />
+        <Status value={mission.p_assessed} bands={data.forecast.bands} />
         <h2>{mission.label}</h2>
         <p>{mission.name}</p>
+        {mission.coverage_issues.length > 0 && <details><summary>Insufficient evidence</summary>{mission.coverage_issues.map(issue => <p key={issue}>{issue}</p>)}</details>}
         <span className="mono">
           {days} days out / {dateLabel(mission.start)}
         </span>
@@ -926,7 +951,7 @@ function MissionRow({
       </div>
       <div className="mission-assessment">
         <div className="odds">
-          <strong>{percent(mission.p_ready)}</strong>
+          <strong>{percent(mission.p_assessed)}</strong>
           <span className={delta != null && delta < 0 ? "risk" : "muted"}>
             {delta == null
               ? "No baseline"
@@ -934,18 +959,18 @@ function MissionRow({
           </span>
         </div>
         <div className="probability-bar">
-          <div style={{ width: percent(mission.p_ready) }} />
+          <div style={{ width: percent(mission.p_assessed ?? 0) }} />
           <i style={{ left: percent(data.forecast.bands.amber) }} />
           <i style={{ left: percent(data.forecast.bands.green) }} />
         </div>
         <div className="assessment-detail">
-          <span>At event start</span>
+          <span>Across event interval*</span>
           <span>
-            Interval*: <b>{percent(mission.interval_p_ready)}</b>
+            At start: <b>{percent(mission.p_ready)}</b>
           </span>
         </div>
         <p className="planned-case">
-          Planned <strong>{mission.planned?.result}</strong>
+          Planned at start only: <strong>{mission.planned?.result}</strong>
           {mission.planned?.margin_days != null &&
             ` / ${Math.abs(mission.planned.margin_days).toFixed(1)} days ${mission.planned.margin_days < 0 ? "late" : "margin"}`}
         </p>
@@ -955,8 +980,8 @@ function MissionRow({
         <h3>{next?.label || "No binding requirement"}</h3>
         <p>
           {next
-            ? `${percent(next.p_ok)} meets this requirement at event start`
-            : "No material intervention identified"}
+            ? `${percent(next.p_ok)} meets this requirement across the event interval`
+            : mission.coverage_issues.length ? 'Insufficient evidence; readiness is unknown' : 'No material intervention identified'}
         </p>
         <button
           className={status === "risk" ? "primary" : "secondary"}
@@ -989,7 +1014,7 @@ function GateEvidence({
   onSelect: (gate: string) => void;
 }) {
   return (
-    <details className="gate-evidence" open={gate.p_ok < 0.6 || undefined}>
+    <details className="gate-evidence" open={(gate.p_ok ?? 0) < 0.6 || undefined}>
       <summary>
         <span>{gate.label}</span>
         <b className="mono">{percent(gate.p_ok)}</b>

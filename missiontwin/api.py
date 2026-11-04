@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import os
+import copy
 import json
 import threading
 from pathlib import Path
@@ -21,20 +22,85 @@ from .engine import CACHE_STATS, Scenario, build_world, domino_graph, forecast, 
 from .fixes import rank_fixes
 from .ingest import find_contradictions, load_baseline, read_pdf_pages
 from .llm import LLMClient, llm_brief, nl_to_action
-from .models import ACTION_TYPES, ActionAdapter, BriefBody, ChangeBody, FixDecisionBody, ParseBody, VersionBody, action_schema
+from .models import ACTION_TYPES, ActionAdapter, BriefBody, ChangeBody, FixDecisionBody, ParseBody, VersionBody, RefreshBody, action_schema
 from .visualization import registry
 from .normalize import NORMALIZED_ROOT, REFERENCE_ROOT
+from .sources import load_snapshot, source_health, utc_now
 
 
 class AppState:
     def __init__(self, data_dir: Path | None = None, log_path: Path | None = None, client: LLMClient | None = None):
         self.lock = threading.RLock()
-        self.data_dir = Path(data_dir or os.environ.get("MISSIONTWIN_DATA", DATA_DIR))
+        self.data_dir = Path(data_dir or os.environ.get('MISSIONTWIN_DATA', DATA_DIR)).resolve()
+        self.adapter = os.environ.get('MISSIONTWIN_ADAPTER', 'directory')
         self.client = client or LLMClient()
-        self.baseline = load_baseline(self.data_dir, self.client)
+        self.baseline = load_snapshot(self.data_dir, self.adapter, self.client)
+        self.last_success = utc_now()
+        self.last_attempt = {'at': self.last_success, 'status': 'loaded'}
         self.scenario = Scenario(self.baseline, log_path=log_path)
         self.rankings: dict = {}
         self.initial_forecast = None
+
+    def sources(self):
+        result = source_health(self.baseline, self.data_dir, self.adapter, self.last_success, self.last_attempt)
+        stale = self.view().stale_files(pval(self.scenario.params(), 'staleness_threshold_days'))
+        for source in result['sources']:
+            if source['status'] in ('loaded', 'stale'):
+                source['status'] = 'stale' if source['file'] in stale else 'loaded'
+        return result
+
+    def commit(self, kind, payload):
+        """Validate and evaluate a disposable fork before shared version/log changes."""
+        candidate = self.scenario.fork()
+        candidate.apply(kind, payload)
+        forecast(build_world(candidate))
+        return self.scenario.apply(kind, payload)
+
+    def refresh_sources(self, reset_scenario=False):
+        attempt = {'at': utc_now(), 'status': 'failed'}
+        self.last_attempt = attempt
+        candidate = None
+        try:
+            client = copy.copy(self.client)
+            candidate = load_snapshot(self.data_dir, self.adapter, client)
+            if candidate.configuration_errors:
+                raise ValueError('; '.join(candidate.configuration_errors))
+            gaps = [reason for reasons in candidate.coverage().values() for reason in reasons]
+            if gaps:
+                raise ValueError('Required evidence failed validation: ' + '; '.join(gaps[:8]))
+            if candidate.source_revision == self.baseline.source_revision:
+                attempt['status'] = 'unchanged'
+                self.last_success = attempt['at']
+                return {'changed': False, 'version': self.scenario.version, 'source_revision': self.baseline.source_revision}
+            if not reset_scenario and any(c['kind'] != 'play_event' for c in self.scenario.changes):
+                raise ValueError('Active what-if/decision overlays exist. Undo/reset them or explicitly confirm refresh with scenario reset.')
+            replacement = Scenario(candidate, log_path=self.scenario.log_path, persist=False)
+            if not reset_scenario:
+                old_feed = {e['event_id']: e['known_at'] for e in self.baseline.feed.get('events', [])}
+                new_feed = {e['event_id']: e['known_at'] for e in candidate.feed.get('events', [])}
+                for event_id in self.scenario.played():
+                    if old_feed[event_id] != new_feed.get(event_id):
+                        raise ValueError('Played event timing changed. Refresh with explicit scenario reset.')
+                    replacement.apply('play_event', {'event_id': event_id})
+            forecast(build_world(replacement))
+            replacement.version = self.scenario.version + 1
+            replacement.persist = self.scenario.persist
+            previous = self.baseline
+            self.baseline, self.scenario, self.client = candidate, replacement, client
+            candidate = None
+            self.rankings.clear()
+            self.initial_forecast = None
+            self.last_success = attempt['at']
+            attempt['status'] = 'loaded'
+            self.scenario._log({'op': 'source_refresh', 'source_revision': self.baseline.source_revision,
+                                'previous_revision': previous.source_revision, 'reset_scenario': reset_scenario})
+            if previous.snapshot_owner: previous.snapshot_owner.cleanup()
+            return {'changed': True, 'version': self.scenario.version, 'source_revision': self.baseline.source_revision}
+        except (ValueError, OSError, KeyError, TypeError) as error:
+            attempt['error'] = str(error)
+            raise HTTPException(422, {'error': str(error), 'retained_source_revision': self.baseline.source_revision})
+        finally:
+            if candidate is not None and candidate.snapshot_owner: candidate.snapshot_owner.cleanup()
 
     def world(self):
         if self.baseline.configuration_errors:
@@ -60,7 +126,7 @@ class AppState:
 
     def validate_action(self, action: dict):
         ship = action.get("ship_id")
-        if ship and ship not in SHIP_IDS:
+        if ship and ship not in self.baseline.profile.ships:
             raise HTTPException(422, "Unknown ship")
         kind = action["type"]
         if kind == "remove_person":
@@ -70,7 +136,7 @@ class AppState:
                 raise HTTPException(422, "Return must follow absence start")
         elif kind == "delay_part" and not any(row["doc_number"] == action["doc_number"] for row in self.view().rows(ship, "requisition_status.csv")):
             raise HTTPException(422, "Requisition is not known for this ship at the scenario cursor")
-        elif kind == "add_casrep" and action["eic"] not in set(SYSTEMS) | set(COMPONENT_TO_SYSTEM):
+        elif kind == 'add_casrep' and action['eic'] not in self.baseline.profile.all_eics:
             raise HTTPException(422, "Unknown equipment identity")
         elif kind == "shift_mission" and not any(event["event_id"] == action["event_id"] for event in self.baseline.events):
             raise HTTPException(422, "Unknown event identity")
@@ -87,6 +153,35 @@ def create_app(state: AppState | None = None) -> FastAPI:
 
     app.state.get = S
 
+    def _ship(ship_id):
+        if ship_id not in S().baseline.profile.ships:
+            raise HTTPException(422, 'Unknown ship identity')
+
+    @app.exception_handler(ValueError)
+    async def validation_error(request, error):
+        return JSONResponse(status_code=422, content={'detail': str(error)})
+
+    @app.get('/api/ready')
+    def ready():
+        s = S()
+        with s.lock:
+            errors, coverage = s.baseline.configuration_errors, s.baseline.coverage()
+            ok = not errors and not any(coverage.values()) and s.last_attempt['status'] != 'failed'
+            return JSONResponse(status_code=200 if ok else 503, content={'ok': ok, 'configuration_errors': errors,
+                'coverage': coverage, 'source_revision': s.baseline.source_revision, 'last_attempt': s.last_attempt})
+
+    @app.get('/api/sources')
+    def sources():
+        s = S()
+        with s.lock: return s.sources()
+
+    @app.post('/api/sources/refresh')
+    def refresh_sources(body: RefreshBody):
+        s = S()
+        with s.lock:
+            s.check_version(body.base_version)
+            return s.refresh_sources(body.reset_scenario)
+
     # ------------------------------------------------------------ read
     @app.get("/api/health")
     def health():
@@ -95,7 +190,9 @@ def create_app(state: AppState | None = None) -> FastAPI:
     @app.get("/api/scenario/version")
     def version():
         s = S()
-        return {"version": s.scenario.version, "cursor": iso(s.scenario.cursor_dt())}
+        with s.lock:
+            return {'version': s.scenario.version, 'cursor': iso(s.scenario.cursor_dt()), 'source_revision': s.baseline.source_revision,
+                    'source_health_at': s.last_attempt['at']}
 
     @app.get("/api/state")
     def state_():
@@ -107,20 +204,20 @@ def create_app(state: AppState | None = None) -> FastAPI:
             feed = [{"event_id": e["event_id"], "title": e["title"], "kind": e["kind"], "ship_id": e["ship_id"], "known_at": iso(e["known_at"]),
                      "known_dtg": format_dtg(e["known_at"]), "refs": e["refs"], "played": e["event_id"] in played} for e in s.baseline.feed.get("events", [])]
             nxt = sc.next_event()
-            return {"banner": BANNER, "version": sc.version, "scenario_now": iso(SCENARIO_NOW), "cursor": iso(cur),
+            return {"banner": BANNER, "version": sc.version, "scenario_now": iso(s.baseline.profile.now), "cursor": iso(cur),
                     "cursor_dtg": format_dtg(cur), "cursor_local": local_label(cur), "seed": pval(sc.params(), "seed"),
-                    "runs": pval(sc.params(), "runs"), "ships": [{"ship_id": k, **v} for k, v in SHIPS.items()], "feed": feed,
+                    "runs": pval(sc.params(), "runs"), "ships": [{"ship_id": k, **v} for k, v in s.baseline.profile.ships.items()], "feed": feed,
                     "next_event": nxt["event_id"] if nxt else None, "llm": s.client.status(),
                     "extraction_methods": s.baseline.extraction_methods, "ingest_issues": len(s.baseline.issues),
                     "changes": len(sc.changes), "cache": CACHE_STATS,
-                    "systems": {k: {"name": v["name"], "critical": v["critical"]} for k, v in SYSTEMS.items()},
-                    "watchstations": WATCHSTATIONS}
+                    "systems": {k: {"name": v["name"], "critical": v["critical"]} for k, v in s.baseline.profile.systems.items()},
+                    'source_revision': s.baseline.source_revision, 'watchstations': s.baseline.profile.watchstations}
 
     @app.get("/api/forecast")
     def get_forecast():
         s = S()
         with s.lock:
-            return {**s.fc(), "version": s.scenario.version}
+            return {**s.fc(), 'version': s.scenario.version, 'source_revision': s.baseline.source_revision}
 
     @app.get("/api/dashboard")
     def dashboard():
@@ -132,11 +229,11 @@ def create_app(state: AppState | None = None) -> FastAPI:
                 state.initial_forecast = forecast(build_world(Scenario(state.baseline, persist=False)))
             return {"state": state_(), "forecast": get_forecast(),
                     "baseline": state.initial_forecast, "issues": issues(),
-                    "assumptions": assumptions(), "log": log(), "visualization": registry()}
+                    "assumptions": assumptions(), "log": log(), "visualization": registry(state.baseline.profile), 'sources': state.sources()}
 
     @app.get("/api/visualization")
     def visualization():
-        return registry()
+        return registry(S().baseline.profile)
 
     @app.get("/api/data-contract")
     def data_contract():
@@ -144,7 +241,7 @@ def create_app(state: AppState | None = None) -> FastAPI:
         report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.exists() else None
         if report:
             report = {key: value for key, value in report.items() if key != "quarantine"}
-        return {"active_profile": "canonical", "active_path": "data/synthetic",
+        return {'active_profile': S().baseline.profile.name, 'active_path': str(S().data_dir),
                 "reference": report, "catalog": S().baseline.catalog}
 
     @app.post("/api/preview")
@@ -160,7 +257,7 @@ def create_app(state: AppState | None = None) -> FastAPI:
             action = body.action.model_dump(mode="json")
             if action["type"] == "apply_fix":
                 raise HTTPException(422, "Use the ranked fix comparison to preview a fix package")
-            if action.get("ship_id") and action["ship_id"] not in SHIP_IDS:
+            if action.get('ship_id') and action['ship_id'] not in state.baseline.profile.ships:
                 raise HTTPException(422, "Unknown ship")
             scenario.apply("action", action, actor="preview")
         elif body.kind == "set_assumption" and body.key in EDITABLE_NUMERIC:
@@ -213,12 +310,16 @@ def create_app(state: AppState | None = None) -> FastAPI:
                     "contradictions": [c.model_dump() for c in find_contradictions(v)],
                     "stale": v.stale_files(thr)}
 
-    @app.get("/api/source")
-    def source(file: str, loc: str = "", span: str = "", profile: str = "canonical"):
+    @app.get('/api/source')
+    def source(file: str, loc: str = '', span: str = '', profile: str = 'canonical'):
+        with S().lock:
+            return source_body(file, loc, span, profile)
+
+    def source_body(file, loc, span, profile):
         s = S()
         if profile not in {"canonical", "reference"}:
             raise HTTPException(422, "Unknown data profile")
-        base = REFERENCE_ROOT.resolve() if profile == "reference" else s.data_dir.resolve()
+        base = REFERENCE_ROOT.resolve() if profile == 'reference' else s.baseline.data_dir.resolve()
         if file.startswith("logs/"):
             return {"file": file, "kind": "note", "lines": ["What-if or approved fix recorded in the app's own activity log (not a source record)."], "highlight": None}
         p = (base / file).resolve()
@@ -230,12 +331,17 @@ def create_app(state: AppState | None = None) -> FastAPI:
         meta = {"real_system": cat["real_system"], "steward": cat["steward"], "as_of": cat["as_of"],
                 "fielded_access_path": cat["fielded_access_path"], "spec": cat["spec"]} if cat else {}
         stale = s.view().stale_files(pval(s.scenario.params(), "staleness_threshold_days"))
-        meta["stale"] = next((v for k, v in stale.items() if file.startswith(k.rstrip("/"))), None)
+        meta['stale'] = next((v for k, v in stale.items() if file.startswith(k.rstrip('/'))), None)
+        if profile == 'canonical' and file.endswith('.csv') and p.with_suffix('.csv.json').is_file():
+            meta['original_file'] = file + '.json'
+            meta['adapter'] = s.adapter
         if profile == "reference":
             meta = {"real_system": "Reference exercise / NOT used by forecast", "steward": "Synthetic package", "as_of": "See record timestamp", "stale": None}
         if p.suffix == ".pdf":
             pages = read_pdf_pages(p)
             n = int(loc.split()[-1]) if loc.startswith("page") else 1
+            if not 1 <= n <= len(pages):
+                raise HTTPException(422, 'Page outside document')
             return {"file": file, "kind": "pdf", "page": n, "lines": pages[n - 1].splitlines(), "highlight_text": span, "meta": meta}
         lines = p.read_text(encoding="utf-8").splitlines()
         hl = None
@@ -280,8 +386,8 @@ def create_app(state: AppState | None = None) -> FastAPI:
 
     @app.get("/api/actions/schema")
     def schema():
-        return {"types": ACTION_TYPES, "schema": action_schema(), "ships": SHIP_IDS,
-                "eics": sorted(set(SYSTEMS) | set(COMPONENT_TO_SYSTEM))}
+        return {'types': ACTION_TYPES, 'schema': action_schema(), 'ships': S().baseline.profile.ship_ids,
+                'eics': sorted(S().baseline.profile.all_eics)}
 
     @app.get("/api/log")
     def log():
@@ -294,7 +400,7 @@ def create_app(state: AppState | None = None) -> FastAPI:
         with s.lock:
             s.check_version(body.base_version)
             try:
-                c = s.scenario.apply("play_event", {})
+                c = s.commit('play_event', {})
             except ValueError as e:
                 raise HTTPException(400, str(e))
             return {"change": c, "version": s.scenario.version}
@@ -311,7 +417,7 @@ def create_app(state: AppState | None = None) -> FastAPI:
                 s.validate_action(a)
                 if a["type"] == "apply_fix":
                     return _decide(s, a["fix_id"], "approve", 0.0, "via plain-English action")
-                c = s.scenario.apply("action", a)
+                c = s.commit('action', a)
             elif body.kind == "set_assumption":
                 if body.key not in EDITABLE_NUMERIC:
                     raise HTTPException(422, f"{body.key} is not editable")
@@ -322,25 +428,27 @@ def create_app(state: AppState | None = None) -> FastAPI:
                     raise HTTPException(422, "value must be a number")
                 if not lo <= val <= hi:
                     raise HTTPException(422, f"value out of range [{lo}, {hi}]")
-                c = s.scenario.apply("set_assumption", {"key": body.key, "value": val})
+                c = s.commit('set_assumption', {'key': body.key, 'value': val})
             elif body.kind == "confirm_fact":
                 if body.fact_id not in {fact.fact_id for fact in s.view().facts_with_corroboration()}:
                     raise HTTPException(422, "Fact is not known at this scenario cursor")
-                c = s.scenario.apply("confirm_fact", {"fact_id": body.fact_id, "include": bool(body.include)})
-            elif body.kind == "play_event":
-                c = s.scenario.apply("play_event", {})
+                if body.include is None:
+                    raise HTTPException(422, 'include must be explicitly true or false')
+                c = s.commit('confirm_fact', {'fact_id': body.fact_id, 'include': body.include})
+            elif body.kind == 'play_event':
+                c = s.commit('play_event', {})
             return {"change": c, "version": s.scenario.version}
 
     def _decide(s: AppState, fix_id: str, decision: str, delay: float, note: str):
         fix = None
-        for ship in SHIP_IDS:
+        for ship in s.baseline.profile.ship_ids:
             r = s.rankings.get((s.scenario.digest(), ship))
             if r:
                 fix = next((c for c in r["candidates"] if c["fix_id"] == fix_id), None)
                 if fix:
                     break
         if fix is None:
-            for ship in SHIP_IDS:
+            for ship in s.baseline.profile.ship_ids:
                 fix = next((c for c in s.ranking(ship)["candidates"] if c["fix_id"] == fix_id), None)
                 if fix:
                     break
@@ -349,7 +457,7 @@ def create_app(state: AppState | None = None) -> FastAPI:
         payload = {"decision": decision, "approval_delay_days": delay, "note": note,
                    "fix": {"fix_id": fix["fix_id"], "title": fix["title"], "steps": fix["steps"]},
                    "expected": {m["event_id"]: m["p_after"] for m in fix["missions"]}}
-        c = s.scenario.apply("fix_decision", payload)
+        c = s.commit('fix_decision', payload)
         return {"change": c, "version": s.scenario.version}
 
     @app.post("/api/fixes/decide")
@@ -378,10 +486,11 @@ def create_app(state: AppState | None = None) -> FastAPI:
     @app.post("/api/actions/parse")
     def parse(body: ParseBody):
         s = S()
+        _ship(body.ship_id)
         with s.lock:
             fc = s.fc(detail=False)
             ctx = {"ship_id": body.ship_id, "scenario_now": fc["cursor"], "events": [m["event_id"] for m in fc["missions"]],
-                   "ships": SHIP_IDS, "open_requisitions": [it.doc_number for it in s.world().ships[body.ship_id].items if it.doc_number]}
+                   "ships": s.baseline.profile.ship_ids, "open_requisitions": [it.doc_number for it in s.world().ships[body.ship_id].items if it.doc_number]}
             act, src, badge = nl_to_action(s.client, body.text, ctx)
             return {"action": ActionAdapter.dump_python(act, mode="json") if act is not None else None, "source": src, "badge": badge,
                     "fallback": act is None, "note": "Proposed only. Confirm to run it." if act is not None else "Use the action picker."}
@@ -408,7 +517,7 @@ def create_app(state: AppState | None = None) -> FastAPI:
         @app.get("/{path:path}")
         def spa(path: str):
             f = dist / path
-            if path and f.exists() and f.is_file():
+            if path and dist.resolve() in f.resolve().parents and f.exists() and f.is_file():
                 return FileResponse(f)
             return FileResponse(dist / "index.html")
 

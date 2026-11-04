@@ -218,7 +218,7 @@ export default function ShipView(props: Props) {
         (item) => item.eic === latest.selected,
       );
       const position = selected
-        ? latest.registry.mounts[selected.mounts[0]]
+        ? latest.registry.mounts[selected.mounts[0]] || [0, 0, 0]
         : [0, 0, 0];
       plane.normal.set(
         options.axis === "x" ? 1 : 0,
@@ -542,8 +542,8 @@ export default function ShipView(props: Props) {
         </label>
       ) : (
         <p className="fine-print">
-          Event start: {dateLabel(props.mission.start)}. Colors indicate
-          probability of meeting each system requirement.
+          Event interval: {dateLabel(props.mission.start)}–{dateLabel(props.mission.end)}. Colors indicate
+          probability of meeting each system requirement across interval checks.
         </p>
       )}
       <div className="viewer-legend">
@@ -571,7 +571,7 @@ export default function ShipView(props: Props) {
               filter === "all" ||
               item.mounts.some(
                 (mount) =>
-                  props.registry.mounts[mount][1] < 10 === (filter === "below"),
+                  props.registry.mounts[mount] && (props.registry.mounts[mount][1] < 10) === (filter === 'below'),
               ),
           )
           .map((item) => {
@@ -586,11 +586,11 @@ export default function ShipView(props: Props) {
                 <i />
                 <span>
                   {item.name}
-                  <small>{item.eic}</small>
+                  <small>{item.eic}{!item.mounts.length && ' / No mount on this hull'}</small>
                 </span>
                 <b>
                   {value == null
-                    ? "Not a gate"
+                    ? 'Unknown / not a gate'
                     : mode === "material"
                       ? `${Math.round(value * 100)}/100`
                       : percent(value)}

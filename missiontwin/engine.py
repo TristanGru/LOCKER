@@ -28,6 +28,8 @@ from .domain import (AREAS, COMPONENT_TO_SYSTEM, CRITICAL_CAP, LOG_DIR, MONTHS, 
                      UTC, WATCHSTATIONS, band, date_dt, day_of, dt_of, format_dtg, iso, local_label, parse_ts, parts_index)
 from .ingest import Baseline, View, fact_date
 from .models import SourceRef
+from .profile import Profile, default_profile
+from .validation import validate_params, validate_world
 
 REGIME_OF = {"BA": "NEAR", "BB": "DUE_IN", "BC": "LONG", "BV": "PROCUREMENT", "BZ": "PROCUREMENT", "B3": "LONG",
              "CB": "REJECTED", "CG": "REJECTED", "CJ": "REJECTED", "CU": "REJECTED"}
@@ -208,6 +210,7 @@ class ShipWorld:
     hazards: list = field(default_factory=list)
     holders: dict = field(default_factory=dict)  # ws -> [Holder]
     missions: list = field(default_factory=list)
+    cannibalizable: set = field(default_factory=set)
     stock: dict = field(default_factory=dict)  # niin -> {"on_hand", "allowance", "src"}
     blocks: list = field(default_factory=list)
     certs: dict = field(default_factory=dict)
@@ -227,6 +230,10 @@ class World:
     notes: list
     facts_used: list
     digest: str
+    profile: Profile = field(default_factory=default_profile)
+    coverage: dict = field(default_factory=dict)
+    reported_baseline: dict = field(default_factory=dict)
+    source_revision: str = ''
 
 
 # ====================================================================== scenario (R4)
@@ -249,7 +256,7 @@ class Scenario:
         return [c["payload"]["event_id"] for c in self.changes if c["kind"] == "play_event"]
 
     def cursor_dt(self) -> datetime:
-        t = SCENARIO_NOW
+        t = self.b.profile.now
         played = set(self.played())
         for ev in self.b.feed.get("events", []):
             if ev["event_id"] in played:
@@ -268,10 +275,11 @@ class Scenario:
         for c in self.changes:
             if c["kind"] == "set_assumption":
                 p = set_pval(p, c["payload"]["key"], c["payload"]["value"])
+        validate_params(p)
         return p
 
     def digest(self) -> str:
-        body = [id(self.b)] + [{k: c[k] for k in ("kind", "payload", "at_day")} for c in self.changes]
+        body = [id(self.b), self.b.source_revision] + [{k: c[k] for k in ("kind", "payload", "at_day")} for c in self.changes]
         return hashlib.sha256(json.dumps(body, sort_keys=True, default=str).encode()).hexdigest()[:16]
 
     # mutation (the only writes are the app's own log)
@@ -283,9 +291,9 @@ class Scenario:
             if payload.get("event_id") and payload["event_id"] != nxt["event_id"]:
                 raise ValueError(f"events play in order; next is {nxt['event_id']}")
             payload = {"event_id": nxt["event_id"], "title": nxt["title"]}
-        at_day = day_of(self.cursor_dt()) if kind != "play_event" else day_of(nxt["known_at"])
+        at_day = self.b.profile.day_of(self.cursor_dt()) if kind != "play_event" else self.b.profile.day_of(nxt["known_at"])
         c = {"seq": len(self.changes) + 1, "kind": kind, "payload": payload, "actor": actor, "at_day": round(at_day, 4),
-             "scenario_time": iso(dt_of(at_day)), "wall_time": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")}
+             "scenario_time": iso(self.b.profile.dt_of(at_day)), "wall_time": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")}
         self.changes.append(c)
         self.version += 1
         self._log({"op": "apply", **c})
@@ -331,8 +339,9 @@ def regime_for(req: dict) -> str:
     return REGIME_OF.get(code, "DUE_IN")
 
 
-def arrival(req: dict, params: dict, cursor: float, expedited: bool, wholesale_on_hand: int) -> tuple[float, list, list]:
-    """Requisition -> (base day, [stages], explanation lines). Arrival = base + sum(stages), floored at now."""
+def arrival(req: dict, params: dict, cursor: float, expedited: bool, wholesale_on_hand: int, profile=None) -> tuple[float, list, list]:
+    """Requisition -> (base day, [stages], explanation lines)."""
+    day_of = (profile or default_profile()).day_of
     reg = pval(params, "part_arrival_days_by_regime")
     transit = float(pval(params, "transit_days_conus_default"))
     regime = regime_for(req)
@@ -377,12 +386,28 @@ def etr_slip_stage(params) -> Stage:
 def inport_place(sw: ShipWorld, t: float) -> str | None:
     for b in sw.blocks:
         if b["s"] <= t < b["e"]:
-            return b["place"] if b["code"] in ("UPK", "INPORT", "AVAIL", "HOLUPK", "RFS") else None
+            if b['code'] not in ('UPK', 'INPORT', 'AVAIL', 'HOLUPK', 'RFS'):
+                return None
+            # Messages constrain the matching planned port window, never imply a new track.
+            for movement in getattr(sw, 'movements', []):
+                arrival = movement.get('arrival_day')
+                departure = movement.get('departure_day')
+                through = movement.get('through_day')
+                if arrival is not None and abs(arrival - b['s']) <= 3 and t < arrival:
+                    return None
+                if departure is not None and abs(departure - b['e']) <= 3 and t >= departure:
+                    return None
+                if through is not None and b['s'] <= through < b['e'] and t > through:
+                    return None
+            return b['place']
     return None
 
 
 def build_world(scn: Scenario) -> World:
     b = scn.b
+    SHIP_IDS, SYSTEMS = b.profile.ship_ids, b.profile.systems
+    SCENARIO_NOW = b.profile.now
+    day_of, dt_of = b.profile.day_of, b.profile.dt_of
     if b.configuration_errors:
         raise ValueError("; ".join(b.configuration_errors))
     cursor_dt = scn.cursor_dt()
@@ -398,7 +423,7 @@ def build_world(scn: Scenario) -> World:
     wholesale = {}
     for w in v.squadron("wholesale_stock.csv"):
         wholesale.setdefault(w["niin"], []).append(dict(w))
-    pidx = parts_index()
+    pidx = b.profile.parts_index()
     ships = {}
     facts_used = []
     for s in SHIP_IDS:
@@ -409,10 +434,15 @@ def build_world(scn: Scenario) -> World:
                               "code": blk["employment_code"], "place": blk["oparea_or_port"], "event_id": blk["event_id"],
                               "block_id": blk["block_id"], "src": blk["_src"], "status": blk["status"]})
         sw.blocks.sort(key=lambda x: x["s"])
+        sw.movements = [{**m, 'arrival_day': day_of(m['arrive']['time']) if m.get('arrive') else None,
+                         'departure_day': day_of(m['depart']['time']) if m.get('depart') else None,
+                         'through_day': day_of(m['inport_through']) if m.get('inport_through') else None} for m in v.movements(s)]
         # stock
         for r in v.rows(s, "onboard_allowance_cosal.csv"):
             if r["item_type"] == "STOREROOM":
-                sw.stock[r["niin"]] = {"on_hand": r["on_hand_qty"], "allowance": r["allowance_qty"], "src": r["_src"]}
+                sw.stock[r["niin"]] = {"on_hand": r["on_hand_qty"], "allowance": r["allowance_qty"], "src": r["_src"], "eligible": r.get('cross_deck_eligible', False)}
+        sw.cannibalizable = {(r['niin'], r['installed_system_eic']) for r in v.squadron('fleet_onboard_stock.csv')
+                             if r['ship_id'] == s and r.get('cannibalize_eligible')}
         # certs, training, avails
         for c in v.rows(s, "cert_status.csv"):
             sw.certs[c["cert_id"]] = {"status": c["status"], "expires": day_of(date_dt(c["expires"])) if c["expires"] else INF,
@@ -460,7 +490,9 @@ def build_world(scn: Scenario) -> World:
                 continue
             h = Holder(member_id=q["member_id"], rate=m["rate"], ws=q["watchstation_code"],
                        on_until=day_of(date_dt(q["requal_due"])) if q.get("requal_due") else INF, sources=[q["_src"], m["_src"]])
-            st = m["onboard_status"]
+            st = m['onboard_status']
+            if st == 'GAINING':
+                h.on_base = day_of(date_dt(m['status_start']))
             if st in ("TAD", "LEAVE", "TRANSFERRING") and m["status_start"]:
                 a = day_of(date_dt(m["status_start"]))
                 z = day_of(date_dt(m["status_end"])) if (m["status_end"] and st != "TRANSFERRING") else INF
@@ -484,7 +516,7 @@ def build_world(scn: Scenario) -> World:
                 facts_used.append(f.fact_id)
         sw.facts_assist = {}
         for f in v.facts(s):
-            if f.type == "assist_eta" and (f.status == "VERIFIED" or confirmed.get(f.fact_id)) and f.date:
+            if f.type == 'assist_eta' and f.status != 'NEEDS_REVIEW' and (f.status == 'VERIFIED' or confirmed.get(f.fact_id)) and confirmed.get(f.fact_id) is not False and f.date:
                 sw.facts_assist[f.fact_id] = (day_of(fact_date(f.date, f.known_at)), SourceRef(file=f.doc, loc=f"page {f.page}", span=f.span, key=f.fact_id))
                 facts_used.append(f.fact_id)
         # equipment items: CSMP jobs + CASREPs
@@ -511,7 +543,7 @@ def build_world(scn: Scenario) -> World:
             if j["job_state"] == "OPEN_AWAITING_PARTS" and docs:
                 r = reqs[docs[0]]
                 ws_on = sum(w["on_hand_qty"] for w in wholesale.get(r["niin"], []) if w["holder"] in ("NAVSUP_WSS", "DLA"))
-                base, stages, ex = arrival(r, params, cursor, r["doc_number"] in expedited, ws_on)
+                base, stages, ex = arrival(r, params, cursor, r["doc_number"] in expedited, ws_on, b.profile)
                 item.base, item.stages, item.explain = base, stages + [install_stage(params)], ex + ["+ install/repair (ledger)"]
                 item.part_niin, item.doc_number = r["niin"], r["doc_number"]
                 item.sources.append(r["_src"])
@@ -559,13 +591,16 @@ def build_world(scn: Scenario) -> World:
         ships[s] = sw
 
     world = World(cursor=cursor, cursor_dt=cursor_dt, params=params, ships=ships, wholesale=wholesale, fixes=[],
-                  notes=[], facts_used=facts_used, digest=scn.digest())
+                  notes=[], facts_used=facts_used, digest=scn.digest(), profile=b.profile, coverage=b.coverage(), source_revision=b.source_revision,
+                  reported_baseline={s: [{k: val for k, val in row.items() if not k.startswith('_') and k != 'as_of'} |
+                      {'as_of': iso(row['as_of']), 'source': row['_src'].model_dump()} for row in v.rows(s, 'readiness_baseline.csv')] for s in SHIP_IDS})
     # actions and approved fixes, in order
     for c in scn.changes:
         if c["kind"] == "action":
             apply_action(world, c["payload"], c["at_day"])
         elif c["kind"] == "fix_decision" and c["payload"].get("decision") == "approve":
             apply_fix(world, c["payload"]["fix"], c["at_day"] + float(c["payload"].get("approval_delay_days", 0)))
+    validate_world(world)
     return world
 
 
@@ -579,6 +614,7 @@ def _mission(world: World, event_id: str) -> Mission | None:
 
 
 def apply_action(world: World, a: dict, at: float):
+    day_of, dt_of = world.profile.day_of, world.profile.dt_of
     t = a["type"]
     if t == "remove_person":
         sw = world.ships[a["ship_id"]]
@@ -647,9 +683,16 @@ def apply_fix(world: World, fix: dict, at: float):
             ins = install_stage(world.params)
             if src_kind in ("cross_deck", "cannibalize"):
                 donor = world.ships[st["donor"]]
+                if src_kind == 'cross_deck' and (donor.stock.get(st['niin'], {}).get('on_hand', 0) < 1 or not donor.stock.get(st['niin'], {}).get('eligible')):
+                    raise ValueError('Donor stock is unavailable or ineligible for transfer')
                 t0 = max(at, first_common_port(world, st["donor"], st["receiver"], at)) if src_kind else at
+                if t0 >= INF:
+                    raise ValueError('No compatible transfer window')
                 stages, how = transfer_stages(world, st["donor"], st["receiver"], t0)
-                if src_kind == "cannibalize":
+                if src_kind == 'cannibalize':
+                    if (st['niin'], st['donor_comp']) not in donor.cannibalizable or any(i.eic == st['donor_comp'] and i.score < 1 for i in donor.items):
+                        raise ValueError('Installed donor asset is unavailable or not eligible for cannibalization')
+                    donor.cannibalizable.remove((st['niin'], st['donor_comp']))
                     ce = pval(world.params, "cannibalize_extra_days")
                     stages = stages + [Stage("uniform", ce["min"], ce["max"], label="remove from donor")]
                 item.base, item.stages = t0, stages + [ins]
@@ -676,7 +719,10 @@ def apply_fix(world: World, fix: dict, at: float):
                                             explain=[f"donor degraded until its own replacement arrives ({rg})"]))
                     donor.hazards = [h for h in donor.hazards if h.comp != comp]
             elif src_kind == "wholesale":
-                holder = st["holder"]
+                holder = st['holder']
+                asset = next((w for w in world.wholesale.get(st['niin'], []) if w['holder'] == holder and w['on_hand_qty'] > 0), None)
+                if asset is None:
+                    raise ValueError('Wholesale asset is no longer available')
                 stages = []
                 if holder == "PROGRAM_OFFICE":
                     r = pval(world.params, "program_office_release_days")
@@ -685,7 +731,11 @@ def apply_fix(world: World, fix: dict, at: float):
                               Stage("uniform", v["min"], v["max"], label="engineering validation")]
                 else:
                     stages = [Stage("fixed", 1, label="WSS release")]
-                stages.append(Stage("fixed", float(pval(world.params, "transit_days_conus_default")), label="CONUS transit"))
+                stages = [Stage('fixed', float(asset['release_lead_days']), label='source release lead')]
+                if asset.get('requires_engineering_validation'):
+                    validation = pval(world.params, 'engineering_validation_days')
+                    stages.append(Stage('uniform', validation['min'], validation['max'], label='engineering validation'))
+                stages.append(Stage('fixed', float(asset.get('transit_days_conus') or pval(world.params, 'transit_days_conus_default')), label='CONUS transit'))
                 item.base, item.stages, item.floor = at, stages + [ins], at
                 item.explain = [f"FIX: pull NIIN {st['niin']} from {holder}"] + [s.describe() for s in stages] + ["+ install/repair (ledger)"]
                 item.sources.append(SourceRef(file="squadron/wholesale_stock.csv", key=st["niin"]))
@@ -710,7 +760,10 @@ def apply_fix(world: World, fix: dict, at: float):
             donor, recv = world.ships[st["donor"]], world.ships[st["receiver"]]
             t0 = first_common_port(world, st["donor"], st["receiver"], at)
             stages, how = transfer_stages(world, st["donor"], st["receiver"], t0 if t0 < INF else at)
-            ret = st.get("return_day", INF)
+            ret = st.get('return_day', INF)
+            eligible = next((h for h in donor.holders.get(st['ws'], []) if h.member_id == st['member_id']), None)
+            if t0 >= INF or t0 >= ret or eligible is None or eligible.on_until < ret or any(a < ret + 1 and z > t0 for a, z, _, _ in eligible.off):
+                raise ValueError('Personnel loan conflicts with availability, qualification expiry or return time')
             src_h = None
             for hs in donor.holders.values():
                 for h in hs:
@@ -739,7 +792,7 @@ def apply_fix(world: World, fix: dict, at: float):
 
 # ====================================================================== forecast
 def horizon_days(world: World) -> int:
-    last = max(m.start for sw in world.ships.values() for m in sw.missions)
+    last = max(m.end for sw in world.ships.values() for m in sw.missions)
     return int(math.ceil(last)) + 3
 
 
@@ -773,7 +826,9 @@ def _items_scores(sw: ShipWorld, T: np.ndarray, n: int, seed: int, planned: bool
     return scores, info
 
 
-def _system_scores(comp_scores: dict, n: int, K: int) -> dict[str, np.ndarray]:
+def _system_scores(comp_scores: dict, n: int, K: int, profile=None) -> dict[str, np.ndarray]:
+    profile = profile or default_profile()
+    SYSTEMS = profile.systems
     out = {}
     one = np.ones((n, K), np.float32)
     for eic, sy in SYSTEMS.items():
@@ -785,7 +840,7 @@ def _system_scores(comp_scores: dict, n: int, K: int) -> dict[str, np.ndarray]:
             for c, a in zip(comps, arrs):
                 if c["critical"]:
                     crit0 |= (a <= 0.0)
-            v = np.where(crit0, np.minimum(v, CRITICAL_CAP), v)
+            v = np.where(crit0, np.minimum(v, profile.critical_cap), v)
         else:
             v = one
         if eic in comp_scores:
@@ -816,7 +871,9 @@ def _team_counts(sw: ShipWorld, ws: str, T: np.ndarray, n: int, seed: int, plann
     return count, det
 
 
-def _area_rollup(sys_scores: dict) -> dict[str, np.ndarray]:
+def _area_rollup(sys_scores: dict, profile=None) -> dict[str, np.ndarray]:
+    profile = profile or default_profile()
+    AREAS, SYSTEMS = profile.areas, profile.systems
     out = {}
     for area, (_name, members) in AREAS.items():
         v = sum(w * sys_scores[e] for e, w in members)
@@ -824,18 +881,19 @@ def _area_rollup(sys_scores: dict) -> dict[str, np.ndarray]:
         for e, _w in members:
             if SYSTEMS[e]["critical"]:
                 crit |= sys_scores[e] <= 0.0
-        out[area] = np.where(crit, np.minimum(v, CRITICAL_CAP), v)
+        out[area] = np.where(crit, np.minimum(v, profile.critical_cap), v)
     return out
 
 
 def _evaluate(world: World, T_by_ship: dict, n: int, seed: int, planned: bool):
     """Core vectorized evaluation. Returns per-ship dict of arrays."""
+    SYSTEMS = world.profile.systems
     res = {}
     for s, sw in world.ships.items():
         T = T_by_ship[s]
         comp_scores, info = _items_scores(sw, T, n if not planned else 1, seed, planned)
         nn = 1 if planned else n
-        sys_scores = _system_scores(comp_scores, nn, len(T))
+        sys_scores = _system_scores(comp_scores, nn, len(T), world.profile)
         teams = {}
         team_det = {}
         needed_ws = {q["watchstation_code"] for sy in SYSTEMS.values() for q in sy["required_quals"]}
@@ -866,6 +924,8 @@ def _evaluate(world: World, T_by_ship: dict, n: int, seed: int, planned: bool):
 
 def _gates(world: World, sw: ShipWorld, m: Mission, r: dict, cols) -> list[dict]:
     """Gate boolean arrays (n, len(cols)) for mission m evaluated at time columns `cols` (indices into r['T'])."""
+    SYSTEMS, WATCHSTATIONS = world.profile.systems, world.profile.watchstations
+    sample_count = next(iter(r['sys'].values())).shape[0]
     T = r["T"][cols]
     gates = []
     for eic, mn in m.req_systems:
@@ -878,7 +938,7 @@ def _gates(world: World, sw: ShipWorld, m: Mission, r: dict, cols) -> list[dict]
     for cid in m.certs:
         c = sw.certs.get(cid)
         valid = np.array([(c is not None and c["status"] == "CERTIFIED" and c["expires"] >= t) for t in T])
-        gates.append({"id": f"cert:{cid}", "kind": "cert", "cert_id": cid, "label": f"{cid} certified", "ok": np.broadcast_to(valid, (r["sys"]["SPY1D"].shape[0], len(T)))})
+        gates.append({"id": f"cert:{cid}", "kind": "cert", "cert_id": cid, "label": f"{cid} certified", "ok": np.broadcast_to(valid, (sample_count, len(T)))})
     for t in sw.trainings:
         if t["area"] not in m.areas:
             continue
@@ -887,7 +947,7 @@ def _gates(world: World, sw: ShipWorld, m: Mission, r: dict, cols) -> list[dict]
             ok_ref = (t["refresh"] <= T)[None, :] & r["tr"][t["id"]][:, None]
             ok = ok_exp | ok_ref
         else:
-            ok = np.broadcast_to(ok_exp, (r["sys"]["SPY1D"].shape[0], len(T)))
+            ok = np.broadcast_to(ok_exp, (sample_count, len(T)))
         if np.all(t["expires"] >= T) and t["refresh"] is None:
             continue  # always valid in horizon; not a gate worth showing
         gates.append({"id": f"training:{t['id']}", "kind": "training", "req": t["id"], "label": f"{t['name']} current", "ok": ok, "t": t})
@@ -904,10 +964,10 @@ def _p10_p90(x: np.ndarray):
     return float(a), float(b)
 
 
-def _day_str(day: float) -> str | None:
+def _day_str(day: float, profile=None) -> str | None:
     if day is None or day >= INF / 2:
         return None
-    return iso(dt_of(day))
+    return iso((profile or default_profile()).dt_of(day))
 
 
 _CACHE: "OrderedDict[str, dict]" = OrderedDict()
@@ -938,6 +998,8 @@ def _fix_digest(world: World) -> str:
 
 
 def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
+    SYSTEMS, AREAS = world.profile.systems, world.profile.areas
+    dt_of = world.profile.dt_of
     H = horizon_days(world)
     grid = np.arange(0, H + 1, dtype=float) + 0.5
     bands = pval(world.params, "bands")
@@ -945,14 +1007,16 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
     interval_columns = {}
     for s, sw in world.ships.items():
         times = list(grid) + [mission.start for mission in sw.missions]
-        if detail:
+        if sw.missions:  # interval readiness is decision data, not optional presentation detail
             for mission in sw.missions:
                 boundaries = [mission.start, max(mission.start, mission.end - 1e-6)]
                 for holders in sw.holders.values():
                     for holder in holders:
                         for beginning, ending, reason, source in holder.off:
                             boundaries.extend([beginning, ending])
-                boundaries.extend(training["expires"] + 1e-6 for training in sw.trainings)
+                boundaries.extend(training['expires'] + 1e-6 for training in sw.trainings)
+                boundaries.extend(holder.on_until for holders in sw.holders.values() for holder in holders)
+                boundaries.extend(holder.on_base for holders in sw.holders.values() for holder in holders)
                 boundaries.extend(cert["expires"] + 1e-6 for cert in sw.certs.values())
                 samples = sorted(set(list(np.arange(mission.start, mission.end, .25)) +
                     [point for point in boundaries if mission.start <= point < mission.end]))
@@ -983,32 +1047,47 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
         return out
     for eid in gate_cache:
         ready_at_start[eid] = ready(eid)
+    interval_cache = {}
+    for eid, (s, m, gates, allok) in gate_cache.items():
+        interval_gates = _gates(world, world.ships[s], m, r[s], interval_columns[eid])
+        interval_own = np.ones(n, bool)
+        for g in interval_gates:
+            interval_own &= g['ok'].all(axis=1)
+        interval_cache[eid] = (interval_gates, interval_own)
+    def interval_ready(eid):
+        result = interval_cache[eid][1].copy()
+        for parent in gate_cache[eid][1].prereqs:
+            result &= interval_ready(parent)
+        return result
+    ready_intervals = {eid: interval_ready(eid) for eid in gate_cache}
     planned = planned_case(world)
     for eid, (s, m, gates, allok) in gate_cache.items():
         full = ready_at_start[eid]
         p = float(full.mean())
         gate_rows = []
-        prereq_arrays = [(pe, ready_at_start[pe]) for pe in m.prereqs if pe in ready_at_start]
-        all_arrays = [(g["id"], g["ok"][:, 0]) for g in gates] + [(f"prereq:{pe}", arr) for pe, arr in prereq_arrays]
+        assessment = float(ready_intervals[eid].mean())
+        interval_gates_raw = interval_cache[eid][0]
+        prereq_arrays = [(pe, ready_intervals[pe]) for pe in m.prereqs]
+        all_arrays = [(g['id'], g['ok'].all(axis=1)) for g in interval_gates_raw] + [(f'prereq:{pe}', arr) for pe, arr in prereq_arrays]
         for gid, arr in all_arrays:
             others = np.ones(n, bool)
             for gid2, arr2 in all_arrays:
                 if gid2 != gid:
                     others &= arr2
-            uplift = float(others.mean()) - p
-            g = next((x for x in gates if x["id"] == gid), None)
+            uplift = float(others.mean()) - assessment
+            g = next((x for x in interval_gates_raw if x['id'] == gid), None)
             row = {"gate_id": gid, "kind": g["kind"] if g else "prereq", "label": g["label"] if g else f"{_mission(world, gid[7:]).label} ready first",
                    "p_ok": float(arr.mean()), "uplift": uplift}
             if detail:
                 row.update(_gate_detail(world, world.ships[s], m, g, r[s], G, n) if g else
-                           {"items": [], "sources": _mission(world, gid[7:]).sources})
+                           {'items': [], 'sources': [s.model_dump() for s in _mission(world, gid[7:]).sources]})
             gate_rows.append(row)
         nd = None
         if gate_rows:
             best = max(gate_rows, key=lambda x: (x["uplift"], -x["p_ok"]))
             if best["uplift"] > 0.005:
                 nd = best["gate_id"]
-            elif p < 0.999:
+            elif assessment < 0.999:
                 nd = min(gate_rows, key=lambda x: x["p_ok"])["gate_id"]
         # curve: if the mission were held on day t
         curve = None
@@ -1021,21 +1100,12 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
             for pe, arr in prereq_arrays:
                 ok &= arr[:, None]
             curve = [round(float(x), 4) for x in ok.mean(axis=0)]
-        interval_probability = None
-        interval_gates = []
-        if detail:
-            interval_ok = np.ones(n, bool)
-            for gate in _gates(world, world.ships[s], m, r[s], interval_columns[eid]):
-                gate_ok = gate["ok"].all(axis=1)
-                interval_ok &= gate_ok
-                interval_gates.append({"gate_id": gate["id"], "label": gate["label"], "p_ok": round(float(gate_ok.mean()), 4)})
-            for prerequisite, values in prereq_arrays:
-                interval_ok &= values
-            interval_probability = round(float(interval_ok.mean()), 4)
+        interval_probability = round(assessment, 4)
+        interval_gates = [{'gate_id': g['id'], 'label': g['label'], 'p_ok': round(float(g['ok'].all(axis=1).mean()), 4)} for g in interval_gates_raw]
         missions_out.append({
             "event_id": eid, "label": m.label, "ship_id": s, "name": m.name, "start": iso(dt_of(m.start)),
             "start_dtg": format_dtg(dt_of(m.start)), "start_local": local_label(dt_of(m.start)), "day": round(m.start, 2),
-            "p_ready": round(p, 4), "band": band(p, bands), "next_domino": nd, "gates": gate_rows, "curve": curve,
+            "p_ready": round(p, 4), "p_assessed": interval_probability, "band": band(assessment, bands), "next_domino": nd, "gates": gate_rows, "curve": curve,
             "planned": planned.get(eid), "areas": m.areas, "moved_note": m.moved_note, "consequence": m.consequence,
             "sources": [x.model_dump() for x in m.sources], "prereqs": m.prereqs,
             "end": iso(dt_of(m.end)), "interval_p_ready": interval_probability,
@@ -1058,7 +1128,7 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
                             "area_capability_mean": {a: round(float(np.mean(v)), 4) for a, v in cap.items()}}
             continue
         if True:
-            area = _area_rollup({k: v[:, :G] for k, v in rr["sys"].items()})
+            area = _area_rollup({k: v[:, :G] for k, v in rr["sys"].items()}, world.profile)
             ships_out[s] = {
                 "capability_mean": round(float(np.mean([np.mean(v) for v in cap.values()])), 4),
                 "area_capability_mean": {a: round(float(np.mean(v)), 4) for a, v in cap.items()},
@@ -1066,15 +1136,38 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
                 "systems": {e: [round(float(x), 3) for x in rr["sys"][e][:, :G].mean(axis=0)] for e in SYSTEMS},
                 "system_p_ok": {e: [round(float(x), 4) for x in (rr["sys"][e][:, :G] >= 0.6).mean(axis=0)] for e in SYSTEMS},
             }
+    unknown = {m['event_id'] for m in missions_out if world.coverage.get(m['ship_id'])}
+    for _ in missions_out:
+        unknown |= {m['event_id'] for m in missions_out if any(p in unknown for p in m['prereqs'])}
+    for m in missions_out:
+        m['coverage_issues'] = world.coverage.get(m['ship_id'], [])
+        if m['event_id'] in unknown:
+            m.update(p_ready=None, p_assessed=None, interval_p_ready=None, band='UNKNOWN', next_domino=None,
+                     curve=[None] * G if detail else None, planned={'result': 'UNKNOWN', 'margin_days': None})
+            if not m['coverage_issues']: m['coverage_issues'] = ['Prerequisite event has insufficient evidence']
+            for gate in m['gates'] + m['interval_gates']:
+                gate['p_ok'] = None
+    for s, ship in ships_out.items():
+        if world.coverage.get(s):
+            ship['capability_mean'] = None
+            ship['area_capability_mean'] = {a: None for a in AREAS}
+            if detail:
+                ship['systems'] = {e: [None] * G for e in SYSTEMS}
+                ship['system_p_ok'] = {e: [None] * G for e in SYSTEMS}
+                ship['areas'] = {a: {'mfom': [None] * G, 'p_capable': [None] * G} for a in AREAS}
     return {
+        'assessment_basis': 'event_interval', 'source_revision': world.source_revision,
+        'coverage': world.coverage, 'reported_baseline': world.reported_baseline, 'units': world.profile.ships,
         "seed": seed, "runs": n, "cursor": iso(world.cursor_dt), "cursor_dtg": format_dtg(world.cursor_dt), "cursor_day": round(world.cursor, 3),
-        "day0": iso(SCENARIO_NOW), "horizon_days": H, "grid_days": [float(x) for x in grid],
+        "day0": iso(world.profile.now), "horizon_days": H, "grid_days": [float(x) for x in grid],
         "grid_dates": [iso(dt_of(x)) for x in grid], "missions": missions_out, "ships": ships_out,
         "bands": bands, "fixes_applied": [f.get("title") for f in world.fixes],
     }
 
 
 def _gate_detail(world, sw, m, g, r, G, n) -> dict:
+    SYSTEMS = world.profile.systems
+    _day_str = lambda day: globals()['_day_str'](day, world.profile)
     col = G + sw.missions.index(m)
     t = r["T"][col]
     items, sources = [], []
@@ -1082,7 +1175,7 @@ def _gate_detail(world, sw, m, g, r, G, n) -> dict:
         comps = {c["eic"] for c in SYSTEMS[g["eic"]]["components"]} | {g["eic"]}
         for obj, arr in r["info"]:
             if isinstance(obj, Item) and obj.eic in comps:
-                active = (obj.start <= t) & (t < arr)
+                active = (obj.start < m.end) & (m.start < arr)
                 p10, p90 = _p10_p90(arr[arr < INF / 2])
                 items.append({"key": obj.key, "kind": obj.kind, "title": obj.title, "eic": obj.eic, "score_while_active": obj.score,
                               "p_active_at_mission": round(float(np.mean(active)), 4),
@@ -1093,13 +1186,14 @@ def _gate_detail(world, sw, m, g, r, G, n) -> dict:
             elif isinstance(obj, Hazard) and obj.comp in comps:
                 items.append({"key": obj.key, "kind": "hazard", "title": f"Random failure risk: {obj.comp} (NIIN {obj.niin})",
                               "eic": obj.comp, "score_while_active": obj.score,
-                              "p_active_at_mission": None, "p_fail_before_mission": round(float(np.mean(arr <= t)), 4),
+                              "p_active_at_mission": None, "p_fail_before_mission": round(float(np.mean(arr < m.end)), 4),
                               "spare_onboard": obj.spare, "explain": [f"rate {obj.rate:.4f}/day (ledger)", "spare on board" if obj.spare else "no spare on board"],
                               "sources": [s.model_dump() for s in obj.sources]})
     elif g["kind"] == "team":
         for h, aboard in r["team_det"][g["ws"]]:
             items.append({"key": f"member:{h.member_id}", "kind": "person", "title": f"{h.rate} {h.member_id}" + (f" ({h.note})" if h.note else ""),
                           "member_id": h.member_id, "p_aboard_at_mission": round(float(np.mean(aboard[:, col])), 4),
+                          'p_available_interval': round(float(aboard[:, (r['T'] >= m.start) & (r['T'] < m.end)].all(axis=1).mean()), 4),
                           "off": [{"from": _day_str(a), "until": _day_str(z), "why": why, "source": s.model_dump()} for a, z, why, s in h.off],
                           "sources": [s.model_dump() for s in h.sources]})
             sources += h.sources
@@ -1122,6 +1216,8 @@ def _gate_detail(world, sw, m, g, r, G, n) -> dict:
 # ====================================================================== planned case (R1)
 def planned_case(world: World) -> dict:
     """Deterministic: stated ETAs and point estimates, no randomness. MAKE/MISS margin and the binding chain."""
+    _day_str = lambda day: globals()['_day_str'](day, world.profile)
+    dt_of = world.profile.dt_of
     H = horizon_days(world) + 45
     step = 0.25
     fine = np.arange(max(0.0, math.floor(world.cursor * 4) / 4), H, step)
@@ -1182,6 +1278,8 @@ def planned_case(world: World) -> dict:
 
 
 def _planned_why(world, sw, g, m, r) -> list[str]:
+    SYSTEMS = world.profile.systems
+    dt_of = world.profile.dt_of
     why = []
     if g["kind"] == "system":
         comps = {c["eic"] for c in SYSTEMS[g["eic"]]["components"]} | {g["eic"]}
@@ -1215,7 +1313,7 @@ def domino_graph(fc: dict, ship_id: str, event_id: str | None = None) -> dict:
         if m["ship_id"] != ship_id or (event_id and m["event_id"] != event_id):
             continue
         mid = f"mission:{m['event_id']}"
-        G.add_node(mid, kind="mission", label=f"{m['label']}: {m['name']}", p=m["p_ready"], band=m["band"], sources=m["sources"])
+        G.add_node(mid, kind="mission", label=f"{m['label']}: {m['name']}", p=m['p_assessed'], band=m['band'], sources=m["sources"])
         for g in m["gates"]:
             gid = f"{m['event_id']}|{g['gate_id']}"
             entity = g["gate_id"].split(":", 1)[1]
@@ -1226,7 +1324,7 @@ def domino_graph(fc: dict, ship_id: str, event_id: str | None = None) -> dict:
             for it in g.get("items", []):
                 iid = f"{gid}|{it['key']}"
                 pa = it.get("p_active_at_mission")
-                p_ok = (1 - pa) if pa is not None else it.get("p_aboard_at_mission", 1 - (it.get("p_fail_before_mission") or 0))
+                p_ok = None if m.get('coverage_issues') else (1 - pa) if pa is not None else it.get('p_available_interval', 1 - (it.get('p_fail_before_mission') or 0))
                 if it["kind"] == "hazard" and (it.get("p_fail_before_mission") or 0) < 0.01:
                     continue
                 G.add_node(iid, kind=it["kind"], label=it["title"], p=p_ok,

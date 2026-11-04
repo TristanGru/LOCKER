@@ -1,0 +1,13 @@
+# Direct dependency versions used for the offline-demo verification (Python 3.13).
+# requirements.txt remains the supported dependency-range declaration.
+-r requirements.txt
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.2
+numpy==2.5.4
+networkx==3.7
+pyyaml==6.0.3
+reportlab==5.1.0
+pypdf==6.21.4
+httpx==0.28.1
+pytest==9.2.0

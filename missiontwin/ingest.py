@@ -23,6 +23,9 @@ from .domain import (ALL_EICS, DATA_DIR, MONTHS, SCENARIO_NOW, SHIP_IDS, SHIPS, 
                      parse_date, parse_dtg, parse_ts, mission_tree_json)
 from .llm import LLMClient, build_name_index, extract_facts, surname_of
 from .models import Contradiction, ExtractedFact, IngestIssue, SourceRef
+from .profile import Profile, default_profile, load_profile
+from .domain import COLUMNS
+from .validation import validate_events, validate_params
 
 NAME_TO_SHIP = {v["name"]: k for k, v in SHIPS.items()}
 
@@ -31,7 +34,7 @@ FILE_RULES = {
     "csmp.csv": {"req": ["jcn", "eic", "status_code", "job_state", "as_of"], "ts": ["as_of"], "date": ["date_discovered", "date_deferred"]},
     "requisition_status.csv": {"req": ["doc_number", "niin", "status_code", "status_history", "as_of"], "ts": ["as_of"], "date": ["esd"]},
     "onboard_allowance_cosal.csv": {"req": ["niin", "item_type"], "ts": ["as_of"], "int": ["allowance_qty", "on_hand_qty", "due_in_qty"]},
-    "roster.csv": {"req": ["member_id", "rate", "work_center", "onboard_status"], "ts": ["as_of"], "date": ["status_start", "status_end", "prd", "eaos"]},
+    "roster.csv": {"req": ["member_id", "rate", "work_center", "onboard_status"], "ts": ["as_of"], "date": ["status_start", "status_end", "prd", "eaos", "report_date"]},
     "quals.csv": {"req": ["member_id", "watchstation_code", "qual_status"], "ts": ["as_of"], "date": ["requal_due", "final_date", "interim_date"]},
     "watchbill.csv": {"req": ["date", "watchstation_code", "member_id"], "ts": ["as_of"], "date": ["date"]},
     "nec_billets.csv": {"req": ["billet_id", "nec_required"], "ts": ["as_of"], "date": ["holder_prd", "gap_start"]},
@@ -58,8 +61,11 @@ SQUAD = ["wholesale_stock.csv", "fleet_onboard_stock.csv", "ship_positions.csv",
          "status_code_reference.csv", "pii_redaction_test.csv"]
 
 
-def _check_row(fname: str, row: dict):
+def _check_row(fname: str, row: dict, profile: Profile | None = None):
+    all_eics = (profile or default_profile()).all_eics
     rules = FILE_RULES.get(fname, {})
+    missing = set(COLUMNS.get(fname, [])) - set(row)
+    if missing: raise ValueError('Missing schema columns: ' + ', '.join(sorted(missing)))
     for c in rules.get("req", []):
         if not (row.get(c) or "").strip():
             raise ValueError(f"required field '{c}' is empty")
@@ -71,29 +77,47 @@ def _check_row(fname: str, row: dict):
             row[c] = parse_date(row[c])
         else:
             row[c] = None
-    for c in rules.get("int", []):
-        row[c] = int(row[c]) if row.get(c) not in (None, "") else 0
+    for c in rules.get('int', []):
+        row[c] = int(row[c]) if row.get(c) not in (None, '') else 0
+        if row[c] < 0: raise ValueError(f'{c} cannot be negative')
+    if row.get('eic') and row['eic'] not in all_eics:
+        raise ValueError(f"Unmapped equipment identity: {row['eic']}")
+    if row.get('known_at'):
+        row['known_at'] = parse_ts(row['known_at'])
+    if fname == 'quals.csv' and row['qual_status'] not in ('QUALIFIED', 'INTERIM', 'IN_PROGRESS', 'EXPIRED'):
+        raise ValueError('Unknown qualification status')
+    if fname == 'roster.csv':
+        if row['onboard_status'] not in ('ONBOARD', 'TAD', 'LEAVE', 'TRANSFERRING', 'GAINING'):
+            raise ValueError('Unknown onboard status')
+        if row['onboard_status'] != 'ONBOARD' and not row.get('status_start'):
+            raise ValueError('Personnel change requires an effective start date')
     if fname == "csmp.csv":
         if len(row["jcn"]) != 13:
             raise ValueError(f"JCN must be 13 chars, got {row['jcn']!r}")
         if row["status_code"] not in STATUS_SCORE:
             raise ValueError(f"unknown equipment status code {row['status_code']!r}")
-        if row["eic"] not in ALL_EICS:
+        if row["eic"] not in all_eics:
             raise ValueError(f"EIC {row['eic']!r} not in mission tree")
         row["type_avail"] = int(row["type_avail"] or 4)
     if fname == "requisition_status.csv":
         hist = []
         for ent in row["status_history"].split(";"):
             t, code, esd = ent.split(" ")
-            hist.append((parse_ts(t), code, parse_date(esd) if esd != "-" else None))
+            if code not in {'BA', 'BB', 'BC', 'BV', 'BZ', 'B3', 'B5', 'CB', 'CG', 'CJ', 'CU'}:
+                raise ValueError(f'Unmapped supply status: {code}')
+            hist.append((parse_ts(t), code, parse_date(esd) if esd != '-' else None))
         if not hist:
             raise ValueError("empty status_history")
-        row["_history"] = hist
+        if len({h[0] for h in hist}) != len(hist):
+            raise ValueError('Duplicate requisition history timestamp')
+        row['_history'] = sorted(hist, key=lambda h: h[0])
         row["expedite_flag"] = row.get("expedite_flag") == "true"
     for b in ("cross_deck_eligible", "cannibalize_eligible", "iem_flag", "corrected", "nors", "co_deferral_signed",
               "requires_engineering_validation"):
         if b in row:
-            row[b] = row[b] == "true"
+            if row[b] not in ('true', 'false', ''):
+                raise ValueError(f'{b} must be true or false')
+            row[b] = row[b] == 'true'
 
 
 @dataclass
@@ -114,6 +138,23 @@ class Baseline:
     expected_facts: dict = field(default_factory=dict)
     extraction_methods: dict = field(default_factory=dict)
     configuration_errors: list[str] = field(default_factory=list)
+    profile: Profile = field(default_factory=default_profile)
+    source_revision: str = ""
+    snapshot_owner: object = None
+
+    def coverage(self):
+        """Conservative coverage: malformed required evidence makes the unit unknown."""
+        required = {'csmp.csv', 'requisition_status.csv', 'roster.csv', 'quals.csv', 'training_readiness.csv',
+                    'cert_status.csv', 'schedule_30day.csv', 'availabilities.csv', 'onboard_allowance_cosal.csv', 'sked_schedule.csv'}
+        out = {s: [] for s in self.profile.ship_ids}
+        for issue in self.issues:
+            owner, _, name = issue.file.partition('/')
+            if owner == 'squadron' and name == 'wholesale_stock.csv':
+                for reasons in out.values(): reasons.append(f'{issue.file}: {issue.reason}')
+            if name in required or name.startswith('casrep_messages/'):
+                if owner in out:
+                    out[owner].append(f'{issue.file} {issue.loc}: {issue.reason}')
+        return out
 
     def r(self, ship: str, fname: str) -> list[dict]:
         return self.rows.get((ship, fname), [])
@@ -139,6 +180,10 @@ def read_csv(b: Baseline, path: Path, rel: str, fname: str, owner: str) -> list[
         body = lines[1:]
         offset = 2
     reader = csv.DictReader(body)
+    missing = set(COLUMNS.get(fname, [])) - set(reader.fieldnames or [])
+    if missing:
+        b.issues.append(IngestIssue(file=rel, loc='header', reason='Missing schema columns: ' + ', '.join(sorted(missing)), kind='validation'))
+        return out
     for i, row in enumerate(reader):
         line_no = offset + 1 + i  # header is at `offset`
         try:
@@ -147,14 +192,14 @@ def read_csv(b: Baseline, path: Path, rel: str, fname: str, owner: str) -> list[
             if any(v is None for v in row.values()):
                 raise ValueError("row has fewer fields than the header")
             row = dict(row)
-            _check_row(fname, row)
+            _check_row(fname, row, b.profile)
             key = row.get("jcn") or row.get("doc_number") or row.get("member_id") or row.get("billet_id") or \
                 row.get("block_id") or row.get("cert_id") or row.get("avail_id") or row.get("requirement_id") or row.get("niin") or ""
             row["_src"] = SourceRef(file=rel, loc=f"row {line_no}", key=str(key))
             as_of = row.get("as_of")
-            row["_known"] = as_of if isinstance(as_of, datetime) else SCENARIO_NOW - timedelta(hours=2)
-            if fname == "requisition_status.csv":
-                row["_known"] = row["_history"][0][0]
+            row['_known'] = row.get('known_at') or (as_of if isinstance(as_of, datetime) else b.profile.now - timedelta(hours=2))
+            if fname == 'requisition_status.csv' and not row.get('known_at'):
+                row['_known'] = row['_history'][0][0]
             if owner != "squadron" and "ship_id" in row and row["ship_id"] != owner:
                 raise ValueError(f"ship_id {row['ship_id']} in {owner} folder")
             out.append(row)
@@ -194,9 +239,10 @@ def _sets(text: str) -> tuple[list[tuple[int, str]], str]:
     return sets, fm
 
 
-def parse_casrep(text: str, rel: str) -> dict:
+def parse_casrep(text: str, rel: str, profile: Profile | None = None) -> dict:
+    profile = profile or default_profile()
     sets, fm = _sets(text)
-    ship = NAME_TO_SHIP.get(fm)
+    ship = {v['name']: k for k, v in profile.ships.items()}.get(fm)
     if not ship:
         raise ValueError(f"unknown originator {fm!r}")
     m = {"ship_id": ship, "file": rel, "parts": [], "assist": None, "etr": None, "ref": None, "lines": {}}
@@ -216,7 +262,7 @@ def parse_casrep(text: str, rel: str) -> dict:
             if not g:
                 raise ValueError(f"line {line_no}: bad CASUALTY set")
             m["type"], m["system_name"], m["category"], m["eic"] = g.group(1), g.group(2), int(g.group(3)), g.group(4)
-            if m["eic"] not in ALL_EICS:
+            if m["eic"] not in profile.all_eics:
                 raise ValueError(f"line {line_no}: EIC {m['eic']} not in mission tree")
         elif tag == "EQUIP":
             g = EQ_RE.match(s)
@@ -247,15 +293,18 @@ def parse_casrep(text: str, rel: str) -> dict:
     if m["type"] != "INITIAL" and not m["ref"]:
         raise ValueError("UPDATE/CORRECT/CANCEL must reference the INITIAL DTG")
     init = parse_dtg(m["ref"]) if m["ref"] else m["time"]
-    m["casrep_id"] = f"{hull_key(ship)}-{init.year % 100:02d}-{m['serial']}"
+    m["casrep_id"] = f"{profile.ships[ship]['hull'].replace('-', '')}-{init.year % 100:02d}-{m['serial']}"
+    if m['category'] not in (2, 3, 4):
+        raise ValueError('CASREP category must be 2, 3 or 4')
     m["_known"] = m["time"]
     m["_src"] = SourceRef(file=rel, loc=f"line {m['lines'].get('CASUALTY', 1)}", key=m["casrep_id"])
     return m
 
 
-def parse_movement(text: str, rel: str) -> dict:
+def parse_movement(text: str, rel: str, profile: Profile | None = None) -> dict:
+    profile = profile or default_profile()
     sets, fm = _sets(text)
-    ship = NAME_TO_SHIP.get(fm)
+    ship = {v['name']: k for k, v in profile.ships.items()}.get(fm)
     if not ship:
         raise ValueError(f"unknown originator {fm!r}")
     m = {"ship_id": ship, "file": rel, "items": []}
@@ -300,6 +349,11 @@ def fact_date(s: str, ref: datetime) -> datetime:
 def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) -> Baseline:
     data_dir = Path(data_dir)
     b = Baseline(data_dir=data_dir)
+    try:
+        b.profile = load_profile(data_dir)
+    except (ValueError, KeyError, TypeError, OSError) as error:
+        b.configuration_errors.append(f'Invalid domain profile: {error}')
+    SHIP_IDS = b.profile.ship_ids
     client = client or LLMClient()
     for ship in SHIP_IDS:
         for fname in PER_SHIP:
@@ -308,41 +362,64 @@ def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) ->
                 b.rows[(ship, fname)] = read_csv(b, p, f"{ship}/{fname}", fname, ship)
             else:
                 b.issues.append(IngestIssue(file=f"{ship}/{fname}", loc="file", reason="file missing"))
+        if not (data_dir / ship / 'casrep_messages').is_dir():
+            b.issues.append(IngestIssue(file=f'{ship}/casrep_messages/', loc='folder', reason='Required casualty feed missing'))
         for p in sorted((data_dir / ship / "casrep_messages").glob("*.txt")):
             rel = f"{ship}/casrep_messages/{p.name}"
             try:
-                b.messages.append(parse_casrep(p.read_text(encoding="utf-8"), rel))
+                b.messages.append(parse_casrep(p.read_text(encoding="utf-8"), rel, b.profile))
             except Exception as e:
                 b.issues.append(IngestIssue(file=rel, loc="message", reason=str(e)))
         for sub in ("movrep", "logreq"):
             for p in sorted((data_dir / ship / sub).glob("*.txt")):
                 rel = f"{ship}/{sub}/{p.name}"
                 try:
-                    b.movements.append(parse_movement(p.read_text(encoding="utf-8"), rel))
+                    b.movements.append(parse_movement(p.read_text(encoding="utf-8"), rel, b.profile))
                 except Exception as e:
                     b.issues.append(IngestIssue(file=rel, loc="message", reason=str(e)))
     for fname in SQUAD:
         p = data_dir / "squadron" / fname
         if p.exists():
             b.rows[("squadron", fname)] = read_csv(b, p, f"squadron/{fname}", fname, "squadron")
+        else:
+            b.issues.append(IngestIssue(file=f'squadron/{fname}', loc='file', reason='file missing'))
     sq = data_dir / "squadron"
 
     def j(name):
         try:
-            return json.loads((sq / name).read_text(encoding="utf-8"))
+            result = json.loads((sq / name).read_text(encoding='utf-8'))
+            if not isinstance(result, dict): raise ValueError('Expected JSON object')
+            return result
         except Exception as e:
             b.issues.append(IngestIssue(file=f"squadron/{name}", loc="file", reason=str(e)))
             return {}
     b.tree = j("mission_equipment_tree.json")
-    if b.tree.get("missions") != mission_tree_json()["missions"]:
-        b.configuration_errors.append("Mission tree differs from the canonical five-area configuration. Normalize or regenerate the dataset before forecasting.")
-    b.events = j("events_missions.json").get("events", [])
-    for ev in b.events:
-        for k in ("start", "end"):
-            ev[k] = parse_ts(ev[k]) if ev.get(k) else None
-    b.feed = j("scenario_feed.json")
-    for ev in b.feed.get("events", []):
-        ev["known_at"] = parse_ts(ev["known_at"])
+    for ev in j('events_missions.json').get('events', []):
+        try:
+            for k in ('start', 'end'):
+                ev[k] = parse_ts(ev[k]) if ev.get(k) else None
+            b.events.append(ev)
+        except (ValueError, TypeError, KeyError) as error:
+            b.configuration_errors.append(f'Invalid event record: {error}')
+    try:
+        validate_events(b.events, b.profile)
+    except (ValueError, TypeError, KeyError) as error:
+        b.configuration_errors.append(str(error))
+    b.feed = j('scenario_feed.json')
+    valid_feed = []
+    for ev in b.feed.get('events', []):
+        try:
+            if not all(k in ev for k in ('event_id', 'known_at', 'ship_id', 'title', 'kind', 'refs')):
+                raise ValueError('Missing required feed fields')
+            ev['known_at'] = parse_ts(ev['known_at'])
+            if ev['ship_id'] not in b.profile.ships or ev['known_at'] < b.profile.now:
+                raise ValueError('Unknown ship or feed time before scenario start')
+            valid_feed.append(ev)
+        except (ValueError, TypeError, KeyError) as error:
+            b.configuration_errors.append(f'Invalid feed record: {error}')
+    b.feed['events'] = sorted(valid_feed, key=lambda e: e['known_at'])
+    if len({e['event_id'] for e in valid_feed}) != len(valid_feed):
+        b.configuration_errors.append('Duplicate feed event identity')
     b.catalog = j("data_catalog.json").get("datasets", [])
     b.expected_facts = j("daily_status_expected_facts.json").get("documents", {})
     try:
@@ -351,6 +428,11 @@ def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) ->
         b.issues.append(IngestIssue(file="squadron/delay_model_params.yaml", loc="file", reason=str(e)))
         from .domain import DEFAULT_PARAMS
         b.params = dict(DEFAULT_PARAMS)
+
+    try:
+        validate_params(b.params)
+    except (ValueError, KeyError, TypeError) as error:
+        b.configuration_errors.append(f'Invalid assumptions: {error}')
 
     # names for redaction (never sent anywhere)
     roster_all = [r for s in SHIP_IDS for r in b.r(s, "roster.csv")]
@@ -380,6 +462,30 @@ def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) ->
                     if f.status == "NEEDS_REVIEW":
                         b.issues.append(IngestIssue(file=rel, loc=f"page {pi}", reason=f"{f.reason}: {f.span[:80]}", kind="extraction"))
                 b.facts.extend(facts)
+    # Validate joins without treating the deliberately unmatched CASREP/JCN cases as fatal.
+    for ship in SHIP_IDS:
+        members = {r['member_id'] for r in b.r(ship, 'roster.csv')}
+        docs = {r['doc_number'] for r in b.r(ship, 'requisition_status.csv')}
+        for event in [e for e in b.events if e.get('ship_id') == ship]:
+            for name, field, required in [('cert_status.csv', 'cert_id', event.get('prerequisite_certs', [])),
+                                          ('availabilities.csv', 'avail_id', [event['prerequisite_avail']] if event.get('prerequisite_avail') else [])]:
+                if not set(required) <= {r[field] for r in b.r(ship, name)}:
+                    b.issues.append(IngestIssue(file=f'{ship}/{name}', loc='file', reason=f"Unresolved prerequisite for {event['event_id']}", kind='validation'))
+        for row in b.r(ship, 'quals.csv'):
+            if row['member_id'] not in members or row['watchstation_code'] not in b.profile.watchstations:
+                b.issues.append(IngestIssue(file=row['_src'].file, loc=row['_src'].loc, reason='Unresolved qualification identity', kind='validation'))
+        for row in b.r(ship, 'csmp.csv'):
+            required = {v for v in (row.get('req_doc_numbers') or '').split(';') if v}
+            if row['job_state'] == 'OPEN_AWAITING_PARTS' and (not required or not required <= docs):
+                b.issues.append(IngestIssue(file=row['_src'].file, loc=row['_src'].loc, reason='Missing linked requisition', kind='validation'))
+        for name, keys in {'roster.csv': ('member_id',), 'quals.csv': ('member_id', 'watchstation_code'), 'csmp.csv': ('jcn',)}.items():
+            seen = {}
+            for row in b.r(ship, name):
+                identity = tuple(row.get(k) for k in keys) + (row['_known'],)
+                values = {k: v for k, v in row.items() if not k.startswith('_')}
+                if identity in seen and seen[identity] != values:
+                    b.issues.append(IngestIssue(file=row['_src'].file, loc=row['_src'].loc, reason='Conflicting records at identical knowledge time', kind='validation'))
+                seen[identity] = values
     return b
 
 
@@ -393,15 +499,31 @@ class View:
         self.params = b.params
 
     def rows(self, ship: str, fname: str) -> list[dict]:
-        return [r for r in self.b.r(ship, fname) if r["_known"] <= self.now]
+        rows = [r for r in self.b.r(ship, fname) if r['_known'] <= self.now]
+        keys = {'roster.csv': ('member_id',), 'quals.csv': ('member_id', 'watchstation_code'),
+                'csmp.csv': ('jcn',), 'training_readiness.csv': ('requirement_id',),
+                'cert_status.csv': ('cert_id',), 'availabilities.csv': ('avail_id',),
+                'onboard_allowance_cosal.csv': ('niin', 'item_type'), 'requisition_status.csv': ('doc_number',),
+                'schedule_30day.csv': ('block_id',), 'nec_billets.csv': ('billet_id',),
+                'wholesale_stock.csv': ('niin', 'holder'), 'fleet_onboard_stock.csv': ('ship_id', 'niin', 'installed_system_eic'),
+                'ship_positions.csv': ('ship_id', 'date')}
+        if fname not in keys:
+            return rows
+        latest = {}
+        revision = lambda r: (r['_known'], r.get('as_of') or r['_known'])
+        for row in sorted(rows, key=revision):
+            identity = tuple(row.get(k) for k in keys[fname])
+            if identity not in latest or revision(row) > revision(latest[identity]):
+                latest[identity] = row
+        return list(latest.values())
 
     def squadron(self, fname: str) -> list[dict]:
-        return [r for r in self.b.r("squadron", fname) if r["_known"] <= self.now]
+        return self.rows('squadron', fname)
 
     def requisitions(self, ship: str) -> list[dict]:
         out = []
-        for r in self.b.r(ship, "requisition_status.csv"):
-            hist = [h for h in r["_history"] if h[0] <= self.now]
+        for r in self.rows(ship, 'requisition_status.csv'):
+            hist = sorted([h for h in r['_history'] if h[0] <= self.now], key=lambda h: h[0])
             if not hist:
                 continue
             v = dict(r)
@@ -526,6 +648,7 @@ class View:
 
 # ====================================================================== contradictions X1..X10
 def find_contradictions(v: View) -> list[Contradiction]:
+    SHIP_IDS = v.b.profile.ship_ids
     out: list[Contradiction] = []
     thr = v.params.get("staleness_threshold_days", {}).get("value", 5)
     for ship in SHIP_IDS:

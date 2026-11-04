@@ -12,6 +12,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { api } from "./api";
+import SourcesPanel from './SourcesPanel';
 import type {
   Dashboard,
   Fix,
@@ -61,7 +62,7 @@ export function FixesPanel({
           <div className="eyebrow">{ship} / HUMAN DECISION REQUIRED</div>
           <h1>Resolve the blockers. See the trade-offs.</h1>
           <p>
-            Ranked by squadron outcomes, receiver improvement, and donor cost.
+            Ranked by event-interval readiness, receiver improvement, and donor cost.
           </p>
         </div>
       </div>
@@ -75,7 +76,7 @@ export function FixesPanel({
         <div className="empty-state">
           <ListChecks size={28} />
           <h2>No fix candidates for this state</h2>
-          <p>Advance the scenario or inspect the current requirements.</p>
+          <p>{ranking.warning || 'Advance the scenario or inspect the current requirements.'}</p>
         </div>
       ) : (
         <div className="comparison-layout">
@@ -111,8 +112,8 @@ export function FixesPanel({
                 <thead>
                   <tr>
                     <th>Event</th>
-                    <th>Before</th>
-                    <th>After</th>
+                    <th>Interval before</th>
+                    <th>Interval after</th>
                     <th>Change</th>
                   </tr>
                 </thead>
@@ -221,7 +222,7 @@ export function WhatIfPanel({
   const [kind, setKind] = useState("shift_mission"),
     [record, setRecord] = useState(""),
     [days, setDays] = useState(2),
-    [when, setWhen] = useState("2026-11-10T00:00"),
+    [when, setWhen] = useState(new Date(Date.parse(data.state.cursor) + 86400000).toISOString().slice(0, 16)),
     [until, setUntil] = useState(""),
     [category, setCategory] = useState(3);
   const [key, setKey] = useState("transit_days_conus_default"),
@@ -232,6 +233,7 @@ export function WhatIfPanel({
     [text, setText] = useState("");
   const [actionTypes, setActionTypes] = useState<string[]>([]);
   const inputVersion = useRef(0);
+  const defaultEic = Object.keys(data.visualization.component_to_system)[0] || data.visualization.systems[0]?.eic;
   useEffect(() => {
     api
       .schema()
@@ -283,7 +285,7 @@ export function WhatIfPanel({
       if (kind === "add_casrep")
         action = {
           ...action,
-          eic: record || "SPY1D-CW",
+          eic: record || defaultEic,
           category,
           etr: `${when}:00Z`,
         };
@@ -324,6 +326,7 @@ export function WhatIfPanel({
           <label className="field">
             Proposal
             <select
+              aria-label="Proposal"
               value={kind}
               onChange={(event) => {
                 setKind(event.target.value);
@@ -363,7 +366,7 @@ export function WhatIfPanel({
               <label className="field">
                 System or component
                 <select
-                  value={record || "SPY1D-CW"}
+                  value={record || defaultEic}
                   onChange={(event) => setRecord(event.target.value)}
                 >
                   {[
@@ -542,7 +545,7 @@ export function WhatIfPanel({
                             )?.p_ready,
                           )}
                         </td>
-                        <td className={tone(item.p_ready, preview.after.bands)}>
+                        <td>
                           {percent(item.p_ready)}
                         </td>
                         <td>{percent(item.interval_p_ready)}</td>
@@ -731,8 +734,7 @@ function DataProfiles({ onSource }: { onSource: (source: SourceRef) => void }) {
             </>
           ) : (
             <p className="fine-print">
-              Active scenario: {contract.active_path}. Five mission areas;
-              canonical identifiers and versioned source records.
+              Active source directory: {contract.active_path}. Validated profile identifiers and versioned source records.
             </p>
           )}
         </>
@@ -745,11 +747,13 @@ export function EvidencePanel({
   data,
   onSource,
   onConfirmFact,
+  onRefresh,
 }: {
   ship: string;
   data: Dashboard;
   onSource: (source: SourceRef) => void;
   onConfirmFact: (factId: string, include: boolean) => void;
+  onRefresh: (reset: boolean) => void;
 }) {
   const [facts, setFacts] = useState<Fact[] | null>(null),
     [error, setError] = useState("");
@@ -780,7 +784,8 @@ export function EvidencePanel({
           </p>
         </div>
       </div>
-      <DataProfiles onSource={onSource} />
+      <SourcesPanel data={data} ship={ship} onRefresh={onRefresh} onSource={onSource} />
+      <DataProfiles key={data.state.source_revision} onSource={onSource} />
       <section>
         <div className="section-heading">
           <h2>Exercise change feed</h2>

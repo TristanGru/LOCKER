@@ -22,11 +22,13 @@ def build_brief(fc: dict, ship_id: str, ranking: dict | None, contradictions: li
             marks.append(f"[{idx + 1}]")
         return "".join(marks)
 
-    info = SHIPS[ship_id]
+    info = fc.get('units', SHIPS)[ship_id]
+    def pct(value):
+        return 'Unknown' if value is None else f'{value * 100:.0f}%'
     now = parse_ts(fc["cursor"])
     L = [BANNER, f"READINESS BRIEF  {info['name']} ({info['hull']})",
          f"As of {fc['cursor_dtg']} ({local_label(now)}). Seed {fc['seed']}, {fc['runs']:,} runs. Read-only; the captain decides.",
-         "Exercise estimates, not official readiness ratings. Headline probabilities assess event start.", "",
+         "Exercise estimates, not official readiness ratings. Headline probabilities assess the sampled event interval.", "",
          "BOTTOM LINE"]
     ctx_missions = []
     for m in fc["missions"]:
@@ -34,19 +36,21 @@ def build_brief(fc: dict, ship_id: str, ranking: dict | None, contradictions: li
             continue
         pl = m["planned"] or {}
         margin = pl.get("margin_days")
-        plan_txt = f"Planned (on stated ETAs): {pl.get('result')}"
+        plan_txt = f"Planned at start only (on stated ETAs): {pl.get('result')}"
         if margin is not None:
             plan_txt += f", {abs(margin):.1f} days {'margin' if margin >= 0 else 'late'}"
         elif pl.get("result") == "MISS":
             plan_txt += ", not ready inside the horizon"
         srcs = m["sources"]
-        L.append(f"- {m['label']} ({m['name']}, {m['start_dtg']}): {m['band']}, {m['p_ready'] * 100:.0f}% ready (risk, seeded runs). "
+        L.append(f"- {m['label']} ({m['name']}, {m['start_dtg']}): {m['band']}, {pct(m.get('p_assessed', m['p_ready']))} across interval; {pct(m['p_ready'])} at start. "
                  f"{plan_txt}. {cite(srcs)}")
         if m.get("moved_note"):
             L.append(f"  Mission date {m['moved_note']}.")
         if m.get("interval_p_ready") is not None:
             L.append(f"  Interval checks: {m['interval_p_ready'] * 100:.0f}%, sampled every six hours plus known boundaries; not a continuous guarantee.")
-        ctx_missions.append({"label": m["label"], "p_ready": m["p_ready"], "band": m["band"], "planned": pl.get("result"), "margin_days": margin})
+        for issue in m.get('coverage_issues', []):
+            L.append(f'  INSUFFICIENT EVIDENCE: {issue}')
+        ctx_missions.append({"label": m["label"], "p_ready": m["p_ready"], 'p_assessed': m.get('p_assessed'), "band": m["band"], "planned": pl.get("result"), "margin_days": margin})
     L += ["", "NEXT DOMINO"]
     for m in fc["missions"]:
         if m["ship_id"] != ship_id or not m["next_domino"]:

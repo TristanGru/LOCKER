@@ -17,6 +17,7 @@ async function j(method: string, url: string, body?: unknown) {
 
 export const api = {
   dashboard: (): Promise<Dashboard> => j("GET", "/api/dashboard"),
+  refreshSources: (version: number, reset_scenario = false) => j('POST', '/api/sources/refresh', { base_version: version, reset_scenario }),
   dataContract: () => j("GET", "/api/data-contract"),
   preview: (version: number, proposal: Proposal): Promise<Preview> => j("POST", "/api/preview", { base_version: version, ...proposal }),
   state: () => j("GET", "/api/state"),                       // banner, clock, seed, feed, ships, LLM status

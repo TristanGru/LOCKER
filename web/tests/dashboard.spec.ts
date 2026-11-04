@@ -48,6 +48,8 @@ test("mission overview opens highlighted source and changes ship", async ({
   page,
 }, info) => {
   await expect(page.locator(".mission-row")).toHaveCount(2);
+  await expect(page.getByLabel('Readiness over time')).toBeVisible();
+  await expect(page.locator('.readiness-timeline path').last()).toHaveAttribute('d', /^M/);
   await expect(page.locator(".mission-row").first()).toContainText(
     "12 days out",
   );

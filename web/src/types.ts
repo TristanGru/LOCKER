@@ -21,7 +21,7 @@ export interface Gate {
   gate_id: string;
   kind: string;
   label: string;
-  p_ok: number;
+  p_ok: number | null;
   uplift: number;
   items: EvidenceItem[];
 }
@@ -32,12 +32,14 @@ export interface Mission {
   name: string;
   start: string;
   end: string;
-  p_ready: number;
+  p_ready: number | null;
+  p_assessed: number | null;
+  coverage_issues: string[];
   band: string;
   next_domino: string | null;
   gates: Gate[];
-  curve: number[];
-  interval_p_ready: number;
+  curve: (number | null)[];
+  interval_p_ready: number | null;
   interval_sampling_hours: number;
   interval_gates: { gate_id: string; label: string; p_ok: number }[];
   planned: { result: string; margin_days: number | null };
@@ -46,6 +48,9 @@ export interface Mission {
   consequence: string;
 }
 export interface Forecast {
+  reported_baseline: Record<string, ReportedBaseline[]>;
+  source_revision: string;
+  assessment_basis: string;
   version?: number;
   cursor: string;
   grid_dates: string[];
@@ -63,6 +68,7 @@ export interface Forecast {
   >;
 }
 export interface AppState {
+  source_revision: string;
   version: number;
   banner: string;
   cursor: string;
@@ -118,6 +124,7 @@ export interface Assumption {
   source: string;
 }
 export interface Dashboard {
+  sources: SourceHealth;
   state: AppState;
   forecast: Forecast;
   baseline: Forecast;
@@ -161,6 +168,8 @@ export interface SourceDocument {
     steward?: string;
     as_of?: string;
     stale?: unknown;
+    original_file?: string;
+    adapter?: string;
   };
 }
 export interface Fix {
@@ -183,6 +192,7 @@ export interface Fix {
   }[];
 }
 export interface Ranking {
+  warning?: string;
   candidates: Fix[];
   runs_per_candidate: number;
   rule: string;
@@ -204,11 +214,22 @@ export interface GraphData {
     id: string;
     kind: string;
     label: string;
-    p: number;
+    p: number | null;
     next?: boolean;
     eic?: string;
     gate_id?: string;
     sources?: SourceRef[];
   }[];
   edges: { source: string; target: string }[];
+}
+export interface ReportedBaseline {
+  mission_area: string; rating: string; mfom_index: number; as_of: string; source: SourceRef;
+}
+export interface SourceHealth {
+  profile: string; adapter: string; source_revision: string; configured_path: string;
+  schema_version: number; mapping_version: string; last_successful_refresh: string;
+  last_attempt: { status: string; at: string; error?: string };
+  coverage: Record<string, string[]>; configuration_errors: string[]; notice: string;
+  sources: { file: string; real_system: string; as_of: string; status: string; usage: string;
+    explanation: string; record_count: number; rejected_count: number }[];
 }

@@ -21,18 +21,25 @@ SYSTEM_MOUNTS = {
 }
 
 
-def registry():
+def registry(profile=None):
+    from .profile import default_profile
+    profile = profile or default_profile()
+    SYSTEMS, AREAS = profile.systems, profile.areas
+    COMPONENT_TO_SYSTEM = profile.component_to_system
+    mounts = profile.mounts or MOUNTS
+    system_mounts = profile.system_mounts or SYSTEM_MOUNTS
     entries = []
     for eic, system in SYSTEMS.items():
         entries.append({"eic": eic, "system_eic": eic, "name": system["name"],
-            "mounts": SYSTEM_MOUNTS[eic], "critical": system["critical"],
+            "mounts": system_mounts.get(eic, []), "critical": system["critical"],
             "mission_areas": [area for area, (_, members) in AREAS.items() if any(key == eic for key, weight in members)],
             "components": [component["eic"] for component in system["components"]],
             "watchstations": [item["watchstation_code"] for item in system["required_quals"]]})
-    entries.append({"eic": "SPY1D-CW", "system_eic": "SPY1D", "name": "Radar cooling water pump",
-        "mounts": ["chill"], "critical": True, "mission_areas": ["AW"], "components": [], "watchstations": ["4310"]})
+    if 'SPY1D-CW' in COMPONENT_TO_SYSTEM and 'chill' in mounts:
+        entries.append({'eic': 'SPY1D-CW', 'system_eic': COMPONENT_TO_SYSTEM['SPY1D-CW'], 'name': 'Radar cooling water pump',
+            'mounts': ['chill'], 'critical': True, 'mission_areas': ['AW'], 'components': [], 'watchstations': ['4310']})
     return {"model": "Illustrative DDG; not verified DTMB geometry or actual installed layout",
-        "hull_class": "Notional Arleigh Burke-style destroyer", "mounts": MOUNTS,
+        "hull_class": "Notional Arleigh Burke-style destroyer", "mounts": mounts,
         "systems": entries, "component_to_system": COMPONENT_TO_SYSTEM,
         "mission_areas": {area: name for area, (name, members) in AREAS.items()},
-        "assessment_basis": "Start-time forecast plus six-hour and known-boundary interval checks"}
+        "assessment_basis": "Event interval: six-hour and known-boundary checks; not a continuous guarantee"}

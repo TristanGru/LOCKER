@@ -78,4 +78,4 @@ def test_approved_fix_is_what_the_forecast_shows(baseline, log_path):
     s.apply("fix_decision", {"decision": "approve", "fix": {k: top[k] for k in ("fix_id", "title", "steps")}})
     fc = forecast(build_world(s), runs=1000, detail=False)
     for m in top["missions"]:
-        assert abs(mission(fc, m["event_id"])["p_ready"] - m["p_after"]) < 0.02
+        assert abs(mission(fc, m['event_id'])['p_assessed'] - m['p_after']) < 0.02

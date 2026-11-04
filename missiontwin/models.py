@@ -146,6 +146,10 @@ class VersionBody(BaseModel):
     base_version: int
 
 
+class RefreshBody(VersionBody):
+    reset_scenario: bool = False
+
+
 class ParseBody(BaseModel):
     text: str
     ship_id: str = "KESSLER"

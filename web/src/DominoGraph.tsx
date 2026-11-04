@@ -107,7 +107,7 @@ export default function DominoGraph({
         <Controls showInteractive={false} />
       </ReactFlow>
       <div className="graph-caption">
-        Record → requirement → event / event-start assessment
+        Record → requirement → event / sampled event-interval assessment
       </div>
     </div>
   );
