@@ -34,7 +34,7 @@ Every fact, column and code value carries one of these tags. Generators should c
 3. **No real ships.** Fictional hulls in the DDG-99x range, which no real ship uses. **[PH]**
 4. **Time.** All timestamps are **Zulu (UTC)**, matching Navy message practice (DTGs are Zulu). ISO 8601 in CSV/JSON (`2026-11-04T08:00:00Z`); DTG form (`041200Z NOV 26`) inside message text. *(Confirmed by engineering review decision R11: zone-less timestamps are rejected at ingest.)*
 5. **Scenario clock.** "Scenario now" = `2026-11-04T08:00:00Z` (day 0). Horizon = day 0 to last mission date + 3 days.
-6. **Encoding.** UTF-8, comma-separated, header row after the banner line, dates ISO 8601, booleans `true/false`, empty string for null.
+6. **Encoding.** UTF-8, comma-separated, header row first, dates ISO 8601, booleans `true/false`, empty string for null. Synthetic marking is carried in metadata/provenance rather than a CSV comment preamble.
 7. **Read-only.** MissionTwin never writes to these files. Generated files live in `data/synthetic/<ship_id>/` and `data/synthetic/squadron/`.
 
 ---
@@ -43,9 +43,9 @@ Every fact, column and code value carries one of these tags. Generators should c
 
 | ship_id | Name | Hull | UIC | DoDAAC | Role in demo | Data depth |
 |---|---|---|---|---|---|---|
-| `KESSLER` | USS Kessler | DDG-991 | `99101` | `R99101` | Primary ship; full demo scenario | Full |
-| `VARNELL` | USS Varnell | DDG-992 | `99102` | `R99102` | Donor; holds the spare cooling pump | Full |
-| `ASHBY` | USS Ashby | DDG-993 | `99103` | `R99103` | Third ship for the squadron view | Light |
+| `KESSLER` | USS Kessler | DDG-991 | `99101` | `V99101` | Primary ship; full demo scenario | Full |
+| `VARNELL` | USS Varnell | DDG-992 | `99102` | `V99102` | Donor; holds the spare cooling pump | Full |
+| `ASHBY` | USS Ashby | DDG-993 | `99103` | `V99103` | Third ship for the squadron view | Light |
 
 All UICs, hulls and DoDAACs are **[PH]**. The UIC is 5 characters **[S]**. The DoDAAC form "R + UIC" for afloat units is **[UNV]**.
 
@@ -65,7 +65,7 @@ Squadron: `DESRON 99` (fictional), TYCOM `CNSL` (code style **[UNV]**).
 | `casrep_id` (our key) | `<hull>-<yy>-<serial>` | `DDG991-26-017` | [PROP] | 03 |
 | NSN | FSC(4)-NIIN(9) | `4320-01-999-0001` | [S] structure, [PH] value | 04 |
 | NIIN | 9 digits; we use `01999xxxx` to mark fakes | `019990001` | [PH] | 04 |
-| MILSTRIP document number | DoDAAC(6) + Julian date YDDD(4) + serial(4) = 14 | `R991016308A001` | [UNV] | 04 |
+| MILSTRIP document number | DoDAAC(6) + Julian date YDDD(4) + serial(4) = 14 | `V9910163080001` | [UNV] | 04 |
 | Supply status code | 2 chars, AP7.16 vocab | `BB` | [S-SNIP] | 04 |
 | Priority designator | `01`-`15` | `02` | [DATED] | 04 |
 | member_id | `M-` + 4 digits | `M-0007` | [PROP] | 07 |
@@ -85,15 +85,15 @@ Julian date note: 4 Nov 2026 = day 308, so YDDD = `6308`.
 |---|---|---|---|---|
 | 01 | `01_sked_pms.md` | SKED 3.2 (Planned Maintenance System) | `sked_schedule.csv`, `sked_loep.csv` | Lost-PMS risk signal, maintenance load |
 | 02 | `02_omms_ng_csmp.md` | OMMS-NG / AWN (2-Kilo, CSMP) | `csmp.csv` | Deferred work, CASREP-to-job-to-part join |
-| 03 | `03_casrep.md` | CASREP messages (NTTP 1-03.1) | `casrep_messages/*.txt`, `casreps.json` | Primary event stream, ETRs, categories |
-| 04 | `04_r_supply_milstrip.md` | R-Supply / NOSS + MILSTRIP status | `requisition_status.csv`, `onboard_allowance_cosal.csv`, `status_code_reference.csv` | Part arrival forecast |
+| 03 | `03_casrep.md` | CASREP messages (NTRP/NWP 1-03.1) | `casrep_messages/*.txt`, `casreps.json` | Primary event stream, ETRs, categories |
+| 04 | `04_r_supply_milstrip.md` | R-Supply / MILSTRIP status | `requisition_status.csv`, `onboard_allowance_cosal.csv`, `status_code_reference.csv` | Part arrival forecast |
 | 05 | `05_navsup_wholesale.md` | NAVSUP WSS / DLA / OTS / program office | `wholesale_stock.csv` | "Expedite" and "pull from wholesale" fixes |
 | 06 | `06_fleet_stock_positions.md` | Fleet onboard stock (no public system) + ship locations | `fleet_onboard_stock.csv`, `ship_positions.csv` | "Borrow from nearby ship" fix |
 | 07 | `07_r_adm.md` | R-ADM (crew, PQS, watchbill) | `roster.csv`, `quals.csv`, `watchbill.csv` | k-of-n qualified people per system |
 | 08 | `08_fltmps_nec.md` | FLTMPS / NTMPS NEC billets | `nec_billets.csv` | NEC gaps, PRD cliffs, ship-vs-shore drift |
 | 09 | `09_mfom_mission_tree.md` | MFOM / AWN readiness tree | `mission_equipment_tree.json` | The dependency graph itself |
 | 10 | `10_roc_poe.md` | ROC/POE mission assignments | `roc_poe_mission_map.csv` | Which missions a DDG owes, weights |
-| 11 | `11_drrs_readiness_baseline.md` | DRRS-S / DRRS-N (Y/Q/N, PESTO) | `readiness_baseline.csv` | Today's ratings to project forward |
+| 11 | `11_drrs_readiness_baseline.md` | DRRS-S (Y/Q/N, PESTO vocabulary) | `readiness_baseline.csv` | Today's ratings to project forward |
 | 12 | `12_training_readiness.md` | TORIS / NTIMS / TFOM | `training_readiness.csv` | Training pillar |
 | 13 | `13_ofrp_schedule.md` | OFRP employment schedule | `schedule_30day.csv` | Mission deadlines |
 | 14 | `14_certifications_events.md` | SFTRM certifications / ATG events | `events_missions.json`, `cert_status.csv` | Mission requirements and prerequisites |
@@ -143,7 +143,7 @@ All files must tell this one consistent story. Days are relative to scenario now
 |---|---|---|
 | -21 | Kessler daily-report roster last updated (stale by day 0) | 07, 16 |
 | 0 | **Kessler CASREP INITIAL `041200Z NOV 26`**, Cat 3, AN/SPY-1D(V) cooling water pump failed; AW mission degraded | 03, 02 |
-| 0 | 2-Kilo JCN `99101CF010042` opened, remarks cite the DTG; requisition `R991016308A001` for NIIN `019990001`, PD `02`, RDD `999`, status `BB` | 02, 04 |
+| 0 | 2-Kilo JCN `99101CF010042` opened, remarks cite the DTG; requisition `V9910163080001` for NIIN `019990001`, PD `02`, RDD `999`, status `BB` | 02, 04 |
 | 1 | Supply status changes `BB` → `BC` (long delay), ESD slips to day 11 | 04, 03 (UPDATE) |
 | 1 | Daily report: "NSWC tech rep assist may slip to 12 NOV." Not in any structured file (seeded inconsistency) | 16 |
 | 1-2 | Two of Kessler's three SPY-qualified FC techs leave day 6 (PRD + TAD), reported in the 05 NOV daily report (the stale roster still shows them aboard) | 07, 08, 16 |
@@ -199,7 +199,7 @@ Other build changes, each written into its spec: spec 04 (`status_history` forma
 
 ## 9. What is still unverified (check before the demo)
 
-- NTTP 1-03.1 current CASREP set order and parts set layout.
+- NTRP/NWP 1-03.1 current CASREP set order and parts set layout.
 - NAVSEAINST 4790.8D Chapter 2 and Appendix G: periodicity codes, the SKED 3.2 no-deferral rule, 2-Kilo code tables.
 - DLM 4000.25 Vol 2 AP7.16: the full status-code table (we used a secondary mirror).
 - Current SFTRM (3502.7 series) certification list and prerequisites.

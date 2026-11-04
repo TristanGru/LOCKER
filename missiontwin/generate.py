@@ -2,7 +2,8 @@
 
     python -m missiontwin.generate [--out data/synthetic]
 
-Deterministic: fixed seed, fixed PDF metadata. Every file carries the SYNTHETIC banner.
+Deterministic: fixed seed, fixed PDF metadata. JSON, YAML, PDF, and messages carry the SYNTHETIC banner;
+CSV files use standard header-first formatting with provenance columns.
 Specs: data_sources/01..20. If this code and a spec disagree, change one of them on purpose.
 """
 from __future__ import annotations
@@ -90,7 +91,6 @@ class Gen:
         folder.mkdir(parents=True, exist_ok=True)
         cols = COLUMNS[name]
         buf = io.StringIO()
-        buf.write(f"# {BANNER}\n")
         w = csv.DictWriter(buf, fieldnames=cols, lineterminator="\n")
         w.writeheader()
         for r in rows:
@@ -537,11 +537,11 @@ class Gen:
         def docnum(ship, dt: date, serial=None):
             if serial is None:
                 req_serial[ship] += 1
-                serial = f"B{req_serial[ship]:03d}"
+                serial = f"{req_serial[ship]:04d}"
             return SHIPS[ship]["dodaac"] + julian(dt) + serial
 
         def job(ship, wc, eic, noun, status, state, discovered: date, prio, ta, mh, remarks, j=None, dtg="", cid="", reqs="",
-                deferred="", reason="", as_of=BASE_AS_OF, apl=None, when="B"):
+                deferred="", reason="", as_of=BASE_AS_OF, apl=None, when="2"):
             uic = SHIPS[ship]["uic"]
             jn = jsn(ship, wc, j)
             row = {"jcn": uic + wc + jn, "ship_id": ship, "uic": uic, "work_center": wc, "jsn": jn, "eic": eic,
@@ -582,40 +582,40 @@ class Gen:
         # DDG991-26-015: closed nav radar casualty (CORRECT on day -3)
         j15 = job(K, "OD01", "NAVRAD-TX", "MAGNETRON, NAV RADAR NO. 1", "1", "COMPLETED", date(2026, 10, 20), "2", 4, 22,
                   "CASREP 200900Z OCT 26. NIIN 019990401 RECEIVED 311400Z OCT 26. CORRECTED.", j="0031",
-                  dtg="200900Z OCT 26", cid="DDG991-26-015", apl=PARTS["019990401"]["apl"], when="B")
-        d15 = docnum(K, date(2026, 10, 20), "A002")
+                  dtg="200900Z OCT 26", cid="DDG991-26-015", apl=PARTS["019990401"]["apl"], when="2")
+        d15 = docnum(K, date(2026, 10, 20), "0002")
         j15["req_doc_numbers"] = d15
         req(K, d15, j15["jcn"], "DDG991-26-015", "019990401", PARTS["019990401"]["nomenclature"], PARTS["019990401"]["nsn"], "03", "999",
             date(2026, 10, 20), [("2026-10-20T10:00:00Z", "BA", "2026-10-26")], tcn="TCN-PH-00915")
         # DDG991-26-016: chilled water compressor, Cat 2, part arriving
         j16 = job(K, "EA01", "HM-CHW", "COMPRESSOR, CHILLED WATER NO. 3", "3", "OPEN_AWAITING_PARTS", date(2026, 10, 28), "2", 4, 16,
                   "CASREP 281300Z OCT 26. AWAITING NIIN 019990601.", j="0077", dtg="281300Z OCT 26", cid="DDG991-26-016",
-                  apl=PARTS["019990601"]["apl"], when="B")
-        d16 = docnum(K, date(2026, 10, 28), "A003")
+                  apl=PARTS["019990601"]["apl"], when="2")
+        d16 = docnum(K, date(2026, 10, 28), "0003")
         j16["req_doc_numbers"] = d16
         req(K, d16, j16["jcn"], "DDG991-26-016", "019990601", PARTS["019990601"]["nomenclature"], PARTS["019990601"]["nsn"], "03", "999",
             date(2026, 10, 28), [("2026-10-28T14:00:00Z", "BA", "2026-11-06")])
         # DDG991-26-017: THE demo casualty
         j17 = job(K, "CF01", "SPY1D-CW", "PUMP, COOLING WATER, SPY-1D", "2", "OPEN_AWAITING_PARTS", date(2026, 11, 4), "1", 3, 16,
                   "CASREP 041200Z NOV 26. AWAITING NIIN 019990001. FTS ASSIST REQ.", j="0042", dtg="041200Z NOV 26",
-                  cid="DDG991-26-017", reqs="R991016308A001", as_of="2026-11-04T12:00:00Z", apl=pump["apl"], when="C")
-        req(K, "R991016308A001", j17["jcn"], "DDG991-26-017", "019990001", pump["nomenclature"], pump["nsn"], "02", "999",
-            date(2026, 11, 4), [("2026-11-04T12:00:00Z", "BB", "2026-11-05"), ("2026-11-05T10:00:00Z", "BC", "2026-11-15")],
+                  cid="DDG991-26-017", reqs="V9910163080001", as_of="2026-11-04T12:00:00Z", apl=pump["apl"], when="2")
+        req(K, "V9910163080001", j17["jcn"], "DDG991-26-017", "019990001", pump["nomenclature"], pump["nsn"], "02", "999",
+            date(2026, 11, 4), [("2026-11-04T12:00:00Z", "BB", "2026-11-05"), ("2026-11-05T10:00:00Z", "BC", "2026-12-15")],
             expedite=True)
         # SSDG lube oil leak reported in the daily report (corroboration)
         job(K, "EE01", "SSDG-GOV", "SSDG NO. 2 LUBE OIL SYSTEM", "0", "OPEN", date(2026, 11, 4), "3", 4, 6,
-            "LUBE OIL LEAK NO. 2 SSDG. CONTAINED.", when="B")
+            "LUBE OIL LEAK NO. 2 SSDG. CONTAINED.", when="2")
         V = "VARNELL"
         sw = PARTS["019990044"]
         j8 = job(V, "CE01", "SQQ89-PROC", "SWITCH, ETHERNET, SQQ-89 PROCESSING", "3", "OPEN_AWAITING_PARTS", date(2026, 10, 30), "2", 3, 10,
                  "CASREP 301500Z OCT 26. AWAITING NIIN 019990044.", j="0057", dtg="301500Z OCT 26", cid="DDG992-26-008", apl=sw["apl"])
-        d8 = docnum(V, date(2026, 10, 30), "A011")
+        d8 = docnum(V, date(2026, 10, 30), "0011")
         j8["req_doc_numbers"] = d8
         req(V, d8, j8["jcn"], "DDG992-26-008", "019990044", sw["nomenclature"], sw["nsn"], "03", "999", date(2026, 10, 30),
             [("2026-10-30T16:00:00Z", "BA", "2026-11-05")])
         j9 = job(V, "CE01", "LAN-CORE", "SWITCH, ETHERNET, COMBAT-SYSTEM LAN SEGMENT", "3", "OPEN_AWAITING_PARTS", date(2026, 10, 31), "2", 3, 8,
                  "CASREP 310900Z OCT 26. AWAITING NIIN 019990044.", j="0058", dtg="310900Z OCT 26", cid="DDG992-26-009", apl=sw["apl"])
-        d9 = docnum(V, date(2026, 10, 31), "A014")
+        d9 = docnum(V, date(2026, 10, 31), "0014")
         j9["req_doc_numbers"] = d9
         req(V, d9, j9["jcn"], "DDG992-26-009", "019990044", sw["nomenclature"], sw["nsn"], "03", "999", date(2026, 10, 31),
             [("2026-10-31T10:00:00Z", "BA", "2026-11-06")])
@@ -624,7 +624,7 @@ class Gen:
         # X3: Ashby BA with ESD already past and no newer status
         jx3 = job(A, "OD01", "NAVRAD-TX", "MAGNETRON, NAV RADAR NO. 2", "1", "OPEN_AWAITING_PARTS", date(2026, 10, 22), "3", 4, 6,
                   "AWAITING NIIN 019990401.", apl=PARTS["019990401"]["apl"])
-        dx3 = docnum(A, date(2026, 10, 24), "A021")
+        dx3 = docnum(A, date(2026, 10, 24), "0021")
         jx3["req_doc_numbers"] = dx3
         req(A, dx3, jx3["jcn"], "", "019990401", PARTS["019990401"]["nomenclature"], PARTS["019990401"]["nsn"], "06", "2026-11-20",
             date(2026, 10, 24), [("2026-10-24T09:00:00Z", "BA", "2026-10-30")])
@@ -658,7 +658,7 @@ class Gen:
                 ta = R.choice([4, 4, 4, 4, 4, 2, 3])
                 rm = R.choice(remarks_pool)
                 row = job(s, wc, eic, noun, status, state, disc, R.choice(["2", "3", "3", "3"]), ta, R.choice([2, 4, 6, 8, 12, 16, 24]),
-                          rm, deferred=deferred, reason=reason, when=R.choice("ABBDE"))
+                          rm, deferred=deferred, reason=reason, when=R.choice(["0", "1", "2", "4", "6"]))
                 if state == "OPEN_AWAITING_PARTS":
                     niin, nom = R.choice(filler_niins)
                     drq = disc + timedelta(days=R.randint(0, 5))
@@ -675,26 +675,29 @@ class Gen:
                     req(s, doc, row["jcn"], "", niin, nom, f"5330-01-{niin[2:5]}-{niin[5:]}", f"{R.randint(5, 15):02d}",
                         (drq + timedelta(days=R.randint(20, 60))).isoformat(), drq, [(f"{t.isoformat()}T10:00:00Z", code, esd or None)],
                         sos=R.choice(["NAVSUP WSS", "DLA", "DLA", "VENDOR"]),
-                        sor="NOSS" if (s == "ASHBY" and sum(1 for r in self.reqs[s] if r["system_of_record"] == "NOSS") < 2) else "RSUPPLY")
+                        sor="RSUPPLY")
         for s in SHIP_IDS:
             self.jobs[s].sort(key=lambda r: r["jcn"])
             self.write_csv(self.sdir(s), "csmp.csv", self.jobs[s])
             self.write_csv(self.sdir(s), "requisition_status.csv", self.reqs[s])
             self.cat(s, "csmp.csv", "OMMS-NG / AWN", "TYCOM N43 (notional)", "daily", "NTCSS replication via L-IDE to Jupiter (inferred)", BASE_AS_OF, 5)
-            self.cat(s, "requisition_status.csv", "R-Supply / NOSS", "Ship's supply officer (notional)", "daily",
+            self.cat(s, "requisition_status.csv", "R-Supply / MILSTRIP", "Ship's supply officer (notional)", "daily",
                      "NTCSS replication via L-IDE to Jupiter (inferred)", BASE_AS_OF, 5)
 
         # ---- CASREP messages and casreps.json (spec 03)
+        def compact_dtg(dtg: str) -> str:
+            return dtg.replace(" ", "")
+
         def msg(ship, serial, mtype, dtg, cat, eic, noun, apl, jcn, etr_dtg, assist, parts, ampn, rmks, ref=None):
             name = SHIPS[ship]["name"]
-            lines = [MSG_BANNER, f"FM {name}", "TO COMNAVSURFLANT NORFOLK VA", "INFO COMDESRON NINE NINE",
+            lines = [MSG_BANNER, f"R {dtg}", f"FM {name}", "TO COMNAVSURFLANT NORFOLK VA", "INFO COMDESRON NINE NINE",
                      "      NAVSUP WSS MECHANICSBURG PA", "BT", "UNCLAS //N04790//",
-                     f"MSGID/CASREP/{name}/{serial}/{dtg.split()[1]}//", f"DTG/{dtg}//"]
+                     f"MSGID/CASREP/{name}/{serial}/{dtg.split()[1]}//"]
             if ref:
-                lines.append(f"REF/A/MSG/{name}/{ref}//")
+                lines.append(f"REF/A/MSG/{name}/{compact_dtg(ref)}//")
             sysname = SYSTEMS[COMPONENT_TO_SYSTEM.get(eic, eic)]["name"].upper()
             lines.append(f"CASUALTY/{mtype}/{sysname}/CAT:{cat}/EIC:{eic}//")
-            lines.append(f"EQUIP/{noun}/APL:{apl}/JCN:{jcn or 'NONE'}//")
+            lines.append(f"PARTSID/{noun}/APL:{apl}/JCN:{jcn or 'NONE'}//")
             if etr_dtg:
                 lines.append(f"ESTIMATE/ETR:{etr_dtg}//")
             if assist:
@@ -702,7 +705,7 @@ class Gen:
             else:
                 lines.append("ASSIST/REQ:NO//")
             for i, p in enumerate(parts, 1):
-                lines.append(f"PARTS/{i}/NSN:{p['nsn']}/QTY:1/DOC:{p['doc']}/PD:{p['pd']}/RDD:999//")
+                lines.append(f"1PARTS/{i}/NSN:{p['nsn']}/QTY:1/DOC:{p['doc']}/PD:{p['pd']}/RDD:999//")
             lines.append(f"AMPN/{ampn}//")
             lines.append(f"RMKS/{rmks}//")
             lines.append("BT")
@@ -721,12 +724,12 @@ class Gen:
              [("INITIAL", "281300Z OCT 26", "081200Z NOV 26", "NO. 3 CHILLED WATER COMPRESSOR FAILED. TWO OF THREE PLANTS ON LINE.",
                "1. SHIP AVAILABLE TO RECEIVE PARTS NORFOLK 29 OCT-11 NOV.")], ["MOB"]),
             ("KESSLER", "DDG991-26-017", "017", 3, "SPY1D-CW", "PUMP, COOLING WATER, SPY-1D", pump["apl"], j17["jcn"],
-             [{"nsn": pump["nsn"], "doc": "R991016308A001", "pd": "02", "niin": "019990001"}], ("FTS", "NSWC TECH REP"),
+             [{"nsn": pump["nsn"], "doc": "V9910163080001", "pd": "02", "niin": "019990001"}], ("FTS", "NSWC TECH REP"),
              [("INITIAL", "041200Z NOV 26", "121200Z NOV 26",
                "COOLING WATER PUMP SEIZED DURING LIGHT-OFF. SPY-1D DEGRADED TO\nSINGLE ARRAY FACE OPERATION. AW MISSION MAJOR DEGRADATION.",
                "1. SHIP AVAILABLE TO RECEIVE PARTS AND ASSIST NORFOLK 05-15 NOV.\n2. UNDERWAY GROUP SAIL 16 NOV."),
               ("UPDATE", "051000Z NOV 26", "221200Z NOV 26",
-               "SUPPLY STATUS BC LONG DELAY. ESD 15 NOV 26 PLUS 5 DAYS CONUS TRANSIT\nPLUS 2 DAYS INSTALL. ETR REVISED.",
+               "SUPPLY STATUS BC LONG DELAY. ESD 15 DEC 26 PLUS 5 DAYS CONUS TRANSIT\nPLUS 2 DAYS INSTALL. ETR REVISED.",
                "1. SHIP AVAILABLE TO RECEIVE PARTS AND ASSIST NORFOLK 05-15 NOV.\n2. UNDERWAY GROUP SAIL 16 NOV.")], ["AW"]),
             ("VARNELL", "DDG992-26-008", "008", 2, "SQQ89-PROC", "SWITCH, ETHERNET, SQQ-89 PROCESSING", sw["apl"], j8["jcn"],
              [{"nsn": sw["nsn"], "doc": d8, "pd": "03", "niin": "019990044"}], ("FTS", "NSWC ISEA"),
@@ -742,6 +745,8 @@ class Gen:
                "1. SHIP UNDERWAY VACAPES UNTIL 09 NOV. TECH ASSIST ON RETURN.")], ["CCC"]),
         ]
         from .domain import parse_dtg
+        import re
+        casrep_expected = {}
         for ship in SHIP_IDS:
             out = []
             for (s, cid, serial, cat, eic, noun, apl, jcn, parts, assist, msgs, areas) in casrep_defs:
@@ -751,9 +756,27 @@ class Gen:
                 init_dtg = msgs[0][1]
                 for i, (mtype, dtg, etr, ampn, rmks) in enumerate(msgs, 1):
                     fname = f"casrep_messages/{cid}_{i:02d}_{mtype}.txt"
-                    text = msg(s, serial, mtype, dtg, cat, eic, noun, apl, jcn, etr, assist, parts, ampn, rmks,
+                    message_serial = serial if i == 1 else f"{int(serial) + 50 + i:03d}"
+                    text = msg(s, message_serial, mtype, dtg, cat, eic, noun, apl, jcn, etr, assist, parts, ampn, rmks,
                                ref=init_dtg if i > 1 else None)
                     self.write_text(self.sdir(s) / fname, text)
+                    def span_for(tag, index=0):
+                        pattern = r"(?m)^" + (r"(?:PARTS|1PARTS)" if tag == "PARTS" else tag) + r"/[\s\S]*?//"
+                        return list(re.finditer(pattern, text))[index].group(0)
+                    # Expected fields come from the fixture definitions, independently of the ingest/LLM parsers.
+                    facts = [{"type": "casrep_status", "report_type": mtype, "category": cat, "eic": eic,
+                              "span": span_for("CASUALTY"), "hedged": False}]
+                    if etr:
+                        facts.append({"type": "repair_estimate", "timestamp": iso(parse_dtg(etr)),
+                                      "span": span_for("ESTIMATE"), "hedged": False})
+                    facts.append({"type": "assistance_request", "value": "YES" if assist else "NO",
+                                  "span": span_for("ASSIST"), "hedged": False})
+                    for pi, part in enumerate(parts):
+                        facts.append({"type": "part_requirement", "niin": part["niin"], "quantity": 1,
+                                      "doc_number": part["doc"], "span": span_for("PARTS", pi), "hedged": False})
+                    for tag in ("AMPN", "RMKS"):
+                        facts.append({"type": "casrep_narrative", "span": span_for(tag), "hedged": False})
+                    casrep_expected[f"{s}/{fname}"] = {"ship_id": s, "known_at": iso(parse_dtg(dtg)), "facts": facts}
                     files.append(fname)
                     if etr:
                         etr_hist.append({"dtg": dtg, "etr": iso(parse_dtg(etr)), "report_type": mtype})
@@ -768,8 +791,11 @@ class Gen:
                             "messages": files, "provenance": "proposed"})
             self.casreps[ship] = out
             self.write_json(self.sdir(ship) / "casreps.json", {"_banner": BANNER, "casreps": out})
-            self.cat(ship, "casrep_messages/", "CASREP messages (NTTP 1-03.1)", "Fleet Forces / MFOM (notional)", "per message",
+            self.cat(ship, "casrep_messages/", "CASREP messages (NTRP/NWP 1-03.1)", "Fleet Forces / MFOM (notional)", "per message",
                      "Message traffic via MFOM to Jupiter (inferred)", BASE_AS_OF, 7)
+
+        self.write_json(self.out / "squadron" / "casrep_expected_facts.json",
+                        {"_banner": BANNER, "documents": casrep_expected})
 
         # ---- COSAL (spec 04), fleet stock (spec 06), wholesale (spec 05), status codes
         pidx = parts_index()
@@ -1028,7 +1054,7 @@ class Gen:
                 "ENGINEERING (LCDR Osei)": ["All GTMs up. No. 2 SSDG lube oil leak, contained, 2-Kilo submitted."]},
             1: {"OPERATIONS": ["Group Sail planning conference held. No change to underway date received."],
                 "COMBAT SYSTEMS (LT Brandt)": ["SPY-1D: single array face ops continue. CASREP 017 UPDATE sent, ETR 22 NOV.",
-                                               "Cooling pump NIIN 01-999-0001 on order, supply now showing long delay (BC), ESD 15 NOV.",
+                                               "Cooling pump NIIN 01-999-0001 on order, supply now showing long delay (BC), ESD 15 DEC.",
                                                "FC1 Ramos believes the NSWC tech rep visit may slip to 12 NOV due to travel."],
                 "SUPPLY": ["Expedite requested on CASREP 017 pump via OTS."],
                 "ADMIN / TRAINING": ["FC1 Ramos detaches 10 NOV on PRD orders.",
@@ -1134,14 +1160,14 @@ class Gen:
                 cat = max([c["category"] for c in crs], default=0)
                 on_critical = any(SYSTEMS[COMPONENT_TO_SYSTEM.get(c["eic"], c["eic"])]["critical"] for c in crs)
                 rating = "N" if (cat >= 4 or idx < 60) else "Q" if (cat >= 3 or on_critical or idx < 80) else "Y"
-                bnd = "GREEN" if idx >= 80 else "AMBER" if idx >= 60 else "RED"
+                bnd = "GREEN" if idx >= 80 else "YELLOW" if idx >= 60 else "RED"
                 lim = "; ".join(f"CASREP {c['casrep_id']} CAT {c['category']}" for c in crs)
                 rows.append({"ship_id": s, "as_of": as_of, "mission_area": area, "nmet_id": f"NMET-{area}-01 (SYNTH)", "rating": rating,
                              "mfom_index": idx, "band": bnd, "p_score": self.R.randint(82, 95), "e_score": idx,
                              "s_score": self.R.randint(78, 95), "t_score": self.R.randint(75, 95), "o_score": self.R.randint(88, 99),
                              "limiting_factor": lim, "provenance": "proposed"})
             self.write_csv(self.sdir(s), "readiness_baseline.csv", rows)
-            self.cat(s, "readiness_baseline.csv", "DRRS-S (DRRS-N construct)", "USFF (notional)", "monthly or on change",
+            self.cat(s, "readiness_baseline.csv", "DRRS-S", "USFF (notional)", "monthly or on change",
                      "SIPR only when real (spec 20); synthetic stand-in here", as_of, 30)
 
     # ------------------------------------------------------------ INSURV (spec 18, optional)
@@ -1175,10 +1201,10 @@ class Gen:
             {"event_id": "E1", "known_at": "2026-11-04T12:00:00Z", "title": "CASREP DDG991-26-017 INITIAL: SPY-1D cooling pump, CAT 3",
              "kind": "casrep", "ship_id": "KESSLER",
              "refs": ["KESSLER/casrep_messages/DDG991-26-017_01_INITIAL.txt", "KESSLER/csmp.csv#99101CF010042",
-                      "KESSLER/requisition_status.csv#R991016308A001"]},
+                      "KESSLER/requisition_status.csv#V9910163080001"]},
             {"event_id": "E2", "known_at": "2026-11-05T10:00:00Z", "title": "Part delay: supply status BB to BC, ETR slips to 22 NOV",
              "kind": "supply", "ship_id": "KESSLER",
-             "refs": ["KESSLER/casrep_messages/DDG991-26-017_02_UPDATE.txt", "KESSLER/requisition_status.csv#R991016308A001",
+             "refs": ["KESSLER/casrep_messages/DDG991-26-017_02_UPDATE.txt", "KESSLER/requisition_status.csv#V9910163080001",
                       "KESSLER/daily_reports/daily_status_KESSLER_20261104.pdf"]},
             {"event_id": "E3", "known_at": "2026-11-06T01:00:00Z", "title": "Sailors detach: 2 of 3 SPY-qualified FCs leave 10 NOV",
              "kind": "personnel", "ship_id": "KESSLER",

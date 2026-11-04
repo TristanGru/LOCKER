@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 member_id,ship_id,uic,display_name,rate,rating,paygrade,department,division,work_center,duty_section,onboard_status,status_start,status_end,report_date,prd,eaos,necs,as_of,provenance
 M-0701,VARNELL,99102,EMSN RIOS (SYNTH),EMSN,EM,E3,ENGINEERING,EE,EE01,2,ONBOARD,,,2026-03-16,2028-12-12,2030-10-31,,2026-11-03T08:00:00Z,placeholder
 M-0702,VARNELL,99102,BM1 EKWUEME (SYNTH),BM1,BM,E6,DECK,DK,DK01,2,ONBOARD,,,2024-07-02,2027-09-06,2028-12-17,,2026-11-03T08:00:00Z,placeholder

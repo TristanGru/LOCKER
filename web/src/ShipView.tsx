@@ -253,7 +253,7 @@ export default function ShipView(props: Props) {
           value,
           options.mode === "event"
             ? latest.forecast.bands
-            : { green: 0.8, amber: 0.6 },
+            : { green: 0.8, yellow: 0.6 },
         );
         const material = pin.mesh.material as THREE.MeshStandardMaterial;
         material.color.setHex(colors[status]);
@@ -392,7 +392,7 @@ export default function ShipView(props: Props) {
     };
   }, []);
   const legendBands =
-    mode === "event" ? props.forecast.bands : { green: 0.8, amber: 0.6 };
+    mode === "event" ? props.forecast.bands : { green: 0.8, yellow: 0.6 };
   return (
     <div className="ship-view">
       <div className="viewer-tools">
@@ -553,7 +553,7 @@ export default function ShipView(props: Props) {
         </span>
         <span className="watch">
           {mode === "material" ? "Degraded" : "Watch"} ≥{" "}
-          {mode === "material" ? "60" : percent(legendBands.amber)}
+          {mode === "material" ? "60" : percent(legendBands.yellow)}
         </span>
         <span className="risk">
           {mode === "material" ? "Low material score" : "At risk"}

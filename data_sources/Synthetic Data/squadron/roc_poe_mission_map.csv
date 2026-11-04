@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_class,mission_area,mission_area_name,primary_secondary,readiness_condition,required_capability,weight,provenance
 DDG (notional),AW,Air Warfare,P,III,F,0.3,proposed
 DDG (notional),ASW,Anti-Submarine Warfare,P,III,F,0.2,proposed

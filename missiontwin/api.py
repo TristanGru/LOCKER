@@ -320,6 +320,12 @@ def create_app(state: AppState | None = None) -> FastAPI:
             after = forecast(build_world(candidate))
             return {'base_version': body.base_version, 'before': before, 'after': after, 'persisted': False}
 
+    @app.get("/results")
+    def results():
+        s = S()
+        with s.lock:
+            return {**s.fc(), "version": s.scenario.version}
+
     @app.get("/api/graph/{ship_id}")
     def graph(ship_id: str, event_id: str | None = None):
         s = S()
@@ -472,14 +478,24 @@ def create_app(state: AppState | None = None) -> FastAPI:
                     raise HTTPException(422, f"value out of range [{lo}, {hi}]")
                 c = s.commit('set_assumption', {'key': body.key, 'value': val})
             elif body.kind == "confirm_fact":
-                if body.fact_id not in {fact.fact_id for fact in s.view().facts_with_corroboration()}:
+                fact = next((f for f in s.view().facts_with_corroboration() if f.fact_id == body.fact_id), None)
+                if fact is None:
                     raise HTTPException(422, "Fact is not known at this scenario cursor")
                 if body.include is None:
                     raise HTTPException(422, 'include must be explicitly true or false')
+                if body.include and fact.status == "NEEDS_REVIEW":
+                    raise HTTPException(422, "invalid evidence must be corrected before confirmation")
                 c = s.commit('confirm_fact', {'fact_id': body.fact_id, 'include': body.include})
             elif body.kind == 'play_event':
-                c = s.commit('play_event', {})
+                c = s.commit('play_event', {"event_id": body.event_id} if body.event_id else {})
             return {"change": c, "version": s.scenario.version}
+
+    @app.post("/scenario")
+    def scenario(body: ChangeBody):
+        s = S()
+        with s.lock:
+            applied = change(body)
+            return {**applied, "results": {**s.fc(), "version": s.scenario.version}}
 
     def _decide(s: AppState, fix_id: str, decision: str, delay: float, note: str):
         fix = None

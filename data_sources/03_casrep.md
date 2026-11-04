@@ -1,10 +1,14 @@
 # 03 CASREP: casualty report messages
 
+Implementation: standardized sets are parsed for the engine, and the optional LLM extracts typed facts with source lines
+and spans from the same messages, including AMPN/RMKS narratives. `squadron/casrep_expected_facts.json` provides the
+synthetic evaluation oracle. See [DEV 2 setup and evaluation](../docs/DEV2.md).
+
 Tags: see `00_README.md` section 1.
 
 ## 1. The real source
 
-- **What it is.** A CASREP reports a casualty: a deficiency in mission-essential equipment that **cannot be corrected within 48 hours** and reduces mission capability **[S-SNIP]** (NETCINST 3040.1A, 2021). Governed by NTTP 1-03.1 (Operational Reports), **not retrieved**; current set order and parts-set layout are **[UNV]**.
+- **What it is.** A CASREP reports a casualty: a deficiency in mission-essential equipment that **cannot be corrected within 48 hours** and reduces mission capability **[S-SNIP]** (NETCINST 3040.1A, 2021). Governed by NTRP/NWP 1-03.1 (Operational Reports), **not retrieved**; current set order and parts-set layout are **[UNV]**.
 - **Format.** A serialized, set-based formatted naval message, not a PDF **[DATED]**.
 - **Ownership.** CASREP data is owned by Fleet Forces and Pacific Fleet; GAO pulled it from MFOM **[S]** (GAO-12-887).
 - **Classification.** Individual-ship CASREPs are classified when they reveal warfighting capability; roll-ups above ship level are not **[S]**. Our data is synthetic and unclassified by construction.
@@ -57,10 +61,10 @@ BT
 UNCLAS //N04790//
 MSGID/CASREP/USS KESSLER/017/NOV//
 CASUALTY/INITIAL/AN/SPY-1D(V) RADAR COOLING SYSTEM/CAT:3/EIC:SPY1D-CW//
-EQUIP/PUMP, COOLING WATER, SPY-1D/APL:APL-PH-000123/JCN:99101CF010042//
+PARTSID/PUMP, COOLING WATER, SPY-1D/APL:APL-PH-000123/JCN:99101CF010042//
 ESTIMATE/ETR:121200Z NOV 26//
 ASSIST/REQ:YES/TYPE:FTS/ORG:NSWC TECH REP//
-PARTS/1/NSN:4320-01-999-0001/QTY:1/DOC:R991016308A001/PD:02/RDD:999//
+1PARTS/1/NSN:4320-01-999-0001/QTY:1/DOC:V9910163080001/PD:02/RDD:999//
 AMPN/COOLING WATER PUMP SEIZED DURING LIGHT-OFF. SPY-1D DEGRADED TO
 SINGLE ARRAY FACE OPERATION. AW MISSION MAJOR DEGRADATION.//
 RMKS/1. SHIP AVAILABLE TO RECEIVE PARTS AND ASSIST NORFOLK 05-15 NOV.
@@ -96,7 +100,7 @@ Structured view of the same messages (what the parser should produce; also used 
       "mission_areas_affected": ["AW"],
       "assist": {"required": true, "type": "FTS", "org": "NSWC TECH REP"},
       "parts": [{"nsn": "4320-01-999-0001", "niin": "019990001", "qty": 1,
-                 "doc_number": "R991016308A001", "pd": "02", "rdd": "999"}],
+                 "doc_number": "V9910163080001", "pd": "02", "rdd": "999"}],
       "etr_history": [
         {"dtg": "041200Z NOV 26", "etr": "2026-11-12T12:00:00Z", "report_type": "INITIAL"},
         {"dtg": "051000Z NOV 26", "etr": "2026-11-22T12:00:00Z", "report_type": "UPDATE"}
@@ -133,7 +137,7 @@ Structured view of the same messages (what the parser should produce; also used 
 
 ## 7. Open questions
 
-- NTTP 1-03.1 current set order, PARTS set layout, initial-report deadline (24 hours **[UNV]**).
+- NTRP/NWP 1-03.1 current set order, PARTS set layout, initial-report deadline (24 hours **[UNV]**).
 - Surface-ship version of the Cat-to-rating cap rule.
 - Real casualty durations: **no public source**; stays an assumption.
 

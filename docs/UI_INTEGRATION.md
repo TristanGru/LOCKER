@@ -22,12 +22,21 @@ The default frontend now uses the layout and components imported from Sakie's fr
 
 This is the frontend integration increment, not completion of every item in the proposed cross-branch merge sequence:
 
-- Sakie's extraction evaluator, expanded typed CASREP grounding/cache workflow and associated test suite have not yet been ported.
-- Generalized per-node 30-day series and STW profile additions have not yet been ported.
+- STW profile additions have not yet been ported.
 - Some richer advanced-workspace tools remain on the advanced route rather than being restyled into captain screens.
 - Captain fix modification controls are not offered without a backend-supported package-edit contract; use the advanced preview workflow instead.
 - Browser-local pause and print/download actions are not persisted as shared operational audit decisions. Actual scenario mutations remain backend-logged.
 - Further UI polish should improve detailed contradiction presentation, historical fix display and temporal graph animations without inventing model outputs.
+
+## Merged from main (DEV2 extraction and forecast API)
+
+Merging `main` brought in the DEV2 extraction evaluator, typed CASREP grounding and cache workflow, the `/results` and `/scenario` endpoints, and per-node 30-day `p_ready` series. The two sides' semantics were reconciled as follows:
+
+- **Interval assessment stays the decision number.** `p_assessed`, band, next domino and uplift still use sampled event-interval readiness. The new per-day `p_ready` series on missions, gates, items and graph nodes is display data.
+- **Fixed 30-day daily window.** `grid_dates` is now 30 daily samples starting 12 hours after the scenario cursor, per `docs/DEV2.md`. Interval columns are sampled separately, so events ending beyond the window are still fully assessed. The planned case extends to the last event's end.
+- **Prerequisite timing.** A prerequisite counts only if its event ends before the dependent event starts. This applies to both start-time and interval readiness. A shift that puts a prerequisite after its dependent is now accepted as a what-if, and the dependent event scores 0. Previously such a shift was rejected as invalid.
+- **Unknown evidence.** Daily series for UNKNOWN missions are null, not zero. Extraction-review issues on CASREP messages do not mark a ship UNKNOWN, because the standardized CASREP parser remains authoritative for engine records.
+- **Data contract.** Source CSVs no longer carry a `# SYNTHETIC` banner line, and the band threshold key is `yellow` (was `amber`). Ingest, normalization, JSON export, the JSON adapter, and both frontends accept the new form.
 
 ## Validation
 

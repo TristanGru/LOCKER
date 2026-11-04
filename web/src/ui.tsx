@@ -18,13 +18,13 @@ export const dateLabel = (value: string) =>
   });
 export const tone = (
   value: number | null,
-  bands: { green: number; amber: number },
+  bands: { green: number; yellow: number },
 ) =>
   value == null
     ? "unknown"
     : value >= bands.green
       ? "ready"
-      : value >= bands.amber
+      : value >= bands.yellow
         ? "watch"
         : "risk";
 export const toneLabel = {
@@ -38,7 +38,7 @@ export function Status({
   bands,
 }: {
   value: number | null;
-  bands: { green: number; amber: number };
+  bands: { green: number; yellow: number };
 }) {
   const status = tone(value, bands),
     Icon =

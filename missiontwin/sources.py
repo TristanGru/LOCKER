@@ -14,7 +14,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
-from . import BANNER
 from .ingest import load_baseline
 from .llm import LLMClient
 
@@ -48,7 +47,7 @@ class JsonExportAdapter(DirectoryAdapter):
             if not columns or len(columns) != len(set(columns)) or not all(isinstance(c, str) for c in columns):
                 raise ValueError(f'{path.name}: invalid columns')
             with target.open('w', encoding='utf-8', newline='') as stream:
-                stream.write(f'# {BANNER}\n')
+                # No banner line: canonical CSVs no longer carry one, and adding it would shift source row numbers.
                 writer = csv.DictWriter(stream, fieldnames=columns)
                 writer.writeheader()
                 for row in rows:

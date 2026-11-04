@@ -37,7 +37,10 @@ def roster_surnames(baseline):
 
 
 def test_redaction_fixture(baseline, data_dir):
-    rows = list(csv.DictReader((data_dir / "squadron" / "pii_redaction_test.csv").read_text(encoding="utf-8").splitlines()[1:]))
+    lines = (data_dir / "squadron" / "pii_redaction_test.csv").read_text(encoding="utf-8").splitlines()
+    if lines and lines[0].startswith("#"):
+        lines = lines[1:]
+    rows = list(csv.DictReader(lines))
     assert rows
     for r in rows:
         out, _ = redact(r["input_text"], r["ship_id"], baseline.name_index)

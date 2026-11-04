@@ -41,7 +41,7 @@ def test_one_malformed_row_isolated(data_dir, tmp_path, offline_client):
     shutil.copytree(data_dir, d)
     p = d / "KESSLER" / "roster.csv"
     lines = p.read_text(encoding="utf-8").splitlines()
-    n_rows = len(lines) - 2
+    n_rows = len(lines) - 1
     lines[6] = lines[6].replace("2026-10-14T08:00:00Z", "2026-10-14T08:00:00")  # zone-less (R11) on file line 7
     p.write_text("\n".join(lines) + "\n", encoding="utf-8")
     b = load_baseline(d, offline_client)
@@ -54,11 +54,11 @@ def test_one_malformed_row_isolated(data_dir, tmp_path, offline_client):
 def test_planned_case_exact(baseline, log_path):
     s = Scenario(baseline, log_path=log_path)
     s.apply("play_event", {})
-    s.apply("play_event", {})  # E2: BC, ESD 15 NOV
+    s.apply("play_event", {})  # E2: BC, ESD 15 DEC
     w = build_world(s)
-    item = next(i for i in w.ships["KESSLER"].items if i.doc_number == "R991016308A001")
-    # status 05 NOV 1000Z (day 1.0833) ; ESD 15 NOV 0000Z (day 10.6667); +5 transit; +2 install (mode)
-    expected = 1.08333 + (10.66667 - 1.08333) + 5 + 2
+    item = next(i for i in w.ships["KESSLER"].items if i.doc_number == "V9910163080001")
+    # status 05 NOV 1000Z (day 1.0833) ; ESD 15 DEC 0000Z (day 40.6667); +5 transit; +2 install (mode)
+    expected = 1.08333 + (40.66667 - 1.08333) + 5 + 2
     assert abs(item.planned_end() - expected) < 1e-3
     pc = planned_case(w)
     assert pc["EVT-KESSLER-01"]["result"] == "MISS"
@@ -114,7 +114,7 @@ def test_action_schema_single_source():
         assert t in sch
     samples = {
         "remove_person": {"type": "remove_person", "ship_id": "KESSLER", "member_id": "M-0019", "from_time": "2026-11-08T00:00:00Z"},
-        "delay_part": {"type": "delay_part", "ship_id": "KESSLER", "doc_number": "R991016308A001", "days": 3},
+        "delay_part": {"type": "delay_part", "ship_id": "KESSLER", "doc_number": "V9910163080001", "days": 3},
         "add_casrep": {"type": "add_casrep", "ship_id": "KESSLER", "eic": "GUN5-HYD", "category": 3, "etr": "2026-11-20T00:00:00Z"},
         "shift_mission": {"type": "shift_mission", "event_id": "EVT-KESSLER-01", "days": 2},
         "apply_fix": {"type": "apply_fix", "fix_id": "FX-1"},

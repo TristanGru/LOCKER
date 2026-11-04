@@ -7,9 +7,9 @@ seed:
   tag: assumed
   source: fixed seed; shown in UI
 runs:
-  value: 10000
+  value: 500
   tag: assumed
-  source: design doc performance budget
+  source: DEV 2 demo simulation budget
 ranking_runs:
   value: 2000
   tag: assumed
@@ -17,7 +17,7 @@ ranking_runs:
 bands:
   value:
     green: 0.8
-    amber: 0.6
+    yellow: 0.6
   tag: sourced
   source: MFOM patent US20120215734A1 (80/60 bands)
 status_score_map:

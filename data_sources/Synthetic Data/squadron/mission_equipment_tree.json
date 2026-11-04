@@ -10,7 +10,7 @@
     },
     "bands": {
       "green": 0.8,
-      "amber": 0.6
+      "yellow": 0.6
     },
     "rollup": "Weighted systems; critical zero caps mission index at 59",
     "rating_policy": "Reported Y/Q/N is independent; index is not a probability",

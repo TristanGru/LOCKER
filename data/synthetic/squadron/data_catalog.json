@@ -340,7 +340,7 @@
     {
       "file": "KESSLER/requisition_status.csv",
       "spec": "data_sources/04_r_supply_milstrip.md",
-      "real_system": "R-Supply / NOSS",
+      "real_system": "R-Supply / MILSTRIP",
       "system_of_record": "R-Supply",
       "steward": "Ship's supply officer (notional)",
       "marking": "CUI when real; NOTIONAL here",
@@ -364,7 +364,7 @@
     {
       "file": "VARNELL/requisition_status.csv",
       "spec": "data_sources/04_r_supply_milstrip.md",
-      "real_system": "R-Supply / NOSS",
+      "real_system": "R-Supply / MILSTRIP",
       "system_of_record": "R-Supply",
       "steward": "Ship's supply officer (notional)",
       "marking": "CUI when real; NOTIONAL here",
@@ -388,7 +388,7 @@
     {
       "file": "ASHBY/requisition_status.csv",
       "spec": "data_sources/04_r_supply_milstrip.md",
-      "real_system": "R-Supply / NOSS",
+      "real_system": "R-Supply / MILSTRIP",
       "system_of_record": "R-Supply",
       "steward": "Ship's supply officer (notional)",
       "marking": "CUI when real; NOTIONAL here",
@@ -400,7 +400,7 @@
     {
       "file": "KESSLER/casrep_messages/",
       "spec": "data_sources/03_casrep.md",
-      "real_system": "CASREP messages (NTTP 1-03.1)",
+      "real_system": "CASREP messages (NTRP/NWP 1-03.1)",
       "system_of_record": "CASREP",
       "steward": "Fleet Forces / MFOM (notional)",
       "marking": "CUI when real; NOTIONAL here",
@@ -412,7 +412,7 @@
     {
       "file": "VARNELL/casrep_messages/",
       "spec": "data_sources/03_casrep.md",
-      "real_system": "CASREP messages (NTTP 1-03.1)",
+      "real_system": "CASREP messages (NTRP/NWP 1-03.1)",
       "system_of_record": "CASREP",
       "steward": "Fleet Forces / MFOM (notional)",
       "marking": "CUI when real; NOTIONAL here",
@@ -424,7 +424,7 @@
     {
       "file": "ASHBY/casrep_messages/",
       "spec": "data_sources/03_casrep.md",
-      "real_system": "CASREP messages (NTTP 1-03.1)",
+      "real_system": "CASREP messages (NTRP/NWP 1-03.1)",
       "system_of_record": "CASREP",
       "steward": "Fleet Forces / MFOM (notional)",
       "marking": "CUI when real; NOTIONAL here",
@@ -676,7 +676,7 @@
     {
       "file": "KESSLER/readiness_baseline.csv",
       "spec": "data_sources/11_drrs_readiness_baseline.md",
-      "real_system": "DRRS-S (DRRS-N construct)",
+      "real_system": "DRRS-S",
       "system_of_record": "DRRS-S",
       "steward": "USFF (notional)",
       "marking": "CUI when real; NOTIONAL here",
@@ -688,7 +688,7 @@
     {
       "file": "VARNELL/readiness_baseline.csv",
       "spec": "data_sources/11_drrs_readiness_baseline.md",
-      "real_system": "DRRS-S (DRRS-N construct)",
+      "real_system": "DRRS-S",
       "system_of_record": "DRRS-S",
       "steward": "USFF (notional)",
       "marking": "CUI when real; NOTIONAL here",
@@ -700,7 +700,7 @@
     {
       "file": "ASHBY/readiness_baseline.csv",
       "spec": "data_sources/11_drrs_readiness_baseline.md",
-      "real_system": "DRRS-S (DRRS-N construct)",
+      "real_system": "DRRS-S",
       "system_of_record": "DRRS-S",
       "steward": "USFF (notional)",
       "marking": "CUI when real; NOTIONAL here",

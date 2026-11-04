@@ -54,7 +54,7 @@ export interface Forecast {
   version?: number;
   cursor: string;
   grid_dates: string[];
-  bands: { green: number; amber: number };
+  bands: { green: number; yellow: number };
   runs: number;
   seed: number;
   missions: Mission[];
@@ -84,7 +84,7 @@ export interface AppState {
   next_event: string | null;
   runs: number;
   seed: number;
-  llm: { configured: boolean; model: string };
+  llm: { configured: boolean; model: string; demo_mode?: boolean };
 }
 export interface Issue {
   id?: string;

@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_id,date,status,port,pier,lat,lon,in_company_with,next_port,next_eta,source,known_at,position_type,provenance
 KESSLER,2026-11-04,INPORT,EXERCISE PORT A,SYNTHETIC PIER,,,,EXERCISE PORT A,,KESSLER/schedule_30day.csv;KESSLER/movrep,2026-11-07T15:00:00Z,PLANNED_NOT_TRACKED,placeholder
 KESSLER,2026-11-05,INPORT,EXERCISE PORT A,SYNTHETIC PIER,,,,EXERCISE PORT A,,KESSLER/schedule_30day.csv;KESSLER/movrep,2026-11-07T15:00:00Z,PLANNED_NOT_TRACKED,placeholder

@@ -41,7 +41,7 @@ export function Overview() {
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-ink-muted">
               <span className="inline-flex items-center gap-2">
-                <i className="h-3.5 w-px bg-white/70" aria-hidden /> {pct(getBands().amber)} watch
+                <i className="h-3.5 w-px bg-white/70" aria-hidden /> {pct(getBands().yellow)} watch
               </span>
               <span className="inline-flex items-center gap-2">
                 <i className="h-3.5 w-px bg-white/80" aria-hidden /> {pct(getBands().green)} ready

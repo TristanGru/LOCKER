@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 date,ship_id,watch_period,condition,watchstation_code,watchstation_name,section,member_id,assignment_state,known_at,as_of,provenance
 2026-11-04,VARNELL,0000-0800,III,4310,Exercise station 4310,1,M-0607,ASSIGNED,2026-11-07T06:00:00Z,2026-11-07T06:00:00Z,proposed
 2026-11-04,VARNELL,0800-1600,III,4310,Exercise station 4310,2,M-0611,ASSIGNED,2026-11-07T06:00:00Z,2026-11-07T06:00:00Z,proposed

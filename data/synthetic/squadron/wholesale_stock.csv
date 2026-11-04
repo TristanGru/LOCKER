@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 niin,nsn,nomenclature,holder,holder_name,location,on_hand_qty,due_in_qty,due_in_date,release_lead_days,transit_days_conus,transit_days_oconus,requires_engineering_validation,as_of,provenance
 019990001,4320-01-999-0001,"PUMP, CENTRIFUGAL, COOLING WATER",NAVSUP_WSS,NAVSUP WSS MECHANICSBURG (SYNTH),MECHANICSBURG PA,0,2,2026-12-20,1,5,10,false,2026-11-04T06:00:00Z,proposed
 019990001,4320-01-999-0001,"PUMP, CENTRIFUGAL, COOLING WATER",PROGRAM_OFFICE,AEGIS PROGRAM OFFICE (SYNTH),WASHINGTON DC,1,0,,3,5,10,true,2026-11-04T06:00:00Z,proposed

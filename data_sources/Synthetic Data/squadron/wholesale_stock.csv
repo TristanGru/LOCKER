@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 niin,nsn,nomenclature,apl,unit_of_issue,provenance,holder,holder_name,location,on_hand_qty,due_in_qty,due_in_date,release_lead_days,transit_days_conus,transit_days_oconus,requires_engineering_validation,as_of
 019990001,4320-01-999-0001,COOLING WATER PUMP (SYNTH),APL-PH-000123,EA,placeholder,NAVSUP_WSS,NAVSUP_WSS EXERCISE HOLDER,EXERCISE DEPOT A,0,2,2026-12-20,1,5,10,false,2026-11-07T06:00:00Z
 019990001,4320-01-999-0001,COOLING WATER PUMP (SYNTH),APL-PH-000123,EA,placeholder,PROGRAM_OFFICE,PROGRAM_OFFICE EXERCISE HOLDER,EXERCISE DEPOT A,1,2,2026-12-20,3,5,10,true,2026-11-07T06:00:00Z

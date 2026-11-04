@@ -1,5 +1,4 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_id,name,hull,uic,dodaac,squadron,ship_class,visual_reference,visual_relationship,ofrp_phase,crew_count,provenance
-KESSLER,USS Kessler (SYNTH),DDG-991,99101,R99101,DESRON 99 (SYNTH),"Notional guided-missile destroyer, Arleigh Burke-style Flight IIA","US Navy Combatant, DTMB 5415",Generic combatant visualization only; not an exact class or installed fit,INTEGRATED,300,placeholder
-VARNELL,USS Varnell (SYNTH),DDG-992,99102,R99102,DESRON 99 (SYNTH),"Notional guided-missile destroyer, Arleigh Burke-style Flight IIA","US Navy Combatant, DTMB 5415",Generic combatant visualization only; not an exact class or installed fit,BASIC,300,placeholder
-ASHBY,USS Ashby (SYNTH),DDG-993,99103,R99103,DESRON 99 (SYNTH),"Notional guided-missile destroyer, Arleigh Burke-style Flight IIA","US Navy Combatant, DTMB 5415",Generic combatant visualization only; not an exact class or installed fit,SUSTAINMENT,300,placeholder
+KESSLER,USS Kessler (SYNTH),DDG-991,99101,V99101,DESRON 99 (SYNTH),"Notional guided-missile destroyer, Arleigh Burke-style Flight IIA","US Navy Combatant, DTMB 5415",Generic combatant visualization only; not an exact class or installed fit,INTEGRATED,300,placeholder
+VARNELL,USS Varnell (SYNTH),DDG-992,99102,V99102,DESRON 99 (SYNTH),"Notional guided-missile destroyer, Arleigh Burke-style Flight IIA","US Navy Combatant, DTMB 5415",Generic combatant visualization only; not an exact class or installed fit,BASIC,300,placeholder
+ASHBY,USS Ashby (SYNTH),DDG-993,99103,V99103,DESRON 99 (SYNTH),"Notional guided-missile destroyer, Arleigh Burke-style Flight IIA","US Navy Combatant, DTMB 5415",Generic combatant visualization only; not an exact class or installed fit,SUSTAINMENT,300,placeholder

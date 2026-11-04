@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_id,block_id,start_date,end_date,ofrp_phase,employment_code,event_id,oparea_or_port,status,source_msg_dtg,superseded_block_id,is_current,known_at,as_of,provenance
 VARNELL,SCH-VARNELL-01,2026-11-04,2026-11-11,BASIC,AVAIL,,EXERCISE PORT A,FIRM,071500Z NOV 26,,true,2026-11-03T06:00:00Z,2026-11-07T18:00:00Z,proposed
 VARNELL,SCH-VARNELL-02,2026-11-12,2026-11-17,BASIC,INPORT,,EXERCISE PORT A,FIRM,071500Z NOV 26,,true,2026-11-03T06:00:00Z,2026-11-07T18:00:00Z,proposed

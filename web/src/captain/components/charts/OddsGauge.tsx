@@ -54,7 +54,7 @@ export function OddsGauge({ odds, status, size = 220 }: { odds: number; status: 
           animate={{ pathLength: Number.isFinite(odds) ? Math.max(0.001, odds) : 0, stroke: meta.hex }}
           transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
         />
-        {tick(getBands().amber)}
+        {tick(getBands().yellow)}
         {tick(getBands().green)}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">

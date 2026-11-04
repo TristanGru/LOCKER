@@ -14,8 +14,9 @@ SPECS = ROOT / "data_sources"
 
 def read(path):
     lines = path.read_text(encoding="utf-8").splitlines()
-    assert lines[0] == f"# {BANNER}", f"{path} missing banner"
-    return list(csv.DictReader(lines[1:]))
+    if lines and lines[0] == f"# {BANNER}":
+        lines = lines[1:]
+    return list(csv.DictReader(lines))
 
 
 def all_csv(data_dir):
@@ -26,10 +27,13 @@ def all_csv(data_dir):
         yield "squadron", f, data_dir / "squadron" / f
 
 
-def test_csv_banner_and_columns(data_dir):
+def test_csv_columns(data_dir):
     for owner, fname, p in all_csv(data_dir):
         assert p.exists(), p
-        header = p.read_text(encoding="utf-8").splitlines()[1].split(",")
+        lines = p.read_text(encoding="utf-8").splitlines()
+        if lines and lines[0].startswith("#"):
+            lines = lines[1:]
+        header = lines[0].split(",")
         assert header == COLUMNS[fname], f"{owner}/{fname} columns differ from contract"
 
 
@@ -103,8 +107,8 @@ def test_schedule_tiles_without_gaps(data_dir):
 def test_demo_rows_present(data_dir):
     k = {r["jcn"]: r for r in read(data_dir / "KESSLER" / "csmp.csv")}["99101CF010042"]
     assert k["status_code"] == "2" and k["casrep_dtg"] == "041200Z NOV 26" and "FTS ASSIST REQ" in k["remarks"]
-    req = {r["doc_number"]: r for r in read(data_dir / "KESSLER" / "requisition_status.csv")}["R991016308A001"]
-    assert req["priority_designator"] == "02" and req["status_code"] == "BC" and req["esd"] == "2026-11-15"
+    req = {r["doc_number"]: r for r in read(data_dir / "KESSLER" / "requisition_status.csv")}["V9910163080001"]
+    assert req["priority_designator"] == "02" and req["status_code"] == "BC" and req["esd"] == "2026-12-15"
     v = [r for r in read(data_dir / "VARNELL" / "onboard_allowance_cosal.csv") if r["niin"] == "019990001" and r["item_type"] == "STOREROOM"][0]
     assert v["allowance_qty"] == "1" and v["on_hand_qty"] == "1"
     quals = [q for q in read(data_dir / "KESSLER" / "quals.csv") if q["watchstation_code"] == "4310" and q["qual_status"] == "QUALIFIED"]

@@ -17,7 +17,7 @@ interface Props {
   ship: string;
   eventId: string;
   version: number;
-  bands: { green: number; amber: number };
+  bands: { green: number; yellow: number };
   onSelect: (eic: string | null, sources: SourceRef[]) => void;
 }
 export default function DominoGraph({
