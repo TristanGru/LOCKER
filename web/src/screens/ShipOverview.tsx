@@ -1,0 +1,206 @@
+import { motion } from 'framer-motion';
+import { Anchor, Gauge, LayoutGrid, Ship } from 'lucide-react';
+import { lazy, Suspense, useMemo, useState } from 'react';
+import { api } from '../api/api';
+import type { ShipPayload, Status } from '../api/types';
+import { AttentionPanel } from '../components/ship/AttentionPanel';
+import { DepartmentCard } from '../components/ship/DepartmentCard';
+import { Panel } from '../components/ui/Panel';
+import { EmptyState, ErrorState, Skeleton } from '../components/ui/States';
+import clsx from '../lib/clsx';
+import { useStore } from '../state/store';
+import { useApi } from '../state/useApi';
+import { STATUS } from '../theme/status';
+
+// three.js is large: load the 3D view as its own chunk (bundled locally, works offline).
+const ShipModel3D = lazy(() => import('../components/ship3d/ShipModel3D').then((m) => ({ default: m.ShipModel3D })));
+
+type Filter = 'all' | Status;
+
+const FILTERS: { id: Filter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'risk', label: 'At risk' },
+  { id: 'watch', label: 'Watch' },
+  { id: 'ready', label: 'Ready' },
+];
+
+const COUNT_CARDS: { status: Status; title: string; desc: string }[] = [
+  { status: 'ready', title: 'Ready', desc: 'Mission capable, no open issues' },
+  { status: 'watch', title: 'On watch', desc: 'Degraded, or the records disagree' },
+  { status: 'risk', title: 'At risk', desc: 'Could stop a mission in the next 30 days' },
+];
+
+export function ShipOverview() {
+  // Refetches whenever a demo event, approval or reset bumps the store version.
+  const { data, error, loading, reload } = useApi(() => api.getShip());
+  const { openNode } = useStore();
+  const [filter, setFilter] = useState<Filter>('all');
+
+  return (
+    <div className="mx-auto max-w-[120rem] space-y-5 px-8 pb-10 pt-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-[2.2rem] font-bold leading-tight tracking-tight">Ship Overview</h1>
+          <p className="mt-1 flex items-center gap-2 text-lg text-ink-muted">
+            <Anchor className="h-5 w-5" aria-hidden />
+            {data ? (
+              <span>
+                <span className="font-semibold text-ink">{data.name}</span> · {data.hull} · {data.className}
+              </span>
+            ) : (
+              'Loading ship systems…'
+            )}
+          </p>
+        </div>
+      </div>
+
+      {error != null && !data && <ErrorState error={error} onRetry={reload} className="glass" />}
+      {loading && <LoadingSkeleton />}
+      {data && data.systems.length === 0 && (
+        <EmptyState icon={Ship} title="No systems reported" className="glass">
+          The ship has not reported any systems yet.
+        </EmptyState>
+      )}
+      {data && data.systems.length > 0 && <Body ship={data} filter={filter} setFilter={setFilter} onOpen={openNode} />}
+    </div>
+  );
+}
+
+function Body({ ship, filter, setFilter, onOpen }: { ship: ShipPayload; filter: Filter; setFilter: (f: Filter) => void; onOpen: (id: string) => void }) {
+  const shown = useMemo(() => (filter === 'all' ? ship.systems : ship.systems.filter((s) => s.status === filter)), [ship.systems, filter]);
+  const depts = ship.departments.filter((d) => shown.some((s) => s.department === d.id));
+  const overallStatus: Status = ship.counts.risk ? 'risk' : ship.counts.watch ? 'watch' : 'ready';
+
+  return (
+    <>
+      {/* 1. summary row */}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[1.35fr_1fr_1fr_1fr]">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={clsx('glass relative overflow-hidden p-5', STATUS[overallStatus].border)}>
+          <div className="label-caps flex items-center gap-2">
+            <Gauge className="h-4 w-4" aria-hidden /> Overall readiness
+          </div>
+          <div className="mt-1 flex items-end gap-4">
+            <span className="num text-[3.6rem] font-bold leading-none text-ink">
+              {Math.round(ship.overall.readyShare * 100)}
+              <span className="opacity-60">%</span>
+            </span>
+            <span className="pb-1.5 text-sm text-ink-muted">
+              <span className="num font-semibold text-ink">{ship.overall.ready}</span> of <span className="num">{ship.overall.total}</span> systems Ready
+            </span>
+          </div>
+          <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-white/[0.06]">
+            {(['ready', 'watch', 'risk'] as const).map((s) =>
+              ship.counts[s] ? <motion.div key={s} initial={false} animate={{ width: `${(ship.counts[s] / ship.overall.total) * 100}%` }} transition={{ duration: 0.6 }} style={{ background: STATUS[s].hex }} /> : null,
+            )}
+          </div>
+        </motion.div>
+
+        {COUNT_CARDS.map((c, i) => {
+          const meta = STATUS[c.status];
+          const Icon = meta.icon;
+          const n = ship.counts[c.status];
+          return (
+            <motion.button
+              key={c.status}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 * (i + 1) }}
+              onClick={() => setFilter(filter === c.status ? 'all' : c.status)}
+              aria-pressed={filter === c.status}
+              className={clsx('glass flex flex-col justify-start p-5 text-left transition hover:brightness-110', n ? meta.border : 'opacity-70', filter === c.status && 'shadow-focus')}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className={clsx('grid h-9 w-9 place-items-center rounded-full border-2', meta.bg)} style={{ borderColor: meta.hex }}>
+                  <Icon className={clsx('h-5 w-5', meta.text)} strokeWidth={2.6} aria-hidden />
+                </span>
+                <span className={clsx('text-base font-bold', meta.text)}>{c.title}</span>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="num text-[2.6rem] font-bold leading-none text-ink">{n}</span>
+                <span className="text-sm text-ink-muted">{n === 1 ? 'system' : 'systems'}</span>
+              </div>
+              <p className="mt-1 text-sm text-ink-dim">{c.desc}</p>
+            </motion.button>
+          );
+        })}
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
+        <div className="min-w-0 space-y-6">
+          {/* 2. ship profile */}
+          <Panel
+            title="Ship profile · 3D model"
+            icon={<Ship className="h-4 w-4" />}
+            actions={<span className="text-xs text-ink-muted">{ship.hullType} · procedural model, approximate</span>}
+            bodyClassName="!p-0"
+          >
+            <Suspense fallback={<Skeleton className="m-5 h-[34rem]" />}>
+              <ShipModel3D ship={ship} onOpen={onOpen} />
+            </Suspense>
+          </Panel>
+
+          {/* 3. all systems by department */}
+          <section aria-label="All systems by department">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="label-caps flex items-center gap-2 !text-ink-muted">
+                <LayoutGrid className="h-4 w-4 text-accent" aria-hidden /> All systems by department
+              </h2>
+              <div role="tablist" aria-label="Filter systems" className="flex gap-1 rounded-xl border border-line bg-abyss-900/70 p-1">
+                {FILTERS.map((f) => {
+                  const n = f.id === 'all' ? ship.systems.length : ship.counts[f.id];
+                  const Icon = f.id === 'all' ? null : STATUS[f.id].icon;
+                  return (
+                    <button
+                      key={f.id}
+                      role="tab"
+                      aria-selected={filter === f.id}
+                      onClick={() => setFilter(f.id)}
+                      className={clsx(
+                        'inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-semibold transition',
+                        filter === f.id ? 'bg-accent/15 text-accent shadow-[inset_0_0_0_1px_rgba(34,211,238,0.5)]' : 'text-ink-muted hover:text-ink',
+                      )}
+                    >
+                      {Icon && <Icon className={clsx('h-4 w-4', f.id !== 'all' && STATUS[f.id].text)} aria-hidden />}
+                      {f.label}
+                      <span className="num rounded-full bg-white/[0.07] px-1.5 text-xs">{n}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {depts.length === 0 ? (
+              <EmptyState icon={LayoutGrid} title={`No systems are ${FILTERS.find((f) => f.id === filter)!.label.toLowerCase()}`} className="glass">
+                Pick another filter to see the rest of the ship.
+              </EmptyState>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                {depts.map((d, i) => (
+                  <DepartmentCard key={d.id} dept={d} systems={shown.filter((s) => s.department === d.id)} onOpen={onOpen} index={i} />
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* 4. needs attention */}
+        <AttentionPanel ship={ship} />
+      </div>
+    </>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-36" />
+        ))}
+      </div>
+      <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
+        <Skeleton className="h-[26rem]" />
+        <Skeleton className="h-[26rem]" />
+      </div>
+    </div>
+  );
+}

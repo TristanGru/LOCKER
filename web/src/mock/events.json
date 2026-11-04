@@ -1,0 +1,66 @@
+[
+  {
+    "id": "EV-1",
+    "seq": 1,
+    "type": "CASREP",
+    "title": "CASREP C3: SR-7 air search radar",
+    "summary": "Array face B transmit/receive module failed during the morning system test. Radar degraded; it needs the TR module now in transit.",
+    "feed": "CASREP",
+    "records": [
+      { "id": "CASREP-KB-0412", "feed": "CASREP", "title": "CASREP C3: SR-7 array face B", "summary": "TR module failure on array face B. Detection range reduced in the forward-starboard sector. Needs TR module assembly (REQN-KB-22918).", "fields": { "Category": "C3", "Part": "TR module assembly", "Requisition": "REQN-KB-22918", "Est. repair": "36 h after part arrives" } }
+    ],
+    "attach": { "E-ASR": ["CASREP-KB-0412"], "P-TRM": ["CASREP-KB-0412"] },
+    "contradictions": [
+      { "id": "CX-002", "nodeId": "E-ASR", "field": "Operational status", "a": { "recordId": "CASREP-KB-0412", "value": "C3, degraded" }, "b": { "recordId": "DRR-KB-1103", "value": "Fully mission capable" }, "note": "The readiness report is 30 h old and predates the CASREP. The CASREP is current." }
+    ],
+    "effects": [{ "op": "setCasrep", "node": "E-ASR", "category": "C3", "recordId": "CASREP-KB-0412" }]
+  },
+  {
+    "id": "EV-2",
+    "seq": 2,
+    "type": "SUPPLY",
+    "title": "Part delayed: TR module assembly +6 days",
+    "summary": "Supply updated the TR module ETA from 2 days to 8 days. The vendor tracker shows it backordered.",
+    "feed": "SUPPLY",
+    "records": [
+      { "id": "REQN-KB-22918-U1", "feed": "SUPPLY", "title": "Requisition update: TR module assembly", "summary": "Shipment slipped. Revised ETA 8 days. Priority still 05 (routine).", "fields": { "Priority": "05 (routine)", "Status": "Delayed", "ETA": "8 days (was 2)" } },
+      { "id": "VTRK-KB-5521", "feed": "SUPPLY", "title": "Vendor tracker: TR module assembly", "summary": "Item shows backordered at the vendor. No ship date posted.", "fields": { "Status": "Backordered", "Ship date": "None posted" } }
+    ],
+    "attach": { "P-TRM": ["REQN-KB-22918-U1", "VTRK-KB-5521"] },
+    "contradictions": [
+      { "id": "CX-003", "nodeId": "P-TRM", "field": "Ship date", "a": { "recordId": "REQN-KB-22918-U1", "value": "ETA 8 days" }, "b": { "recordId": "VTRK-KB-5521", "value": "Backordered, no ship date" }, "note": "Supply and the vendor disagree. The 8-day ETA may be optimistic." }
+    ],
+    "effects": [{ "op": "delayPart", "node": "P-TRM", "hours": 144 }]
+  },
+  {
+    "id": "EV-3",
+    "seq": 3,
+    "type": "PERSONNEL",
+    "title": "Orders: 2 SR-7 radar techs detach in 5 days",
+    "summary": "ET2 Lindqvist and ET2 Reyes received transfer orders, detaching in 5 days. Leaves 2 qualified SR-7 techs; 3 are required.",
+    "feed": "PERS",
+    "records": [
+      { "id": "PERS-KB-ORD-7731", "feed": "PERS", "title": "Transfer orders: ET2 Lindqvist, ET2 Reyes", "summary": "Both sailors detach in 5 days for new assignments ashore.", "fields": { "Sailors": "ET2 J. Lindqvist, ET2 M. Reyes", "Detach": "5 days", "Qual impact": "SR-7 techs 4 -> 2 (need 3)" } }
+    ],
+    "attach": { "S-LINDQVIST": ["PERS-KB-ORD-7731"], "S-REYES": ["PERS-KB-ORD-7731"], "E-ASR": ["PERS-KB-ORD-7731"] },
+    "contradictions": [],
+    "effects": [
+      { "op": "setDeparture", "node": "S-LINDQVIST", "hours": 120 },
+      { "op": "setDeparture", "node": "S-REYES", "hours": 120 }
+    ]
+  },
+  {
+    "id": "EV-4",
+    "seq": 4,
+    "type": "SCHEDULE",
+    "title": "Schedule shift: TIDEWATCH moves 2 days earlier",
+    "summary": "Fleet scheduler moved OP TIDEWATCH up 2 days. It now starts in 9 days instead of 11.",
+    "feed": "OPS",
+    "records": [
+      { "id": "OPS-KB-TW01-R2", "feed": "OPS", "title": "Tasking change: OP TIDEWATCH", "summary": "Start moved from D+11 to D+9 to match the logistics ships' sailing date.", "fields": { "Start": "D+9 (was D+11)", "Reason": "Convoy sailing date moved" } }
+    ],
+    "attach": { "M1": ["OPS-KB-TW01-R2"] },
+    "contradictions": [],
+    "effects": [{ "op": "shiftMission", "mission": "M1", "days": -2 }]
+  }
+]

@@ -1,0 +1,105 @@
+[
+  {
+    "id": "FX-EXPEDITE",
+    "missionIds": ["M1", "M2"],
+    "title": "Expedite the TR module by fly-away kit",
+    "action": "Raise the requisition to priority 01 and send a courier to collect the TR module from FLC Harborview.",
+    "rationale": "The part is the next domino. Arriving in 4 days leaves time for the 36 h install before TIDEWATCH.",
+    "owner": "Supply Officer",
+    "effort": "Medium",
+    "confidence": 0.8,
+    "targets": ["P-TRM", "E-ASR"],
+    "recordIds": ["REQN-KB-22918-U1", "VTRK-KB-5521", "CASREP-KB-0412"],
+    "effects": [{ "op": "setPartEta", "node": "P-TRM", "hours": 96 }],
+    "param": { "key": "hours", "label": "Delivery ETA", "min": 48, "max": 192, "step": 12, "default": 96, "unit": "h" }
+  },
+  {
+    "id": "FX-TAD",
+    "missionIds": ["M1", "M2"],
+    "title": "Borrow a qualified SR-7 tech from USS Marrow Point",
+    "action": "Request temporary duty for ET1 G. Sorensen from USS Marrow Point (fictional) to cover the SR-7 watch bill.",
+    "rationale": "Restores 3 of 3 required SR-7 techs after the two transfers.",
+    "owner": "Combat Systems Officer",
+    "effort": "Low",
+    "confidence": 0.85,
+    "targets": ["E-ASR"],
+    "recordIds": ["PERS-KB-ORD-7731", "PERS-KB-MP-TAD"],
+    "externalApproval": "Needs USS Marrow Point CO concurrence",
+    "effects": [
+      {
+        "op": "addPerson",
+        "person": { "id": "S-SORENSEN", "name": "ET1 G. Sorensen (TAD)", "rate": "ET1", "quals": ["SR7"], "note": "Temporary duty from USS Marrow Point", "recordIds": ["PERS-KB-MP-TAD"] },
+        "supports": ["E-ASR"]
+      }
+    ]
+  },
+  {
+    "id": "FX-SLIP",
+    "missionIds": ["M1"],
+    "title": "Ask the fleet scheduler for a 48 h slip of TIDEWATCH",
+    "action": "Send a schedule-change request to move TIDEWATCH back 2 days.",
+    "rationale": "More time before the transit gives the part a chance to arrive and be installed.",
+    "owner": "Operations Officer",
+    "effort": "High",
+    "confidence": 0.4,
+    "targets": ["M1"],
+    "recordIds": ["OPS-KB-TW01-R2"],
+    "externalApproval": "Needs fleet scheduler approval",
+    "effects": [{ "op": "shiftMission", "mission": "M1", "days": 2 }],
+    "param": { "key": "days", "label": "Slip", "min": 1, "max": 4, "step": 1, "default": 2, "unit": "d" }
+  },
+  {
+    "id": "FX-RETAIN",
+    "missionIds": ["M1", "M2"],
+    "title": "Defer ET2 Reyes's transfer by 30 days",
+    "action": "Request a 30-day delay of ET2 M. Reyes's transfer orders.",
+    "rationale": "Keeps a third qualified SR-7 tech aboard through both missions.",
+    "owner": "Executive Officer",
+    "effort": "Medium",
+    "confidence": 0.55,
+    "targets": ["S-REYES", "E-ASR"],
+    "recordIds": ["PERS-KB-ORD-7731", "PERS-KB-1082"],
+    "externalApproval": "Needs personnel command approval",
+    "effects": [{ "op": "setDeparture", "node": "S-REYES", "hours": null }]
+  },
+  {
+    "id": "FX-GTGPMS",
+    "missionIds": ["M1", "M2"],
+    "title": "Do and sign the GTG-1 monthly PMS check",
+    "action": "Run the overdue monthly check on GTG-1 and sign the engineering log.",
+    "rationale": "Clears the records conflict and removes a small risk on ship's power.",
+    "owner": "Chief Engineer",
+    "effort": "Low",
+    "confidence": 0.95,
+    "targets": ["E-GTG1"],
+    "recordIds": ["MAINT-KB-GTG1", "ENGLOG-KB-0930"],
+    "effects": [{ "op": "setBaseP", "node": "E-GTG1", "p": 0.995 }]
+  },
+  {
+    "id": "FX-TACBL",
+    "missionIds": ["M3"],
+    "title": "Expedite the towed array tow cable",
+    "action": "Raise the tow cable requisition to priority 02 and ship by air.",
+    "rationale": "Gets the towed array back to full depth before DEEP LANTERN with time to spare.",
+    "owner": "Supply Officer",
+    "effort": "Medium",
+    "confidence": 0.7,
+    "targets": ["P-TACBL", "E-TA9"],
+    "recordIds": ["REQN-KB-23004", "CASREP-KB-0388"],
+    "effects": [{ "op": "setPartEta", "node": "P-TACBL", "hours": 200 }],
+    "param": { "key": "hours", "label": "Delivery ETA", "min": 120, "max": 360, "step": 24, "default": 200, "unit": "h" }
+  },
+  {
+    "id": "FX-WINCH",
+    "missionIds": ["M3"],
+    "title": "Take the winch brake band from tender stock",
+    "action": "Request the brake band from the tender's stock during the pier period.",
+    "rationale": "Fixes RAS station 3 well before replenishment.",
+    "owner": "First Lieutenant",
+    "effort": "Low",
+    "confidence": 0.75,
+    "targets": ["P-WINCH", "E-RAS"],
+    "recordIds": ["REQN-KB-23051", "CASREP-KB-0371"],
+    "effects": [{ "op": "setPartEta", "node": "P-WINCH", "hours": 72 }]
+  }
+]

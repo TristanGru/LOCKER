@@ -1,0 +1,210 @@
+{
+  "name": "USS Kestrel Bay",
+  "hull": "DDG-1047 (fictional)",
+  "hullType": "DDG",
+  "class": "Guided-missile destroyer (fictional class)",
+  "departments": [
+    {
+      "id": "combat",
+      "name": "Combat Systems"
+    },
+    {
+      "id": "engineering",
+      "name": "Engineering"
+    },
+    {
+      "id": "navcomms",
+      "name": "Navigation & Comms"
+    },
+    {
+      "id": "sonar",
+      "name": "Sonar & ASW"
+    },
+    {
+      "id": "aviation",
+      "name": "Aviation"
+    },
+    {
+      "id": "damage",
+      "name": "Damage Control"
+    }
+  ],
+  "systems": [
+    {
+      "id": "E-HELO",
+      "name": "Helo deck",
+      "department": "aviation",
+      "deck": "top",
+      "location": "Flight deck",
+      "mount": "flight"
+    },
+    {
+      "id": "E-VLA",
+      "name": "Aft VLS",
+      "department": "combat",
+      "deck": "top",
+      "location": "Aft missile deck",
+      "mount": "vls_aft"
+    },
+    {
+      "id": "E-SAT",
+      "name": "SATCOM",
+      "department": "navcomms",
+      "deck": "top",
+      "location": "Superstructure, aft mast",
+      "mount": "sat"
+    },
+    {
+      "id": "E-ASR",
+      "name": "Air search radar",
+      "department": "combat",
+      "deck": "top",
+      "location": "Forward deckhouse",
+      "mount": "air_radar"
+    },
+    {
+      "id": "E-VLM",
+      "name": "Forward VLS",
+      "department": "combat",
+      "deck": "top",
+      "location": "Forward missile deck",
+      "mount": "vls_fwd"
+    },
+    {
+      "id": "E-GUN",
+      "name": "5-inch gun",
+      "department": "combat",
+      "deck": "top",
+      "location": "Bow, mount 51",
+      "mount": "gun"
+    },
+    {
+      "id": "E-MP1A",
+      "name": "Port shaft · GT 1A",
+      "department": "engineering",
+      "deck": "below",
+      "location": "Main engine room 1",
+      "mount": "engine_p"
+    },
+    {
+      "id": "E-MP2B",
+      "name": "Stbd shaft · GT 2B",
+      "department": "engineering",
+      "deck": "below",
+      "location": "Main engine room 2",
+      "mount": "engine_s"
+    },
+    {
+      "id": "E-GTG1",
+      "name": "GTG-1 generator",
+      "department": "engineering",
+      "deck": "below",
+      "location": "Generator room 1",
+      "mount": "genset_1"
+    },
+    {
+      "id": "E-CW2",
+      "name": "Radar chilled-water pump",
+      "department": "engineering",
+      "deck": "below",
+      "location": "AC & refrigeration room",
+      "mount": "chill"
+    },
+    {
+      "id": "E-GTG2",
+      "name": "GTG-2 generator",
+      "department": "engineering",
+      "deck": "below",
+      "location": "Generator room 2",
+      "mount": "genset_2"
+    },
+    {
+      "id": "E-HMS",
+      "name": "Bow sonar",
+      "department": "sonar",
+      "deck": "below",
+      "location": "Sonar dome, bow",
+      "mount": "sonar"
+    },
+    {
+      "id": "E-SSR",
+      "name": "Surface search radar",
+      "department": "combat",
+      "deck": "none",
+      "location": "Mast",
+      "mount": null
+    },
+    {
+      "id": "E-FCD",
+      "name": "Fire control director",
+      "department": "combat",
+      "deck": "none",
+      "location": "Deckhouse",
+      "mount": null
+    },
+    {
+      "id": "E-CIWS",
+      "name": "CIWS mount 21",
+      "department": "combat",
+      "deck": "none",
+      "location": "Aft superstructure",
+      "mount": null
+    },
+    {
+      "id": "E-EW",
+      "name": "Electronic warfare suite",
+      "department": "combat",
+      "deck": "none",
+      "location": "Deckhouse",
+      "mount": null
+    },
+    {
+      "id": "E-STR",
+      "name": "Steering gear (aft)",
+      "department": "engineering",
+      "deck": "none",
+      "location": "Steering gear room",
+      "mount": null
+    },
+    {
+      "id": "E-RAS",
+      "name": "RAS station 3 (fuel)",
+      "department": "engineering",
+      "deck": "none",
+      "location": "Main deck, starboard",
+      "mount": null
+    },
+    {
+      "id": "E-NAV",
+      "name": "Navigation radar",
+      "department": "navcomms",
+      "deck": "none",
+      "location": "Mast",
+      "mount": null
+    },
+    {
+      "id": "E-TDL",
+      "name": "Tactical data link",
+      "department": "navcomms",
+      "deck": "none",
+      "location": "Combat information center",
+      "mount": null
+    },
+    {
+      "id": "E-TA9",
+      "name": "Towed array",
+      "department": "sonar",
+      "deck": "none",
+      "location": "Stern handling room",
+      "mount": null
+    },
+    {
+      "id": "E-FMP",
+      "name": "Fire main pump 4",
+      "department": "damage",
+      "deck": "none",
+      "location": "Pump room 4",
+      "mount": null
+    }
+  ]
+}

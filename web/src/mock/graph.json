@@ -1,0 +1,639 @@
+{
+  "ship": {
+    "name": "USS Kestrel Bay",
+    "hull": "DDG-1047 (fictional)",
+    "homeport": "Port Halyard (fictional)",
+    "deployInDays": 21
+  },
+  "missions": [
+    {
+      "id": "M1",
+      "code": "TIDEWATCH",
+      "name": "Strait Transit Escort",
+      "type": "Escort / surface warfare",
+      "description": "Escort two logistics ships through a narrow strait with a credible air and surface threat. Needs full air search coverage the whole transit.",
+      "dayOffset": 11,
+      "recordId": "OPS-KB-TW01",
+      "requires": [
+        "E-ASR",
+        "E-SSR",
+        "E-CIWS",
+        "E-MP1A",
+        "E-MP2B",
+        "E-NAV",
+        "E-STR",
+        "E-EW",
+        "E-SAT",
+        "E-CW2",
+        "E-GTG1",
+        "E-GUN"
+      ]
+    },
+    {
+      "id": "M2",
+      "code": "SEASHIELD",
+      "name": "Air Defense Exercise",
+      "type": "Integrated air & missile defense",
+      "description": "Multi-ship air defense exercise. Kestrel Bay is the primary air-defense picket and must track and engage simulated raids.",
+      "dayOffset": 16,
+      "recordId": "OPS-KB-SS02",
+      "requires": [
+        "E-ASR",
+        "E-FCD",
+        "E-CIWS",
+        "E-TDL",
+        "E-CW2",
+        "E-VLM",
+        "E-GTG1",
+        "E-GTG2",
+        "E-SAT",
+        "E-VLA"
+      ]
+    },
+    {
+      "id": "M3",
+      "code": "DEEP LANTERN",
+      "name": "Replenishment & ASW Patrol",
+      "type": "Anti-submarine warfare",
+      "description": "Underway replenishment, then a 5-day anti-submarine patrol with embarked helicopter.",
+      "dayOffset": 21,
+      "recordId": "OPS-KB-DL03",
+      "requires": [
+        "E-HMS",
+        "E-TA9",
+        "E-HELO",
+        "E-MP1A",
+        "E-MP2B",
+        "E-TDL",
+        "E-RAS",
+        "E-SSR",
+        "E-FMP"
+      ]
+    }
+  ],
+  "equipment": [
+    {
+      "id": "E-ASR",
+      "name": "Air Search Radar",
+      "tag": "SR-7",
+      "group": "Combat Systems",
+      "baseP": 0.995,
+      "casrep": null,
+      "parts": [
+        "P-TRM"
+      ],
+      "quals": {
+        "qual": "SR7",
+        "min": 3,
+        "label": "SR-7 qualified radar techs"
+      },
+      "recordIds": [
+        "MAINT-KB-ASR1",
+        "DRR-KB-1103"
+      ]
+    },
+    {
+      "id": "E-SSR",
+      "name": "Surface Search Radar",
+      "tag": "SS-3",
+      "group": "Combat Systems",
+      "baseP": 0.995,
+      "casrep": null,
+      "parts": [],
+      "recordIds": [
+        "MAINT-KB-SSR3"
+      ]
+    },
+    {
+      "id": "E-FCD",
+      "name": "Fire Control Director",
+      "tag": "FCD-2",
+      "group": "Combat Systems",
+      "baseP": 0.995,
+      "casrep": null,
+      "parts": [
+        "P-SERVO"
+      ],
+      "recordIds": [
+        "MAINT-KB-FCD2"
+      ]
+    },
+    {
+      "id": "E-CIWS",
+      "name": "Close-In Weapon System",
+      "tag": "MT-21",
+      "group": "Combat Systems",
+      "baseP": 0.99,
+      "casrep": null,
+      "parts": [],
+      "quals": {
+        "qual": "CIWS",
+        "min": 2,
+        "label": "CIWS qualified fire controlmen"
+      },
+      "recordIds": [
+        "MAINT-KB-CIWS21"
+      ]
+    },
+    {
+      "id": "E-VLM",
+      "name": "Vertical Launch Module (Fwd)",
+      "tag": "VLM-F",
+      "group": "Combat Systems",
+      "baseP": 0.995,
+      "casrep": null,
+      "parts": [],
+      "recordIds": [
+        "MAINT-KB-VLMF"
+      ]
+    },
+    {
+      "id": "E-EW",
+      "name": "Electronic Warfare Suite",
+      "tag": "EW-32",
+      "group": "Combat Systems",
+      "baseP": 0.995,
+      "casrep": null,
+      "parts": [],
+      "recordIds": [
+        "MAINT-KB-EW32"
+      ]
+    },
+    {
+      "id": "E-HMS",
+      "name": "Hull-Mounted Sonar",
+      "tag": "HS-40",
+      "group": "Combat Systems",
+      "baseP": 0.995,
+      "casrep": null,
+      "parts": [],
+      "quals": {
+        "qual": "STG",
+        "min": 2,
+        "label": "Qualified sonar techs"
+      },
+      "recordIds": [
+        "MAINT-KB-HS40"
+      ]
+    },
+    {
+      "id": "E-TA9",
+      "name": "Towed Array",
+      "tag": "TA-9",
+      "group": "Combat Systems",
+      "baseP": 0.995,
+      "casrep": "C2",
+      "casrepRecordId": "CASREP-KB-0388",
+      "parts": [
+        "P-TACBL"
+      ],
+      "recordIds": [
+        "MAINT-KB-TA9",
+        "CASREP-KB-0388"
+      ]
+    },
+    {
+      "id": "E-TDL",
+      "name": "Tactical Data Link",
+      "tag": "TDL-16",
+      "group": "C5I",
+      "baseP": 0.995,
+      "casrep": null,
+      "parts": [],
+      "recordIds": [
+        "MAINT-KB-TDL16"
+      ]
+    },
+    {
+      "id": "E-SAT",
+      "name": "SATCOM Terminal",
+      "tag": "SC-5",
+      "group": "C5I",
+      "baseP": 0.995,
+      "casrep": null,
+      "parts": [
+        "P-LNA"
+      ],
+      "recordIds": [
+        "MAINT-KB-SC5"
+      ]
+    },
+    {
+      "id": "E-NAV",
+      "name": "Navigation Radar",
+      "tag": "NR-12",
+      "group": "Navigation",
+      "baseP": 0.995,
+      "casrep": null,
+      "parts": [],
+      "recordIds": [
+        "MAINT-KB-NR12"
+      ]
+    },
+    {
+      "id": "E-STR",
+      "name": "Steering Gear (Aft)",
+      "tag": "STG-A",
+      "group": "Engineering",
+      "baseP": 0.995,
+      "casrep": null,
+      "parts": [],
+      "recordIds": [
+        "MAINT-KB-STGA"
+      ]
+    },
+    {
+      "id": "E-MP1A",
+      "name": "Main Propulsion GT 1A",
+      "tag": "GT-1A",
+      "group": "Engineering",
+      "baseP": 0.995,
+      "casrep": null,
+      "parts": [],
+      "quals": {
+        "qual": "GSM",
+        "min": 2,
+        "label": "Qualified gas turbine techs"
+      },
+      "recordIds": [
+        "MAINT-KB-GT1A"
+      ]
+    },
+    {
+      "id": "E-MP2B",
+      "name": "Main Propulsion GT 2B",
+      "tag": "GT-2B",
+      "group": "Engineering",
+      "baseP": 0.995,
+      "casrep": null,
+      "parts": [],
+      "quals": {
+        "qual": "GSM",
+        "min": 2,
+        "label": "Qualified gas turbine techs"
+      },
+      "recordIds": [
+        "MAINT-KB-GT2B"
+      ]
+    },
+    {
+      "id": "E-GTG1",
+      "name": "Gas Turbine Generator 1",
+      "tag": "GTG-1",
+      "group": "Engineering",
+      "baseP": 0.965,
+      "note": "Monthly PMS check unsigned (records disagree)",
+      "casrep": null,
+      "parts": [
+        "P-GTGF"
+      ],
+      "recordIds": [
+        "MAINT-KB-GTG1",
+        "ENGLOG-KB-0930"
+      ]
+    },
+    {
+      "id": "E-GTG2",
+      "name": "Gas Turbine Generator 2",
+      "tag": "GTG-2",
+      "group": "Engineering",
+      "baseP": 0.995,
+      "casrep": null,
+      "parts": [],
+      "recordIds": [
+        "MAINT-KB-GTG2"
+      ]
+    },
+    {
+      "id": "E-CW2",
+      "name": "Chilled Water Plant",
+      "tag": "CW-2",
+      "group": "Engineering",
+      "baseP": 0.99,
+      "casrep": null,
+      "parts": [
+        "P-SEAL"
+      ],
+      "recordIds": [
+        "MAINT-KB-CW2"
+      ]
+    },
+    {
+      "id": "E-FMP",
+      "name": "Fire Main Pump",
+      "tag": "FP-4",
+      "group": "Damage Control",
+      "baseP": 0.995,
+      "casrep": null,
+      "parts": [],
+      "recordIds": [
+        "MAINT-KB-FP4"
+      ]
+    },
+    {
+      "id": "E-HELO",
+      "name": "Flight Deck & Traverser",
+      "tag": "FD-1",
+      "group": "Aviation",
+      "baseP": 0.995,
+      "casrep": null,
+      "parts": [],
+      "quals": {
+        "qual": "LSE",
+        "min": 1,
+        "label": "Qualified landing signal enlisted"
+      },
+      "recordIds": [
+        "MAINT-KB-FD1"
+      ]
+    },
+    {
+      "id": "E-RAS",
+      "name": "Fuel Transfer / RAS Station 3",
+      "tag": "RAS-3",
+      "group": "Deck",
+      "baseP": 0.995,
+      "casrep": "C2",
+      "casrepRecordId": "CASREP-KB-0371",
+      "parts": [
+        "P-WINCH"
+      ],
+      "recordIds": [
+        "MAINT-KB-RAS3",
+        "CASREP-KB-0371"
+      ]
+    },
+    {
+      "id": "E-VLA",
+      "name": "Vertical Launch Module (Aft)",
+      "tag": "VLM-A",
+      "group": "Combat Systems",
+      "baseP": 0.998,
+      "casrep": null,
+      "parts": [],
+      "recordIds": [
+        "MAINT-KB-VLMA"
+      ]
+    },
+    {
+      "id": "E-GUN",
+      "name": "5-inch Gun Mount",
+      "tag": "MT-51",
+      "group": "Combat Systems",
+      "baseP": 0.998,
+      "casrep": null,
+      "parts": [],
+      "recordIds": [
+        "MAINT-KB-GUN51"
+      ]
+    }
+  ],
+  "parts": [
+    {
+      "id": "P-TRM",
+      "name": "TR Module Assembly",
+      "detail": "Array face B transmit/receive module",
+      "nsn": "NSN 5985-KB-018-4412",
+      "etaHours": 48,
+      "installHours": 36,
+      "source": "FLC Harborview (fictional)",
+      "recordIds": [
+        "REQN-KB-22918"
+      ]
+    },
+    {
+      "id": "P-SERVO",
+      "name": "Elevation Servo Amplifier",
+      "detail": "Director elevation drive",
+      "nsn": "NSN 5996-KB-221-0071",
+      "etaHours": null,
+      "installHours": 8,
+      "source": "Shipboard stock",
+      "recordIds": [
+        "SUP-KB-OH-071"
+      ]
+    },
+    {
+      "id": "P-TACBL",
+      "name": "Tow Cable Section",
+      "detail": "Towed array tow cable, 200 m",
+      "nsn": "NSN 6145-KB-330-2204",
+      "etaHours": 420,
+      "installHours": 48,
+      "source": "Depot Saltmarsh (fictional)",
+      "recordIds": [
+        "REQN-KB-23004"
+      ]
+    },
+    {
+      "id": "P-LNA",
+      "name": "Low-Noise Amplifier",
+      "detail": "SATCOM receive chain",
+      "nsn": "NSN 5996-KB-114-9930",
+      "etaHours": null,
+      "installHours": 4,
+      "source": "Shipboard stock",
+      "recordIds": [
+        "SUP-KB-OH-114"
+      ]
+    },
+    {
+      "id": "P-SEAL",
+      "name": "Compressor Shaft Seal Kit",
+      "detail": "Chilled water compressor",
+      "nsn": "NSN 5330-KB-977-1180",
+      "etaHours": 30,
+      "installHours": 12,
+      "source": "FLC Harborview (fictional)",
+      "recordIds": [
+        "REQN-KB-22977"
+      ]
+    },
+    {
+      "id": "P-GTGF",
+      "name": "Fuel Nozzle Set",
+      "detail": "GTG-1 combustor nozzles",
+      "nsn": "NSN 2915-KB-060-3321",
+      "etaHours": null,
+      "installHours": 10,
+      "source": "Shipboard stock",
+      "recordIds": [
+        "SUP-KB-OH-060"
+      ]
+    },
+    {
+      "id": "P-WINCH",
+      "name": "Winch Brake Band",
+      "detail": "RAS station 3 tensioning winch",
+      "nsn": "NSN 3950-KB-051-7745",
+      "etaHours": 456,
+      "installHours": 24,
+      "source": "Depot Saltmarsh (fictional)",
+      "recordIds": [
+        "REQN-KB-23051"
+      ]
+    }
+  ],
+  "people": [
+    {
+      "id": "S-OKAFOR",
+      "name": "ET1 R. Okafor",
+      "rate": "ET1",
+      "quals": [
+        "SR7"
+      ],
+      "departsInHours": null,
+      "recordIds": [
+        "PERS-KB-1041"
+      ]
+    },
+    {
+      "id": "S-LINDQVIST",
+      "name": "ET2 J. Lindqvist",
+      "rate": "ET2",
+      "quals": [
+        "SR7"
+      ],
+      "departsInHours": null,
+      "recordIds": [
+        "PERS-KB-1077"
+      ]
+    },
+    {
+      "id": "S-REYES",
+      "name": "ET2 M. Reyes",
+      "rate": "ET2",
+      "quals": [
+        "SR7"
+      ],
+      "departsInHours": null,
+      "recordIds": [
+        "PERS-KB-1082"
+      ]
+    },
+    {
+      "id": "S-PARK",
+      "name": "ET3 D. Park",
+      "rate": "ET3",
+      "quals": [
+        "SR7"
+      ],
+      "departsInHours": null,
+      "recordIds": [
+        "PERS-KB-1109"
+      ]
+    },
+    {
+      "id": "S-BRANDT",
+      "name": "FC1 A. Brandt",
+      "rate": "FC1",
+      "quals": [
+        "CIWS"
+      ],
+      "departsInHours": null,
+      "recordIds": [
+        "PERS-KB-1012"
+      ]
+    },
+    {
+      "id": "S-NAKAMURA",
+      "name": "FC2 T. Nakamura",
+      "rate": "FC2",
+      "quals": [
+        "CIWS"
+      ],
+      "departsInHours": null,
+      "recordIds": [
+        "PERS-KB-1058"
+      ]
+    },
+    {
+      "id": "S-MOREAU",
+      "name": "GSM1 L. Moreau",
+      "rate": "GSM1",
+      "quals": [
+        "GSM"
+      ],
+      "departsInHours": null,
+      "recordIds": [
+        "PERS-KB-1003"
+      ]
+    },
+    {
+      "id": "S-ACHEBE",
+      "name": "GSM2 K. Achebe",
+      "rate": "GSM2",
+      "quals": [
+        "GSM"
+      ],
+      "departsInHours": null,
+      "recordIds": [
+        "PERS-KB-1066"
+      ]
+    },
+    {
+      "id": "S-DUARTE",
+      "name": "GSM2 P. Duarte",
+      "rate": "GSM2",
+      "quals": [
+        "GSM"
+      ],
+      "departsInHours": null,
+      "recordIds": [
+        "PERS-KB-1094"
+      ]
+    },
+    {
+      "id": "S-HALVORSEN",
+      "name": "STG1 S. Halvorsen",
+      "rate": "STG1",
+      "quals": [
+        "STG"
+      ],
+      "departsInHours": 600,
+      "recordIds": [
+        "PERS-KB-1020"
+      ]
+    },
+    {
+      "id": "S-VARGA",
+      "name": "STG2 E. Varga",
+      "rate": "STG2",
+      "quals": [
+        "STG"
+      ],
+      "departsInHours": null,
+      "recordIds": [
+        "PERS-KB-1071"
+      ]
+    },
+    {
+      "id": "S-WHITFIELD",
+      "name": "BM1 C. Whitfield",
+      "rate": "BM1",
+      "quals": [
+        "LSE"
+      ],
+      "departsInHours": null,
+      "recordIds": [
+        "PERS-KB-1035"
+      ]
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "CX-001",
+      "nodeId": "E-GTG1",
+      "field": "Monthly PMS check",
+      "a": {
+        "recordId": "MAINT-KB-GTG1",
+        "value": "Complete"
+      },
+      "b": {
+        "recordId": "ENGLOG-KB-0930",
+        "value": "Overdue 6 days, not signed"
+      },
+      "note": "Maintenance system shows the check done, but the engineering log has no signature. Treat as not done until signed."
+    }
+  ]
+}

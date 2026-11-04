@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.vite/
+
+# gstack browser test reports and temp files (screenshots, PDFs)
+.gstack/
+
+# local env overrides (e.g. VITE_API_URL for a real backend)
+.env
+.env.local
+
+# editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

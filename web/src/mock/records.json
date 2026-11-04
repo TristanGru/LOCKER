@@ -1,0 +1,522 @@
+{
+  "staleAfterHours": 24,
+  "feeds": [
+    {
+      "id": "OPS",
+      "label": "Ops schedule",
+      "ageHours": 1
+    },
+    {
+      "id": "MAINT",
+      "label": "Maintenance",
+      "ageHours": 2
+    },
+    {
+      "id": "CASREP",
+      "label": "CASREPs",
+      "ageHours": 4
+    },
+    {
+      "id": "ENGLOG",
+      "label": "Engineering log",
+      "ageHours": 3
+    },
+    {
+      "id": "SUPPLY",
+      "label": "Supply",
+      "ageHours": 6
+    },
+    {
+      "id": "PERS",
+      "label": "Personnel",
+      "ageHours": 30
+    },
+    {
+      "id": "DRR",
+      "label": "Daily readiness report",
+      "ageHours": 30
+    }
+  ],
+  "records": [
+    {
+      "id": "OPS-KB-TW01",
+      "feed": "OPS",
+      "title": "Tasking: OP TIDEWATCH",
+      "summary": "Strait transit escort for two logistics ships. Full air search coverage required for the whole transit.",
+      "fields": {
+        "Start": "D+11",
+        "Duration": "3 days",
+        "Required systems": "Air search, surface search, CIWS, propulsion x2, EW, SATCOM"
+      }
+    },
+    {
+      "id": "OPS-KB-SS02",
+      "feed": "OPS",
+      "title": "Tasking: EX SEASHIELD",
+      "summary": "Multi-ship air defense exercise. Kestrel Bay is the primary air-defense picket.",
+      "fields": {
+        "Start": "D+16",
+        "Duration": "4 days",
+        "Role": "Primary AD picket"
+      }
+    },
+    {
+      "id": "OPS-KB-DL03",
+      "feed": "OPS",
+      "title": "Tasking: OP DEEP LANTERN",
+      "summary": "Underway replenishment, then 5-day ASW patrol with embarked helicopter.",
+      "fields": {
+        "Start": "D+21",
+        "Duration": "6 days",
+        "Embarked": "1 x MH helicopter (fictional det)"
+      }
+    },
+    {
+      "id": "DRR-KB-1103",
+      "feed": "DRR",
+      "title": "Daily readiness report #1103",
+      "summary": "Ship-wide readiness roll-up. All combat systems reported fully mission capable.",
+      "fields": {
+        "Air search radar": "Fully mission capable",
+        "Overall": "Ready"
+      }
+    },
+    {
+      "id": "MAINT-KB-ASR1",
+      "feed": "MAINT",
+      "title": "SR-7 air search radar: status",
+      "summary": "Operational. Last daily system test passed. Array face B power margin trending low.",
+      "fields": {
+        "Status": "Operational",
+        "Last test": "Passed",
+        "Watch item": "Face B power margin -1.8 dB"
+      }
+    },
+    {
+      "id": "MAINT-KB-SSR3",
+      "feed": "MAINT",
+      "title": "SS-3 surface search radar: status",
+      "summary": "Operational. No open jobs.",
+      "fields": {
+        "Status": "Operational",
+        "Open jobs": "0"
+      }
+    },
+    {
+      "id": "MAINT-KB-FCD2",
+      "feed": "MAINT",
+      "title": "FCD-2 fire control director: status",
+      "summary": "Operational. Spare servo amplifier on hand.",
+      "fields": {
+        "Status": "Operational",
+        "Open jobs": "0"
+      }
+    },
+    {
+      "id": "MAINT-KB-CIWS21",
+      "feed": "MAINT",
+      "title": "CIWS mount 21: status",
+      "summary": "Operational. Barrel set at 78% of life.",
+      "fields": {
+        "Status": "Operational",
+        "Barrel life": "78%"
+      }
+    },
+    {
+      "id": "MAINT-KB-VLMF",
+      "feed": "MAINT",
+      "title": "Forward VLM: status",
+      "summary": "Operational. All cells report ready.",
+      "fields": {
+        "Status": "Operational"
+      }
+    },
+    {
+      "id": "MAINT-KB-EW32",
+      "feed": "MAINT",
+      "title": "EW-32 suite: status",
+      "summary": "Operational. Library update loaded.",
+      "fields": {
+        "Status": "Operational"
+      }
+    },
+    {
+      "id": "MAINT-KB-HS40",
+      "feed": "MAINT",
+      "title": "HS-40 hull sonar: status",
+      "summary": "Operational. Dome inspection current.",
+      "fields": {
+        "Status": "Operational"
+      }
+    },
+    {
+      "id": "MAINT-KB-TA9",
+      "feed": "MAINT",
+      "title": "TA-9 towed array: status",
+      "summary": "Partially mission capable. Tow cable section damaged; array usable at reduced depth.",
+      "fields": {
+        "Status": "Degraded",
+        "Limit": "Max depth 120 m"
+      }
+    },
+    {
+      "id": "MAINT-KB-TDL16",
+      "feed": "MAINT",
+      "title": "TDL-16 data link: status",
+      "summary": "Operational. Crypto keys loaded through D+30.",
+      "fields": {
+        "Status": "Operational"
+      }
+    },
+    {
+      "id": "MAINT-KB-SC5",
+      "feed": "MAINT",
+      "title": "SC-5 SATCOM: status",
+      "summary": "Operational. Spare LNA on hand.",
+      "fields": {
+        "Status": "Operational"
+      }
+    },
+    {
+      "id": "MAINT-KB-NR12",
+      "feed": "MAINT",
+      "title": "NR-12 navigation radar: status",
+      "summary": "Operational.",
+      "fields": {
+        "Status": "Operational"
+      }
+    },
+    {
+      "id": "MAINT-KB-STGA",
+      "feed": "MAINT",
+      "title": "Aft steering gear: status",
+      "summary": "Operational. Hydraulic fluid sample satisfactory.",
+      "fields": {
+        "Status": "Operational"
+      }
+    },
+    {
+      "id": "MAINT-KB-GT1A",
+      "feed": "MAINT",
+      "title": "Main propulsion GT 1A: status",
+      "summary": "Operational. 2,140 h since overhaul.",
+      "fields": {
+        "Status": "Operational",
+        "Hours": "2,140"
+      }
+    },
+    {
+      "id": "MAINT-KB-GT2B",
+      "feed": "MAINT",
+      "title": "Main propulsion GT 2B: status",
+      "summary": "Operational. 1,880 h since overhaul.",
+      "fields": {
+        "Status": "Operational",
+        "Hours": "1,880"
+      }
+    },
+    {
+      "id": "MAINT-KB-GTG1",
+      "feed": "MAINT",
+      "title": "GTG-1 generator: PMS",
+      "summary": "Monthly PMS check shown as complete.",
+      "fields": {
+        "Monthly PMS": "Complete",
+        "Status": "Operational"
+      }
+    },
+    {
+      "id": "MAINT-KB-GTG2",
+      "feed": "MAINT",
+      "title": "GTG-2 generator: status",
+      "summary": "Operational. PMS current.",
+      "fields": {
+        "Status": "Operational"
+      }
+    },
+    {
+      "id": "MAINT-KB-CW2",
+      "feed": "MAINT",
+      "title": "CW-2 chilled water plant: status",
+      "summary": "Operational. Shaft seal weeping; replacement kit on order. Cools the SR-7 array.",
+      "fields": {
+        "Status": "Operational",
+        "Watch item": "Seal weep"
+      }
+    },
+    {
+      "id": "MAINT-KB-FP4",
+      "feed": "MAINT",
+      "title": "Fire main pump 4: status",
+      "summary": "Operational.",
+      "fields": {
+        "Status": "Operational"
+      }
+    },
+    {
+      "id": "MAINT-KB-FD1",
+      "feed": "MAINT",
+      "title": "Flight deck & traverser: status",
+      "summary": "Certified. Lighting check current.",
+      "fields": {
+        "Status": "Certified"
+      }
+    },
+    {
+      "id": "MAINT-KB-RAS3",
+      "feed": "MAINT",
+      "title": "RAS station 3: status",
+      "summary": "Degraded. Winch brake band worn; station usable for fuel only at reduced tension.",
+      "fields": {
+        "Status": "Degraded"
+      }
+    },
+    {
+      "id": "ENGLOG-KB-0930",
+      "feed": "ENGLOG",
+      "title": "Engineering log: GTG-1 PMS",
+      "summary": "Monthly PMS check for GTG-1 is not signed. Six days overdue.",
+      "fields": {
+        "Monthly PMS": "Overdue 6 days",
+        "Signed": "No"
+      }
+    },
+    {
+      "id": "CASREP-KB-0388",
+      "feed": "CASREP",
+      "title": "CASREP C2: TA-9 tow cable",
+      "summary": "Tow cable section damaged during recovery. Array limited to 120 m depth until replaced.",
+      "fields": {
+        "Category": "C2",
+        "Part": "Tow cable section",
+        "Requisition": "REQN-KB-23004"
+      }
+    },
+    {
+      "id": "CASREP-KB-0371",
+      "feed": "CASREP",
+      "title": "CASREP C2: RAS station 3 winch",
+      "summary": "Winch brake band worn. Fuel transfer possible at reduced tension.",
+      "fields": {
+        "Category": "C2",
+        "Part": "Winch brake band",
+        "Requisition": "REQN-KB-23051"
+      }
+    },
+    {
+      "id": "REQN-KB-22918",
+      "feed": "SUPPLY",
+      "title": "Requisition: TR module assembly",
+      "summary": "Routine spare. In transit from FLC Harborview.",
+      "fields": {
+        "Priority": "05 (routine)",
+        "Status": "In transit",
+        "ETA": "2 days"
+      }
+    },
+    {
+      "id": "REQN-KB-23004",
+      "feed": "SUPPLY",
+      "title": "Requisition: tow cable section",
+      "summary": "Shipping from Depot Saltmarsh.",
+      "fields": {
+        "Priority": "03",
+        "Status": "Processing",
+        "ETA": "17.5 days"
+      }
+    },
+    {
+      "id": "REQN-KB-22977",
+      "feed": "SUPPLY",
+      "title": "Requisition: CW compressor seal kit",
+      "summary": "In transit.",
+      "fields": {
+        "Priority": "05",
+        "Status": "In transit",
+        "ETA": "30 h"
+      }
+    },
+    {
+      "id": "REQN-KB-23051",
+      "feed": "SUPPLY",
+      "title": "Requisition: RAS winch brake band",
+      "summary": "Shipping from Depot Saltmarsh.",
+      "fields": {
+        "Priority": "03",
+        "Status": "Processing",
+        "ETA": "19 days"
+      }
+    },
+    {
+      "id": "SUP-KB-OH-071",
+      "feed": "SUPPLY",
+      "title": "On-hand: elevation servo amplifier",
+      "summary": "1 on hand in storeroom 3-112.",
+      "fields": {
+        "Qty": "1",
+        "Location": "3-112"
+      }
+    },
+    {
+      "id": "SUP-KB-OH-114",
+      "feed": "SUPPLY",
+      "title": "On-hand: SATCOM LNA",
+      "summary": "1 on hand in storeroom 2-040.",
+      "fields": {
+        "Qty": "1",
+        "Location": "2-040"
+      }
+    },
+    {
+      "id": "SUP-KB-OH-060",
+      "feed": "SUPPLY",
+      "title": "On-hand: GTG fuel nozzle set",
+      "summary": "1 set on hand in engineering storeroom.",
+      "fields": {
+        "Qty": "1 set"
+      }
+    },
+    {
+      "id": "PERS-KB-1041",
+      "feed": "PERS",
+      "title": "ET1 R. Okafor: quals",
+      "summary": "SR-7 radar technician, qualified. No pending orders.",
+      "fields": {
+        "Quals": "SR-7 tech",
+        "Orders": "None"
+      }
+    },
+    {
+      "id": "PERS-KB-1077",
+      "feed": "PERS",
+      "title": "ET2 J. Lindqvist: quals",
+      "summary": "SR-7 radar technician, qualified. No pending orders.",
+      "fields": {
+        "Quals": "SR-7 tech",
+        "Orders": "None"
+      }
+    },
+    {
+      "id": "PERS-KB-1082",
+      "feed": "PERS",
+      "title": "ET2 M. Reyes: quals",
+      "summary": "SR-7 radar technician, qualified. No pending orders.",
+      "fields": {
+        "Quals": "SR-7 tech",
+        "Orders": "None"
+      }
+    },
+    {
+      "id": "PERS-KB-1109",
+      "feed": "PERS",
+      "title": "ET3 D. Park: quals",
+      "summary": "SR-7 radar technician, qualified (recently).",
+      "fields": {
+        "Quals": "SR-7 tech",
+        "Orders": "None"
+      }
+    },
+    {
+      "id": "PERS-KB-1012",
+      "feed": "PERS",
+      "title": "FC1 A. Brandt: quals",
+      "summary": "CIWS technician, qualified.",
+      "fields": {
+        "Quals": "CIWS"
+      }
+    },
+    {
+      "id": "PERS-KB-1058",
+      "feed": "PERS",
+      "title": "FC2 T. Nakamura: quals",
+      "summary": "CIWS technician, qualified.",
+      "fields": {
+        "Quals": "CIWS"
+      }
+    },
+    {
+      "id": "PERS-KB-1003",
+      "feed": "PERS",
+      "title": "GSM1 L. Moreau: quals",
+      "summary": "Gas turbine technician, qualified.",
+      "fields": {
+        "Quals": "GSM"
+      }
+    },
+    {
+      "id": "PERS-KB-1066",
+      "feed": "PERS",
+      "title": "GSM2 K. Achebe: quals",
+      "summary": "Gas turbine technician, qualified.",
+      "fields": {
+        "Quals": "GSM"
+      }
+    },
+    {
+      "id": "PERS-KB-1094",
+      "feed": "PERS",
+      "title": "GSM2 P. Duarte: quals",
+      "summary": "Gas turbine technician, qualified.",
+      "fields": {
+        "Quals": "GSM"
+      }
+    },
+    {
+      "id": "PERS-KB-1020",
+      "feed": "PERS",
+      "title": "STG1 S. Halvorsen: quals",
+      "summary": "Sonar technician, qualified. Transfers in 25 days.",
+      "fields": {
+        "Quals": "Sonar",
+        "Orders": "Detach D+25"
+      }
+    },
+    {
+      "id": "PERS-KB-1071",
+      "feed": "PERS",
+      "title": "STG2 E. Varga: quals",
+      "summary": "Sonar technician, qualified.",
+      "fields": {
+        "Quals": "Sonar"
+      }
+    },
+    {
+      "id": "PERS-KB-1035",
+      "feed": "PERS",
+      "title": "BM1 C. Whitfield: quals",
+      "summary": "Landing signal enlisted, qualified.",
+      "fields": {
+        "Quals": "LSE"
+      }
+    },
+    {
+      "id": "PERS-KB-MP-TAD",
+      "feed": "PERS",
+      "title": "USS Marrow Point: available TAD",
+      "summary": "Sister ship (fictional) has one SR-7 qualified ET1 available for temporary duty.",
+      "fields": {
+        "Available": "ET1 G. Sorensen",
+        "Window": "D+2 to D+30"
+      }
+    },
+    {
+      "id": "MAINT-KB-VLMA",
+      "feed": "MAINT",
+      "title": "Aft VLM: status",
+      "summary": "Operational. All cells report ready; last cell test 3 days ago.",
+      "fields": {
+        "Status": "Operational"
+      }
+    },
+    {
+      "id": "MAINT-KB-GUN51",
+      "feed": "MAINT",
+      "title": "5-inch gun mount 51: status",
+      "summary": "Operational. Barrel erosion within limits; daily systems check passed.",
+      "fields": {
+        "Status": "Operational",
+        "Barrel wear": "Within limits"
+      }
+    }
+  ]
+}
