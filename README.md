@@ -30,6 +30,12 @@ On Linux/macOS use `python3.13 -m venv .venv` and `.venv/bin/python` in place of
 
 The canonical synthetic dataset is checked in at `data/synthetic/`. There is no need to regenerate it. `python -m missiontwin.generate` deliberately rewrites that fixture and is intended for fixture development, not routine demo startup.
 
+## Connected captain UI
+
+The default route now uses Sakie's layout with a top-level ship selector, DDG-only cutaway/interior viewer, and named missions (TIDEWATCH, SEASHIELD, DEEP LANTERN and IRON HORIZON). Its data comes from the Python backend, not the browser mock. **Sources / controls** exposes source refresh and undo.
+
+The previous advanced workspace is retained at **`/?legacy=1`** for the full assumption editor, report-fact review and structured preview/apply workflow. The walkthrough below describes that advanced workspace where screen names differ. See [UI integration status and remaining merge work](docs/UI_INTEGRATION.md).
+
 ## Five-minute presenter walkthrough
 
 1. **Mission overview:** explain Mission A's healthy start-time estimate but low **event-interval readiness**, caused by a training expiration inside its event window. The headline, status, options, and briefs assess the interval. The timeline plots *point-in-time requirement probability*, not material score or a continuous-time guarantee.

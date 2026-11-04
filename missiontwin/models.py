@@ -146,6 +146,11 @@ class VersionBody(BaseModel):
     base_version: int
 
 
+class CaptainPreviewBody(VersionBody):
+    ship_id: str
+    changes: list[dict] = Field(min_length=1, max_length=20)
+
+
 class RefreshBody(VersionBody):
     reset_scenario: bool = False
 

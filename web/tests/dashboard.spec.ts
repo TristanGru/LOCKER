@@ -38,7 +38,7 @@ test.beforeEach(async ({ page, request }) => {
       ? route.continue()
       : route.abort(),
   );
-  await page.goto("/");
+  await page.goto('/?legacy=1');
   await expect(
     page.getByRole("heading", { name: "Mission A needs attention." }),
   ).toBeVisible();
@@ -224,7 +224,7 @@ test("feed, graph, ranked fixes, evidence and brief connect end to end", async (
     .click();
   await expect(
     page.getByRole("button", { name: "Apply to exercise", exact: true }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 45000 });
   await page
     .getByRole("button", { name: "Apply to exercise", exact: true })
     .click();

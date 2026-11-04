@@ -22,7 +22,7 @@ from .engine import CACHE_STATS, Scenario, build_world, domino_graph, forecast, 
 from .fixes import rank_fixes
 from .ingest import find_contradictions, load_baseline, read_pdf_pages
 from .llm import LLMClient, llm_brief, nl_to_action
-from .models import ACTION_TYPES, ActionAdapter, BriefBody, ChangeBody, FixDecisionBody, ParseBody, VersionBody, RefreshBody, action_schema
+from .models import ACTION_TYPES, ActionAdapter, BriefBody, ChangeBody, FixDecisionBody, ParseBody, VersionBody, RefreshBody, CaptainPreviewBody, action_schema
 from .visualization import registry
 from .normalize import NORMALIZED_ROOT, REFERENCE_ROOT
 from .sources import load_snapshot, source_health, utc_now
@@ -145,11 +145,14 @@ class AppState:
 def create_app(state: AppState | None = None) -> FastAPI:
     app = FastAPI(title="MissionTwin", version="0.1.0", description=BANNER)
     holder = {"s": state}
+    init_lock = threading.Lock()
 
     def S() -> AppState:
-        if holder["s"] is None:
-            holder["s"] = AppState()
-        return holder["s"]
+        if holder['s'] is None:
+            with init_lock:
+                if holder['s'] is None:
+                    holder['s'] = AppState()
+        return holder['s']
 
     app.state.get = S
 
@@ -277,6 +280,45 @@ def create_app(state: AppState | None = None) -> FastAPI:
             raise HTTPException(422, f"Invalid proposal: {error}")
         return {"base_version": body.base_version, "before": before, "after": after,
                 "persisted": False, "proposal": body.model_dump(mode="json")}
+
+    @app.post('/api/captain/preview')
+    def captain_preview(body: CaptainPreviewBody):
+        from datetime import timedelta
+        s = S()
+        with s.lock:
+            s.check_version(body.base_version)
+            _ship(body.ship_id)
+            candidate = s.scenario.fork()
+            before = s.fc()
+            for change in body.changes:
+                kind, node = change.get('kind'), str(change.get('node', ''))
+                world = build_world(candidate)
+                action = {'ship_id': body.ship_id}
+                if kind == 'shiftMission':
+                    event_id = change.get('mission')
+                    if not any(m.event_id == event_id for m in world.ships[body.ship_id].missions):
+                        raise HTTPException(422, 'Event is not assigned to the selected ship')
+                    action = {'type': 'shift_mission', 'event_id': event_id, 'days': change.get('days')}
+                elif kind == 'removePerson':
+                    action.update(type='remove_person', member_id=node.split('member:')[-1], from_time=iso(candidate.cursor_dt()))
+                elif kind == 'delayPart':
+                    item = next((i for i in world.ships[body.ship_id].items if node.endswith('|' + i.key) and i.doc_number), None)
+                    if item is None: raise HTTPException(422, 'This node has no linked active requisition to delay')
+                    try: days = float(change['hours']) / 24
+                    except (KeyError, TypeError, ValueError): raise HTTPException(422, 'A numeric delay is required')
+                    action.update(type='delay_part', doc_number=item.doc_number, days=days)
+                elif kind == 'casrep':
+                    category = change.get('category')
+                    if category not in ('C2', 'C3', 'C4'): raise HTTPException(422, 'Only hypothetical C2/C3/C4 casualties are supported; source cancellations are read-only')
+                    eic = node.split('|system:')[-1].split('|')[0].removeprefix('system:')
+                    action.update(type='add_casrep', eic=eic, category=int(category[1:]), etr=iso(candidate.cursor_dt() + timedelta(days=7)))
+                else:
+                    raise HTTPException(422, 'Unsupported preview change')
+                action = ActionAdapter.validate_python(action).model_dump(mode='json')
+                s.validate_action(action)
+                candidate.apply('action', action, actor='preview')
+            after = forecast(build_world(candidate))
+            return {'base_version': body.base_version, 'before': before, 'after': after, 'persisted': False}
 
     @app.get("/api/graph/{ship_id}")
     def graph(ship_id: str, event_id: str | None = None):

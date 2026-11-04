@@ -13,7 +13,7 @@ test('source replacement refreshes the live workspace without restarting', async
   await request.post('/api/events/play', { data: { base_version: await version() } });
   const before = await (await request.get('/api/dashboard')).json();
   try {
-    await page.goto('/');
+    await page.goto('/?legacy=1');
     await page.getByRole('button', { name: 'Evidence & feed', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Source health & refresh' })).toBeVisible();
     await writeFile(file, original.replace('BB 2026-11-05', 'BB 2026-11-12'), 'utf8');
@@ -48,7 +48,7 @@ test('invalid assumption preview leaves exercise unchanged and explains the erro
   const initial = await (await request.get('/api/scenario/version')).json();
   await request.post('/api/reset', { data: { base_version: initial.version } });
   const before = await (await request.get('/api/scenario/version')).json();
-  await page.goto('/');
+  await page.goto('/?legacy=1');
   await page.getByRole('button', { name: 'What-if lab', exact: true }).click();
   await page.getByLabel('Proposal', { exact: true }).selectOption('assumption');
   await page.getByLabel('Editable parameter').selectOption('repair_after_part_days.min');
@@ -67,7 +67,7 @@ test('system evidence remains accessible without WebGL', async ({ page }) => {
       },
     });
   });
-  await page.goto('/');
+  await page.goto('/?legacy=1');
   await page.getByRole('button', { name: 'Ship overview', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('3D rendering is unavailable');
   await page.locator('.system-grid button').filter({ hasText: 'SPY1D-CW' }).click();

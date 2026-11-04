@@ -8,6 +8,10 @@ The demonstration should answer: **Which event is at risk, why, what could impro
 
 **Delivery status:** the five core implementation items below are now implemented on `feature/locker-readiness-dashboard`. The existing application was extended, not rebuilt. Source replacement is demonstrated with live refresh and a second synthetic export adapter. This is a synthetic prototype, not an operational integration platform.
 
+## Subsequent captain UI integration
+
+The default UI now uses Sakie's layout with backend-connected data, named missions, a top-level ship selector and DDG-only cutaway/interior visualization. The prior advanced workspace remains at `/?legacy=1`. The latest integration verification is **74 backend tests and 11 browser tests passed**, plus frontend typecheck/build. See [UI integration scope and remaining merge work](docs/UI_INTEGRATION.md); the extraction evaluator, generalized node time series and STW additions are not yet merged. The original implementation verification below is retained as historical context.
+
 ## Implementation delivered
 
 | Core item | Delivered behavior / implementation |

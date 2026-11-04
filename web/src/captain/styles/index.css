@@ -1,0 +1,210 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    /* Large base size: this is shown on a projector. */
+    font-size: 17px;
+  }
+  @media (min-width: 1800px) {
+    :root {
+      font-size: 18px;
+    }
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-abyss-950 font-sans text-ink antialiased;
+    font-feature-settings: 'cv11', 'ss01', 'tnum';
+  }
+
+  ::selection {
+    background: rgba(34, 211, 238, 0.35);
+  }
+
+  :focus-visible {
+    outline: 2px solid #22d3ee;
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(140, 180, 220, 0.25) transparent;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply rounded-2xl border border-line bg-abyss-850/70 shadow-glass backdrop-blur-md;
+  }
+  .glass-strong {
+    @apply rounded-2xl border border-line-strong bg-abyss-800/85 shadow-glass backdrop-blur-xl;
+  }
+  .hairline {
+    @apply border-line;
+  }
+  .label-caps {
+    /* 14px+ and #9fb0c6: the old 12px #6b7d95 caps failed contrast on a projector. */
+    @apply text-sm font-semibold uppercase tracking-[0.12em] text-ink-muted;
+  }
+  .num {
+    @apply font-mono tabular-nums;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-ghost {
+    @apply btn border-line bg-white/[0.02] text-ink-muted hover:border-line-strong hover:bg-white/[0.05] hover:text-ink;
+  }
+  .btn-accent {
+    @apply btn border-accent/60 bg-accent/15 text-accent hover:bg-accent/25 hover:shadow-focus;
+  }
+  .btn-ready {
+    @apply btn border-ready/50 bg-ready/15 text-ready hover:bg-ready/25;
+  }
+  .btn-risk {
+    @apply btn border-risk/60 bg-risk/15 text-risk hover:bg-risk/25;
+  }
+  /* Stale data: grey diagonal stripes */
+  .stale-stripes {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      rgba(148, 163, 184, 0.22) 0 6px,
+      rgba(148, 163, 184, 0.06) 6px 12px
+    );
+  }
+  .scanline::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent, rgba(34, 211, 238, 0.05), transparent);
+    background-size: 100% 6px;
+    opacity: 0.25;
+    border-radius: inherit;
+  }
+}
+
+/* React Flow theming */
+.locker-flow {
+  --xy-background-color: transparent;
+  --xy-edge-stroke: rgba(140, 180, 220, 0.28);
+  --xy-controls-button-background-color: rgba(11, 21, 36, 0.92);
+  --xy-controls-button-background-color-hover: rgba(26, 42, 68, 0.95);
+  --xy-controls-button-color: #9fb0c6;
+  --xy-controls-button-color-hover: #e6eef8;
+  --xy-controls-button-border-color: rgba(140, 180, 220, 0.14);
+}
+.locker-flow .react-flow__node {
+  /* Nodes glide when the layout changes (new sailor, schedule shift). */
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: pointer;
+}
+.locker-flow .react-flow__node:focus-visible {
+  outline: none;
+}
+.locker-flow .react-flow__controls {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(140, 180, 220, 0.14);
+  box-shadow: none;
+}
+.locker-flow .react-flow__controls-button {
+  width: 34px;
+  height: 34px;
+}
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  :root {
+    font-size: 11pt;
+  }
+  html,
+  body,
+  #root {
+    height: auto !important;
+  }
+  body {
+    background: #fff !important;
+    background-image: none !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* ---- 3D ship model (src/components/ship3d) ---- */
+.s3-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  outline: none;
+  touch-action: none;
+}
+.s3-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.s3-leaders {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.s3-lb {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  white-space: nowrap;
+  background: rgba(6, 11, 20, 0.92);
+  border: 1px solid;
+  border-radius: 8px;
+  padding: 3px 9px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #e6eef8;
+  text-align: left;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.s3-lb:hover {
+  filter: brightness(1.25);
+}
+.s3-lb:focus-visible {
+  outline: 2px solid #22d3ee;
+  outline-offset: 2px;
+}
+.s3-lb small {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.s3-lb small.s3-dom {
+  color: #fb4d5d;
+  letter-spacing: 0.12em;
+}
+.s3-lb.dn {
+  transform: translate(-50%, 0);
+}
+.s3-lb.dom {
+  box-shadow: 0 0 22px -6px rgba(251, 77, 93, 0.9);
+}
+.s3-stage {
+  background: radial-gradient(ellipse at 50% 38%, #14354f 0%, #09131f 52%, #04080f 100%);
+}
