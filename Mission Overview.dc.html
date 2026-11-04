@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#1a1d22;font-family:Inter,system-ui,sans-serif}a{color:#22d3ee}a:hover{color:#67e8f9}</style>
+</helmet>
+<section style="display:flex;flex-wrap:wrap;gap:48px;padding:48px;align-items:flex-start">
+
+<div style="width:420px;color:#e6eef8;background:#0b1524;border:1px solid rgba(140,180,220,.2);border-radius:16px;padding:28px">
+  <div style="font:700 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#22d3ee">ANALYSIS · MISSION OVERVIEW</div>
+  <h2 style="margin:8px 0 16px;font-size:24px;line-height:1.2">What's working, what isn't</h2>
+  <div style="font-size:15px;line-height:1.5;color:#c3d0e0">
+    <p style="margin:0 0 10px"><b style="color:#34d399">Keep:</b> status is never color-only (icon + label), threshold ticks at 50/82%, record-ID chips, STOP always visible, projector-scale type.</p>
+    <sc-for list="{{ findings }}" as="f" hint-placeholder-count="6">
+      <div style="display:flex;gap:12px;margin-top:14px">
+        <div style="flex:none;width:26px;height:26px;border-radius:50%;background:rgba(251,191,36,.16);color:#fbbf24;font:700 13px 'JetBrains Mono',monospace;display:grid;place-items:center">{{ f.n }}</div>
+        <div><div style="font-weight:700;color:#e6eef8">{{ f.title }}</div><div style="color:#9fb0c6">{{ f.body }}</div></div>
+      </div>
+    </sc-for>
+    <p style="margin:20px 0 0;color:#6b7d95;font-size:13px">Mission data (TIDEWATCH 41%, next domino TR Module) follows the demo storyline; SEASHIELD / DEEP LANTERN odds and feed counts are sample values.</p>
+  </div>
+</div>
+
+<div id="2b" style="display:flex;flex-direction:column;gap:12px">
+  <div style="font:700 13px 'JetBrains Mono',monospace;color:#22d3ee;letter-spacing:.1em"><a href="#2b" style="text-decoration:none">2B</a> · PROPOSED</div>
+  <div style="width:1440px;height:900px;overflow:hidden;background:#060b14;color:#e6eef8;display:flex;flex-direction:column;border-radius:8px;border:1px solid rgba(140,180,220,.2)">
+    <div style="display:flex;align-items:center;gap:20px;padding:12px 24px;border-bottom:1px solid rgba(140,180,220,.14);background:#060b14">
+      <svg viewBox="0 0 40 40" width="36" height="36"><defs><linearGradient id="lk36" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee" stop-opacity=".9"></stop><stop offset="1" stop-color="#22d3ee" stop-opacity="0"></stop></linearGradient></defs><rect x=".5" y=".5" width="39" height="39" rx="10" fill="#08101c" stroke="rgba(140,180,220,.25)"></rect><circle cx="20" cy="20" r="13" fill="none" stroke="#22d3ee" stroke-opacity=".55" stroke-width="1.3"></circle><circle cx="20" cy="20" r="7.5" fill="none" stroke="#22d3ee" stroke-opacity=".3" stroke-width="1.1"></circle><line x1="7" y1="20" x2="33" y2="20" stroke="#22d3ee" stroke-opacity=".15"></line><line x1="20" y1="7" x2="20" y2="33" stroke="#22d3ee" stroke-opacity=".15"></line><path d="M20 20 L20 7 A13 13 0 0 1 31.3 13.5 Z" fill="url(#lk36)" opacity=".55"></path><line x1="20" y1="20" x2="20" y2="7" stroke="#22d3ee" stroke-width="1.6" stroke-linecap="round"></line><circle cx="26.5" cy="24.5" r="2.1" fill="#fb4d5d"></circle><circle cx="20" cy="20" r="1.4" fill="#22d3ee"></circle></svg>
+      <span style="font-size:22px;font-weight:800;letter-spacing:.22em">LOCKER</span>
+      <span style="border-left:1px solid rgba(140,180,220,.14);padding-left:20px;font-size:15px;color:#9fb0c6"><b style="color:#e6eef8">USS Kestrel Bay</b> · deploys in 21 days</span>
+      <span style="margin-left:auto;font-size:14px;color:#fbbf24;border:1px solid rgba(251,191,36,.45);border-radius:10px;padding:8px 12px">2 of 7 feeds stale · oldest 3 d</span>
+      <span style="font-weight:800;letter-spacing:.16em;font-size:15px;color:#e6eef8;border:2px solid #e6eef8;border-radius:10px;padding:9px 18px"><svg style="vertical-align:-3px;margin-right:6px" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg>STOP</span>
+    </div>
+    <div style="display:flex;flex:1;min-height:0">
+      <nav style="width:220px;flex:none;border-right:1px solid rgba(140,180,220,.14);padding:16px 12px;display:flex;flex-direction:column;gap:2px">
+        <sc-for list="{{ navV2 }}" as="n" hint-placeholder-count="8">
+          <div style="padding:11px 14px;border-radius:10px;font-size:15px;font-weight:600;color:{{ n.color }};background:{{ n.bg }}">{{ n.label }}</div>
+        </sc-for>
+      </nav>
+      <main style="flex:1;padding:32px 40px;overflow:hidden">
+        <div style="font:600 14px Inter;color:#9fb0c6;letter-spacing:.04em">MISSION OVERVIEW · NEXT 30 DAYS</div>
+        <h1 style="margin:8px 0 0;font-size:34px;line-height:1.15;letter-spacing:-.01em;max-width:900px"><span style="color:#fb4d5d">TIDEWATCH</span> needs action: 41% odds, 11 days out. Fix the <span style="border-bottom:2px solid #fb4d5d">TR Module</span> first.</h1>
+        <div style="display:flex;gap:28px;margin-top:16px;font-size:16px;color:#c3d0e0">
+          <span><b style="color:#fb4d5d">1</b> At risk</span><span><b style="color:#fbbf24">1</b> Watch</span><span><b style="color:#34d399">1</b> Ready</span>
+        </div>
+        <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:22px;font:500 12px 'JetBrains Mono',monospace;color:#9fb0c6">
+          <span>▏50% watch threshold</span><span>▏82% ready threshold</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-top:6px">
+          <sc-for list="{{ missions }}" as="m" hint-placeholder-count="3">
+            <div style="display:grid;grid-template-columns:240px 1fr 320px;gap:32px;align-items:center;background:#0b1524;border:1px solid {{ m.line }};border-left:6px solid {{ m.hex }};border-radius:12px;padding:{{ m.pad }}">
+              <div>
+                <div style="display:inline-flex;gap:8px;align-items:center;font-weight:700;font-size:14px;color:{{ m.hex }}"><sc-if value="{{ m.isRisk }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="{{ m.hex }}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg></sc-if><sc-if value="{{ m.isWatch }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="{{ m.hex }}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg></sc-if><sc-if value="{{ m.isReady }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="{{ m.hex }}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg></sc-if>{{ m.label }}</div>
+                <div style="font-size:26px;font-weight:800;letter-spacing:.03em;margin-top:6px">{{ m.code }}</div>
+                <div style="font-size:15px;color:#9fb0c6">{{ m.name }}</div>
+                <div style="margin-top:8px;font:500 14px 'JetBrains Mono',monospace;color:#c3d0e0">{{ m.days }} days · {{ m.date }}</div>
+              </div>
+              <div>
+                <div style="display:flex;align-items:baseline;gap:14px">
+                  <span style="font:700 52px/1 'JetBrains Mono',monospace;color:{{ m.hex }}">{{ m.pct }}%</span>
+                  <span style="font:600 15px 'JetBrains Mono',monospace;color:{{ m.deltaColor }}">{{ m.delta }} pts since baseline</span>
+                </div>
+                <div style="position:relative;height:12px;border-radius:6px;background:rgba(140,180,220,.14);margin-top:14px">
+                  <div style="height:100%;width:{{ m.pct }}%;border-radius:6px;background:{{ m.hex }}"></div>
+                  <div style="position:absolute;left:50%;top:-5px;width:2px;height:22px;background:#e6eef8"></div>
+                  <div style="position:absolute;left:82%;top:-5px;width:2px;height:22px;background:#e6eef8"></div>
+                </div>
+                <svg viewBox="0 0 300 40" preserveAspectRatio="none" style="width:100%;height:34px;margin-top:10px;display:block"><polyline points="{{ m.spark }}" fill="none" stroke="{{ m.hex }}" stroke-width="2.5" vector-effect="non-scaling-stroke"></polyline></svg>
+              </div>
+              <div>
+                <div style="font:700 12px Inter;letter-spacing:.14em;color:{{ m.dominoColor }}">NEXT DOMINO</div>
+                <div style="font-size:20px;font-weight:700;margin-top:4px">{{ m.domino }}</div>
+                <div style="font-size:15px;line-height:1.4;color:#9fb0c6;margin-top:2px">{{ m.reason }}</div>
+                <div style="display:flex;gap:10px;margin-top:12px;align-items:center">
+                  <span style="background:{{ m.btnBg }};color:{{ m.btnFg }};border:1px solid {{ m.btnBorder }};border-radius:10px;padding:9px 16px;font-weight:700;font-size:15px">{{ m.cta }} →</span>
+                  <span style="font:500 13px 'JetBrains Mono',monospace;color:#22d3ee">{{ m.record }}</span>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+<div id="1a" style="display:flex;flex-direction:column;gap:12px">
+  <div style="font:700 13px 'JetBrains Mono',monospace;color:#9fb0c6;letter-spacing:.1em"><a href="#1a" style="text-decoration:none;color:#9fb0c6">1A</a> · CURRENT (recreated)</div>
+  <div style="width:1440px;min-height:1280px;overflow:hidden;background:#03060c;background-image:radial-gradient(1200px 700px at 70% -10%,rgba(34,211,238,.07),transparent 60%),linear-gradient(rgba(140,180,220,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(140,180,220,.045) 1px,transparent 1px);background-size:auto,40px 40px,40px 40px;color:#e6eef8;display:flex;flex-direction:column;border-radius:8px;font-size:17px">
+    <div style="display:flex;align-items:center;gap:24px;padding:14px 24px;border-bottom:1px solid rgba(140,180,220,.14);background:rgba(6,11,20,.8)">
+      <div style="display:flex;align-items:center;gap:14px">
+        <svg viewBox="0 0 40 40" width="44" height="44"><defs><linearGradient id="lk44" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee" stop-opacity=".9"></stop><stop offset="1" stop-color="#22d3ee" stop-opacity="0"></stop></linearGradient></defs><rect x=".5" y=".5" width="39" height="39" rx="10" fill="#08101c" stroke="rgba(140,180,220,.25)"></rect><circle cx="20" cy="20" r="13" fill="none" stroke="#22d3ee" stroke-opacity=".55" stroke-width="1.3"></circle><circle cx="20" cy="20" r="7.5" fill="none" stroke="#22d3ee" stroke-opacity=".3" stroke-width="1.1"></circle><line x1="7" y1="20" x2="33" y2="20" stroke="#22d3ee" stroke-opacity=".15"></line><line x1="20" y1="7" x2="20" y2="33" stroke="#22d3ee" stroke-opacity=".15"></line><path d="M20 20 L20 7 A13 13 0 0 1 31.3 13.5 Z" fill="url(#lk44)" opacity=".55"></path><line x1="20" y1="20" x2="20" y2="7" stroke="#22d3ee" stroke-width="1.6" stroke-linecap="round"></line><circle cx="26.5" cy="24.5" r="2.1" fill="#fb4d5d"></circle><circle cx="20" cy="20" r="1.4" fill="#22d3ee"></circle></svg>
+        <div style="line-height:1.2"><div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:26px;font-weight:800;letter-spacing:.22em">LOCKER</span><span style="border:1px solid rgba(34,211,238,.3);border-radius:6px;padding:2px 6px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#22d3ee">READINESS</span></div><div style="font-size:12px;color:#6b7d95">See what's headed for Davy Jones' Locker before it sinks the mission.</div></div>
+      </div>
+      <div style="border-left:1px solid rgba(140,180,220,.14);padding-left:24px;line-height:1.2"><div style="font-size:17px;font-weight:600">USS Kestrel Bay</div><div style="font-size:12px;color:#6b7d95">DDG-1047 (fictional) · deploys in 21 days</div></div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:16px">
+        <div style="border:1px solid rgba(148,163,184,.4);border-radius:12px;padding:8px 14px;line-height:1.2"><div style="font-size:12px;color:#6b7d95">Data freshness</div><div style="font-size:14px;font-weight:600">2 feeds stale</div></div>
+        <div style="background:#fb4d5d;border-radius:12px;padding:12px 20px;font-weight:800;letter-spacing:.18em;color:#fff;box-shadow:0 0 24px -6px rgba(251,77,93,.9)"><svg style="vertical-align:-4px;margin-right:6px" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg>STOP</div>
+      </div>
+    </div>
+    <div style="display:flex;flex:1;min-height:0">
+      <nav style="width:264px;flex:none;border-right:1px solid rgba(140,180,220,.14);background:rgba(6,11,20,.7);display:flex;flex-direction:column">
+        <div style="flex:1;padding:20px 12px;display:flex;flex-direction:column;gap:4px">
+          <sc-for list="{{ navV1 }}" as="n" hint-placeholder-count="8">
+            <div style="padding:12px 14px;border-radius:12px;border:1px solid {{ n.border }};background:{{ n.bg }};box-shadow:{{ n.shadow }}">
+              <div style="font-size:16px;font-weight:600;color:{{ n.color }}">{{ n.label }}</div><div style="font-size:12px;color:#6b7d95">{{ n.hint }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="border-top:1px solid rgba(140,180,220,.14);padding:16px"><div style="border:1px solid rgba(140,180,220,.14);border-radius:12px;padding:10px;text-align:center;font-size:14px;font-weight:600;color:#9fb0c6">Reset demo</div><div style="font-size:12px;color:#6b7d95;margin-top:12px">Offline · demo data · fictional</div></div>
+      </nav>
+      <main style="flex:1;padding:24px 32px;overflow:hidden">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap">
+          <div>
+            <h1 style="margin:0;font-size:37px;font-weight:700;letter-spacing:-.01em;line-height:1.15">Mission Overview</h1>
+            <p style="margin:4px 0 0;font-size:19px;color:#9fb0c6">Will <b style="color:#e6eef8">USS Kestrel Bay</b> be ready for each mission in the next 30 days?</p>
+            <p style="margin:4px 0 0;font-size:19px;color:#9fb0c6">Closest concern: <b style="color:#fb4d5d">TIDEWATCH</b> in <b style="font-family:'JetBrains Mono',monospace;color:#e6eef8">11</b> days. Next domino: <b style="color:#e6eef8">TR Module</b>.</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <sc-for list="{{ counts }}" as="c" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:10px;border:1px solid {{ c.border }};background:{{ c.bg }};border-radius:12px;padding:10px 16px"><sc-if value="{{ c.isRisk }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="{{ c.hex }}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg></sc-if><sc-if value="{{ c.isWatch }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="{{ c.hex }}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg></sc-if><sc-if value="{{ c.isReady }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="{{ c.hex }}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg></sc-if><span style="font:700 24px 'JetBrains Mono',monospace">{{ c.n }}</span><span style="font-size:14px;color:#9fb0c6">{{ c.label }}</span></div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="margin-top:20px;display:flex;align-items:center;gap:24px;border:1px solid rgba(148,163,184,.45);background:rgba(8,16,28,.7);border-radius:16px;padding:12px 20px">
+          <div style="width:44px;height:44px;border-radius:12px;border:1px solid rgba(148,163,184,.5);background:repeating-linear-gradient(-45deg,rgba(148,163,184,.22) 0 6px,rgba(148,163,184,.06) 6px 12px)"></div>
+          <div><div style="font-size:19px;font-weight:600">2 of 7 data feeds are stale</div><div style="font-size:14px;color:#9fb0c6">Items using stale data show a striped age badge. Confirm them before acting.</div></div>
+          <div style="margin-left:auto;display:flex;gap:8px;font-size:14px"><span style="border:1px solid rgba(148,163,184,.4);border-radius:8px;padding:6px 10px">Supply (NAVSUP) 3 d old</span><span style="border:1px solid rgba(52,211,153,.3);border-radius:8px;padding:6px 10px;color:#9fb0c6"><b style="color:#34d399">5</b> feeds current</span></div>
+        </div>
+        <div style="margin-top:24px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px">
+          <sc-for list="{{ missions }}" as="m" hint-placeholder-count="3">
+            <article style="background:rgba(8,16,28,.7);border:1px solid {{ m.line }};border-radius:16px;overflow:hidden;box-shadow:{{ m.glow }}">
+              <div style="height:6px;background:{{ m.hex }}"></div>
+              <div style="padding:20px 20px 20px">
+                <div style="display:flex;justify-content:space-between;gap:8px">
+                  <div style="min-width:0"><div style="font:600 11.5px Inter;letter-spacing:.16em;color:#6b7d95"><svg style="vertical-align:-2px" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" x2="4" y1="22" y2="15"></line></svg> OPERATION <span style="font:500 11px 'JetBrains Mono',monospace;color:#22d3ee;border:1px solid rgba(34,211,238,.3);border-radius:6px;padding:1px 5px;letter-spacing:0">{{ m.record }}</span></div><div style="font-size:29px;font-weight:800;letter-spacing:.03em;line-height:1.2;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ m.code }}</div><div style="font-size:16px;color:#9fb0c6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ m.name }}</div></div>
+                  <div style="align-self:flex-start;display:inline-flex;gap:6px;align-items:center;border:1px solid {{ m.line }};background:{{ m.soft }};color:{{ m.hex }};border-radius:99px;padding:6px 12px;font-weight:600;font-size:16px;white-space:nowrap"><sc-if value="{{ m.isRisk }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="{{ m.hex }}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg></sc-if><sc-if value="{{ m.isWatch }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="{{ m.hex }}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg></sc-if><sc-if value="{{ m.isReady }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="{{ m.hex }}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg></sc-if> {{ m.label }}</div>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:center;margin-top:12px">
+                  <div style="position:relative;width:176px;height:176px;flex:none">
+                    <svg viewBox="0 0 200 200" style="width:100%;height:100%"><circle cx="100" cy="100" r="82" fill="none" stroke="rgba(140,180,220,.12)" stroke-width="14" stroke-linecap="round" stroke-dasharray="386.4 1000" transform="rotate(135 100 100)"></circle><circle cx="100" cy="100" r="82" fill="none" stroke="{{ m.hex }}" stroke-width="14" stroke-linecap="round" stroke-dasharray="{{ m.dash }} 1000" transform="rotate(135 100 100)"></circle><line x1="{{ m.t1x1 }}" y1="{{ m.t1y1 }}" x2="{{ m.t1x2 }}" y2="{{ m.t1y2 }}" stroke="rgba(230,238,248,.45)" stroke-width="1.5"></line><line x1="{{ m.t2x1 }}" y1="{{ m.t2y1 }}" x2="{{ m.t2x2 }}" y2="{{ m.t2y2 }}" stroke="rgba(230,238,248,.45)" stroke-width="1.5"></line></svg>
+                    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font:700 42px/1 'JetBrains Mono',monospace;color:{{ m.hex }}">{{ m.pct }}%</span><span style="font:600 11.5px Inter;letter-spacing:.16em;color:#6b7d95;margin-top:4px">ODDS READY</span></div>
+                  </div>
+                  <div style="flex:1;min-width:140px;display:flex;flex-direction:column;gap:12px">
+                    <div><div style="font:600 11.5px Inter;letter-spacing:.16em;color:#6b7d95">DAYS OUT</div><div style="font:700 42px/1 'JetBrains Mono',monospace">{{ m.days }} <span style="font:400 17px Inter;color:#9fb0c6">days</span></div><div style="font:500 13px 'JetBrains Mono',monospace;color:#6b7d95;margin-top:4px">{{ m.date }}</div></div>
+                    <div><div style="font:600 11.5px Inter;letter-spacing:.16em;color:#6b7d95">SINCE BASELINE</div><div style="font:700 20px 'JetBrains Mono',monospace;color:{{ m.deltaColor }}">{{ m.delta }} pts</div></div>
+                    <div><div style="font:600 11.5px Inter;letter-spacing:.16em;color:#6b7d95">FLAGGED ITEMS</div><div style="font:700 20px 'JetBrains Mono',monospace">{{ m.flagged }}</div></div>
+                  </div>
+                </div>
+                <div style="margin-top:8px"><div style="font:600 11.5px Inter;letter-spacing:.16em;color:#6b7d95">ODDS TREND</div><svg viewBox="0 0 300 56" preserveAspectRatio="none" style="width:100%;height:64px;display:block"><line x1="0" x2="300" y1="10" y2="10" stroke="rgba(52,211,153,.35)" stroke-dasharray="4 4"></line><line x1="0" x2="300" y1="28" y2="28" stroke="rgba(251,77,93,.35)" stroke-dasharray="4 4"></line><polyline points="{{ m.spark1 }}" fill="none" stroke="{{ m.hex }}" stroke-width="2.5" vector-effect="non-scaling-stroke"></polyline></svg></div>
+                <div style="margin-top:12px;border:1px solid {{ m.dominoBorder }};background:{{ m.dominoBg }};border-radius:12px;padding:12px 16px">
+                  <div style="font:800 12px Inter;letter-spacing:.16em;color:{{ m.dominoColor }}"><svg style="vertical-align:-3px" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="22" x2="18" y1="12" y2="12"></line><line x1="6" x2="2" y1="12" y2="12"></line><line x1="12" x2="12" y1="6" y2="2"></line><line x1="12" x2="12" y1="22" y2="18"></line></svg> NEXT DOMINO</div><div style="font-size:18px;font-weight:600">{{ m.domino }}</div><div style="font-size:14px;line-height:1.35;color:#9fb0c6">{{ m.reason }}</div>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:16px"><span style="border:1px solid rgba(34,211,238,.6);background:rgba(34,211,238,.15);color:#22d3ee;border-radius:12px;padding:10px 16px;font-weight:600;font-size:14px">Dominoes</span><span style="border:1px solid rgba(140,180,220,.14);color:#9fb0c6;border-radius:12px;padding:10px 16px;font-weight:600;font-size:14px">Fixes →</span></div>
+              </div>
+            </article>
+          </sc-for>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const S = {
+      risk: { hex: '#fb4d5d', label: 'At risk', glyph: '✕', soft: 'rgba(251,77,93,.16)', line: 'rgba(251,77,93,.6)' },
+      watch: { hex: '#fbbf24', label: 'Watch', glyph: '!', soft: 'rgba(251,191,36,.14)', line: 'rgba(251,191,36,.55)' },
+      ready: { hex: '#34d399', label: 'Ready', glyph: '✓', soft: 'rgba(52,211,153,.14)', line: 'rgba(52,211,153,.4)' },
+    };
+    const sp = (arr, h) => arr.map((v, i) => `${(i / (arr.length - 1)) * 300},${h - v * (h - 4) - 2}`).join(' ');
+    const raw = [
+      { code: 'TIDEWATCH', name: 'Strait Transit Escort', st: 'risk', odds: 0.41, days: 11, date: 'Sun, 15 Nov', base: 0.84, flagged: 5, record: 'OPS-KB-TW01', hist: [0.84, 0.8, 0.66, 0.52, 0.41], domino: 'TR Module', reason: 'Requisition: TR module assembly. Illustrative wording.', cta: 'Open dominoes' },
+      { code: 'SEASHIELD', name: 'Air Defense Exercise', st: 'watch', odds: 0.71, days: 16, date: 'Fri, 20 Nov', base: 0.86, flagged: 3, record: 'OPS-KB-SS02', hist: [0.86, 0.84, 0.78, 0.71, 0.71], domino: 'FCD-2 fire control director', reason: 'Illustrative: sample dependency.', cta: 'Review fixes' },
+      { code: 'DEEP LANTERN', name: 'Replenishment & ASW Patrol', st: 'ready', odds: 0.9, days: 21, date: 'Wed, 25 Nov', base: 0.9, flagged: 1, record: 'OPS-KB-DL03', hist: [0.9, 0.9, 0.9, 0.9, 0.9], domino: 'TA-9 towed array', reason: 'Illustrative: sample dependency.', cta: 'View' },
+    ];
+    const missions = raw.map((r) => {
+      const s = S[r.st], d = Math.round((r.odds - r.base) * 100), risk = r.st === 'risk', ready = r.st === 'ready';
+      return {
+        ...s, isRisk: r.st==='risk', isWatch: r.st==='watch', isReady: r.st==='ready', code: r.code, name: r.name, days: r.days, date: r.date, flagged: r.flagged, record: r.record, domino: r.domino, reason: r.reason,
+        ...(()=>{const pt=(deg,rad)=>{const a=(deg-90)*Math.PI/180;return [100+rad*Math.cos(a),100+rad*Math.sin(a)]};const o={};[[0.5,'t1'],[0.82,'t2']].forEach(([p,k])=>{const a=pt(225+270*p,69),b=pt(225+270*p,95);o[k+'x1']=a[0].toFixed(1);o[k+'y1']=a[1].toFixed(1);o[k+'x2']=b[0].toFixed(1);o[k+'y2']=b[1].toFixed(1)});return o})(), pct: Math.round(r.odds * 100), dash: (r.odds * 386.4).toFixed(1),
+        delta: (d > 0 ? '+' : '') + d, deltaColor: d < 0 ? '#fb4d5d' : d > 0 ? '#34d399' : '#9fb0c6',
+        spark: sp(r.hist, 40), spark1: sp(r.hist, 56),
+        glow: risk ? '0 0 60px -28px rgba(251,77,93,.9)' : 'none',
+        dominoColor: ready ? '#fbbf24' : '#fb4d5d', dominoBorder: ready ? 'rgba(251,191,36,.4)' : 'rgba(251,77,93,.6)', dominoBg: ready ? 'rgba(251,191,36,.06)' : '#2a0b12',
+        pad: risk ? '26px 28px' : '18px 28px', cta: r.cta,
+        btnBg: risk ? '#22d3ee' : 'transparent', btnFg: risk ? '#03060c' : '#22d3ee', btnBorder: risk ? '#22d3ee' : 'rgba(34,211,238,.5)',
+      };
+    });
+    const counts = ['risk', 'watch', 'ready'].map((k) => ({ ...S[k], isRisk: k==='risk', isWatch: k==='watch', isReady: k==='ready', n: 1, bg: S[k].soft, border: S[k].line }));
+    const labels = ['Ship Overview', 'Mission Overview', "Davy's Dominoes", 'Fixes', 'Change Feed', 'What-If', 'Readiness Brief', 'Activity Log'];
+    const hints = ['Every system, stem to stern', 'Odds for every mission', 'What depends on what', 'Ranked, needs approval', 'Incoming events', 'Test a change safely', 'Printable summary', 'Every action, recorded'];
+    const navV1 = labels.map((label, i) => { const a = i === 1; return { label, hint: hints[i], color: a ? '#e6eef8' : '#9fb0c6', bg: a ? 'rgba(34,211,238,.09)' : 'transparent', border: a ? 'rgba(34,211,238,.4)' : 'transparent', shadow: a ? 'inset 3px 0 0 0 #22d3ee' : 'none' }; });
+    const navV2 = labels.map((label, i) => { const a = i === 1; return { label, color: a ? '#e6eef8' : '#9fb0c6', bg: a ? 'rgba(34,211,238,.12)' : 'transparent' }; });
+    const findings = [
+      ['Answer is buried', 'The top 330px is title, two sentences, count chips and a banner. The real answer (TIDEWATCH, 41%, TR Module) is in grey body text. Lead with it as the headline.'],
+      ['Three cards, one problem', 'Every card gets equal weight, so the at-risk mission only differs by a glow. Give risk more space and action emphasis; let ready missions shrink.'],
+      ['Gauge hides the thresholds', '270° dial with unlabeled ticks at 50/82 is hard to read at 11 feet. A linear bar with the same markers reads faster and lines up across missions for comparison.'],
+      ['Card overload', 'Per card: badge, ID, gauge, days, delta, flagged, trend, domino, 2 buttons. Flagged count and trend are secondary; fold into one line and a small sparkline.'],
+      ['Low-contrast small text', 'Caps labels (11.5px, #6b7d95) and nav hints sit near 4:1 and are tiny for a projector. Drop most labels, raise the rest to ≥14px #9fb0c6.'],
+      ['Freshness shown 3 times', 'Header chip, banner, and stale badges. Keep one slim header chip plus per-item badges; banner only when a stale feed affects this view.'],
+      ['Red means two things', 'STOP is solid red, same as At risk. Make STOP outlined/neutral so red reads only as mission danger.'],
+      ['Decorative weight', 'Grid background, glows, blur and nav hints add noise. A flat dark surface keeps focus on status colors.'],
+    ].map((x, i) => ({ n: i + 1, title: x[0], body: x[1] }));
+    return { missions, counts, navV1, navV2, findings };
+  }
+}
+</script>
+</body>
+</html>
