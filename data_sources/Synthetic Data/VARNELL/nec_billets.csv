@@ -1,0 +1,39 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+ship_id,uic,billet_id,billet_title,rate_required,nec_required,work_center,fltmps_holder_member_id,holder_prd,gap_start,inbound_member_id,inbound_report_date,as_of,provenance
+VARNELL,99102,B-SPY1D-01,Radar (SPY-1D-style) technician (SYNTH),FC1,F9A1,CF01,M-0607,2027-02-23,2027-02-23,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-SPY1D-02,Radar (SPY-1D-style) technician (SYNTH),FC2,F9A1,CF01,M-0611,2027-03-07,2027-03-07,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-SPY1D-03,Radar (SPY-1D-style) technician (SYNTH),FC2,F9A1,CF01,M-0619,2027-03-31,2027-03-31,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-CIWS-01,Close-in weapon system technician (SYNTH),FC2,F9B2,CF02,M-0614,2027-03-16,2027-03-16,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-CIWS-02,Close-in weapon system technician (SYNTH),FC2,F9B2,CF02,M-0626,2027-04-21,2027-04-21,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-AEGIS-01,Combat direction processor technician (SYNTH),FC1,F9B2,CF01,M-0607,2027-02-23,2027-02-23,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-AEGIS-02,Combat direction processor technician (SYNTH),FC2,F9B2,CF01,M-0611,2027-03-07,2027-03-07,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-AEGIS-03,Combat direction processor technician (SYNTH),FC2,F9B2,CF01,M-0613,2027-03-13,2027-03-13,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-SQQ89-01,Sonar processing suite technician (SYNTH),STG3,S9A1,CA01,M-0603,2027-02-11,2027-02-11,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-SQQ89-02,Sonar processing suite technician (SYNTH),STG3,S9A1,CA01,M-0615,2027-03-19,2027-03-19,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-SQQ89-03,Sonar processing suite technician (SYNTH),STG1,S9A1,CA01,M-0627,2027-04-24,2027-04-24,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-TOWED-01,Towed sensor handling system technician (SYNTH),STG3,S9A1,CA01,M-0603,2027-02-11,2027-02-11,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-TOWED-02,Towed sensor handling system technician (SYNTH),STG3,S9A1,CA01,M-0615,2027-03-19,2027-03-19,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-SONARPROC-01,Acoustic workstation technician (SYNTH),STG3,S9B2,CA01,M-0603,2027-02-11,2027-02-11,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-SONARPROC-02,Acoustic workstation technician (SYNTH),STG3,S9B2,CA01,M-0615,2027-03-19,2027-03-19,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-GUN5-01,Forward gun mount technician (SYNTH),GM2,G9A1,CW01,M-0604,2027-02-14,2027-02-14,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-GUN5-02,Forward gun mount technician (SYNTH),GM2,G9A1,CW01,M-0616,2027-03-22,2027-03-22,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-GUN5-03,Forward gun mount technician (SYNTH),GM2,G9A1,CW01,M-0628,2027-04-27,2027-04-27,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-SURFSEARCH-01,Surface search sensor technician (SYNTH),ET2,E9A1,CE01,M-0605,2027-02-17,2027-02-17,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-SURFSEARCH-02,Surface search sensor technician (SYNTH),ET1,E9A1,CE01,M-0617,2027-03-25,2027-03-25,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-FIRECONTROL-01,Surface fire-control console technician (SYNTH),FC2,F9B2,CF02,M-0614,2027-03-16,2027-03-16,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-FIRECONTROL-02,Surface fire-control console technician (SYNTH),FC2,F9B2,CF02,M-0626,2027-04-21,2027-04-21,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-PROPULSION-01,Propulsion plant technician (SYNTH),GSM3,M9D1,ER01,M-0606,2027-02-20,2027-02-20,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-PROPULSION-02,Propulsion plant technician (SYNTH),GSM3,M9D1,ER01,M-0618,2027-03-28,2027-03-28,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-PROPULSION-03,Propulsion plant technician (SYNTH),GSM3,M9D1,ER01,M-0630,2027-05-03,2027-05-03,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-POWER-01,Electrical generation and distribution technician (SYNTH),EM2,M9E1,EE01,M-0631,2027-05-06,2027-05-06,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-POWER-02,Electrical generation and distribution technician (SYNTH),EM2,M9E1,EE01,M-0643,2027-06-11,2027-06-11,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-POWER-03,Electrical generation and distribution technician (SYNTH),EM2,M9E1,EE01,M-0655,2027-07-17,2027-07-17,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-NAVRADAR-01,Navigation radar technician (SYNTH),QM2,Q9A1,OD01,M-0608,2027-02-26,2027-02-26,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-NAVRADAR-02,Navigation radar technician (SYNTH),QM2,Q9A1,OD01,M-0620,2027-04-03,2027-04-03,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-CSLAN-01,Combat-system local network technician (SYNTH),ET2,E9C1,CE01,M-0605,2027-02-17,2027-02-17,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-CSLAN-02,Combat-system local network technician (SYNTH),ET1,E9C1,CE01,M-0617,2027-03-25,2027-03-25,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-CSLAN-03,Combat-system local network technician (SYNTH),ET2,E9C1,CE01,M-0629,2027-04-30,2027-04-30,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-SATCOM-01,Satellite communications terminal technician (SYNTH),ET2,E9C1,CE01,M-0605,2027-02-17,2027-02-17,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-SATCOM-02,Satellite communications terminal technician (SYNTH),ET1,E9C1,CE01,M-0617,2027-03-25,2027-03-25,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-DATALINK-01,Tactical data-link terminal technician (SYNTH),ET2,E9C1,CE01,M-0605,2027-02-17,2027-02-17,,,2026-11-07T06:00:00Z,placeholder
+VARNELL,99102,B-DATALINK-02,Tactical data-link terminal technician (SYNTH),ET1,E9C1,CE01,M-0617,2027-03-25,2027-03-25,,,2026-11-07T06:00:00Z,placeholder

@@ -1,0 +1,80 @@
+_banner: SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+scenario_now: '2026-11-04T08:00:00Z'
+default_snapshot: '2026-11-07T18:00:00Z'
+seed: 20261104
+horizon_days: 30
+provenance: proposed
+forecast_computed: false
+parameters:
+  bands:
+    value:
+      green: 0.8
+      amber: 0.6
+    evidence: historical public MFOM patent cited in repository
+    applies_to: material index, not probability
+  status_score_map:
+    value:
+      '0': 1.0
+      '1': 0.8
+      '3': 0.6
+      '2': 0.0
+    evidence: historical public MFOM patent; not current policy
+  staleness_threshold_days:
+    value: 5
+    evidence: assumed
+  critical_zero_cap:
+    value: 0.59
+    evidence: assumed
+  part_arrival_days_by_regime:
+    value:
+      NEAR:
+        median: 5
+        sigma: 0.4
+      DUE_IN:
+        median: 45
+        sigma: 0.5
+      LONG:
+        median: 90
+        sigma: 0.6
+      PROCUREMENT:
+        median: 135
+        sigma: 0.7
+    evidence: assumed; not calibrated operational statistics
+  repair_after_part_days:
+    value:
+      min: 1
+      mode: 2
+      max: 4
+    evidence: assumed triangular distribution
+  same_port_transfer_days:
+    value: 1
+    evidence: assumed; approval latency additional
+  approval_lead_days:
+    value:
+      min: 1
+      mode: 2
+      max: 5
+    evidence: assumed, actual authority unverified
+  technical_validation_days:
+    value:
+      min: 1
+      max: 3
+    evidence: assumed
+  transit_days_conus:
+    value: 5
+    evidence: repository ADC 1114 research; delivery standard is not an observed distribution
+rules:
+- Do not interpret material scores as probabilities or official Y/Q/N mappings.
+- Use ESD plus transit when supplied; use regime distributions as an explicitly chosen
+  alternative, not an additional full delay.
+- Repair starts after parts, confirmed assistance and labor are available; add installation
+  and verification.
+- ETR is a reported estimate, not a second independent repair delay.
+- Qualifications and absences apply throughout the event; date-only expirations are
+  valid through 235959Z on that date.
+- A temporary absence interval is start-inclusive/end-exclusive; a permanent transfer
+  has no end.
+- A projected rotation date is not a confirmed movement order.
+- Reserve shared parts and personnel once per scenario; evaluate donor requirements.
+- Unconfirmed document claims remain NEEDS_REVIEW.
+- No surface CASREP-to-rating cap policy is asserted.

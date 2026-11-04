@@ -1,0 +1,142 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "documents": [
+    {
+      "document": "KESSLER/daily_reports/daily_status_KESSLER_20261101.pdf",
+      "ship_id": "KESSLER",
+      "known_at": "2026-11-01T20:00:00Z",
+      "facts": []
+    },
+    {
+      "document": "KESSLER/daily_reports/daily_status_KESSLER_20261102.pdf",
+      "ship_id": "KESSLER",
+      "known_at": "2026-11-02T20:00:00Z",
+      "facts": []
+    },
+    {
+      "document": "KESSLER/daily_reports/daily_status_KESSLER_20261103.pdf",
+      "ship_id": "KESSLER",
+      "known_at": "2026-11-03T20:00:00Z",
+      "facts": []
+    },
+    {
+      "document": "KESSLER/daily_reports/daily_status_KESSLER_20261104.pdf",
+      "ship_id": "KESSLER",
+      "known_at": "2026-11-04T20:00:00Z",
+      "facts": []
+    },
+    {
+      "document": "KESSLER/daily_reports/daily_status_KESSLER_20261105.pdf",
+      "ship_id": "KESSLER",
+      "known_at": "2026-11-05T20:00:00Z",
+      "facts": [
+        {
+          "fact_type": "assist_eta",
+          "casrep_id": "DDG991-26-017",
+          "value": "2026-11-12",
+          "modality": "may",
+          "confidence": "LOW",
+          "review_state": "NEEDS_REVIEW",
+          "source_span": "The technical representative visit may slip to 12 NOV due to travel."
+        }
+      ]
+    },
+    {
+      "document": "KESSLER/daily_reports/daily_status_KESSLER_20261106.pdf",
+      "ship_id": "KESSLER",
+      "known_at": "2026-11-06T20:00:00Z",
+      "facts": [
+        {
+          "fact_type": "assist_eta",
+          "casrep_id": "DDG991-26-017",
+          "value": "2026-11-12",
+          "modality": "may",
+          "confidence": "LOW",
+          "review_state": "NEEDS_REVIEW",
+          "source_span": "The technical representative visit may slip to 12 NOV due to travel."
+        },
+        {
+          "fact_type": "personnel_absence",
+          "member_id": "M-0011",
+          "value": "2026-11-10",
+          "modality": "reported",
+          "confidence": "MEDIUM",
+          "review_state": "CONFIRM_AGAINST_ORDERS",
+          "source_span": "Member M-0011 departs for temporary duty on 10 NOV."
+        }
+      ]
+    },
+    {
+      "document": "VARNELL/daily_reports/daily_status_VARNELL_20261101.pdf",
+      "ship_id": "VARNELL",
+      "known_at": "2026-11-01T20:00:00Z",
+      "facts": []
+    },
+    {
+      "document": "VARNELL/daily_reports/daily_status_VARNELL_20261102.pdf",
+      "ship_id": "VARNELL",
+      "known_at": "2026-11-02T20:00:00Z",
+      "facts": []
+    },
+    {
+      "document": "VARNELL/daily_reports/daily_status_VARNELL_20261103.pdf",
+      "ship_id": "VARNELL",
+      "known_at": "2026-11-03T20:00:00Z",
+      "facts": []
+    },
+    {
+      "document": "VARNELL/daily_reports/daily_status_VARNELL_20261104.pdf",
+      "ship_id": "VARNELL",
+      "known_at": "2026-11-04T20:00:00Z",
+      "facts": []
+    },
+    {
+      "document": "VARNELL/daily_reports/daily_status_VARNELL_20261105.pdf",
+      "ship_id": "VARNELL",
+      "known_at": "2026-11-05T20:00:00Z",
+      "facts": []
+    },
+    {
+      "document": "VARNELL/daily_reports/daily_status_VARNELL_20261106.pdf",
+      "ship_id": "VARNELL",
+      "known_at": "2026-11-06T20:00:00Z",
+      "facts": []
+    },
+    {
+      "document": "ASHBY/daily_reports/daily_status_ASHBY_20261101.pdf",
+      "ship_id": "ASHBY",
+      "known_at": "2026-11-01T20:00:00Z",
+      "facts": []
+    },
+    {
+      "document": "ASHBY/daily_reports/daily_status_ASHBY_20261102.pdf",
+      "ship_id": "ASHBY",
+      "known_at": "2026-11-02T20:00:00Z",
+      "facts": []
+    },
+    {
+      "document": "ASHBY/daily_reports/daily_status_ASHBY_20261103.pdf",
+      "ship_id": "ASHBY",
+      "known_at": "2026-11-03T20:00:00Z",
+      "facts": []
+    },
+    {
+      "document": "ASHBY/daily_reports/daily_status_ASHBY_20261104.pdf",
+      "ship_id": "ASHBY",
+      "known_at": "2026-11-04T20:00:00Z",
+      "facts": []
+    },
+    {
+      "document": "ASHBY/daily_reports/daily_status_ASHBY_20261105.pdf",
+      "ship_id": "ASHBY",
+      "known_at": "2026-11-05T20:00:00Z",
+      "facts": []
+    },
+    {
+      "document": "ASHBY/daily_reports/daily_status_ASHBY_20261106.pdf",
+      "ship_id": "ASHBY",
+      "known_at": "2026-11-06T20:00:00Z",
+      "facts": []
+    }
+  ]
+}

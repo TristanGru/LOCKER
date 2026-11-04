@@ -1,0 +1,48 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "scenario_start": "2026-11-04T08:00:00Z",
+  "default_snapshot": "2026-11-07T18:00:00Z",
+  "replay_rule": "Only reveal facts with known_at <= playback time; effective_at controls when they apply. Latest-state files are NOT historical snapshots.",
+  "events": [
+    {
+      "event_id": "CHANGE-01",
+      "known_at": "2026-11-04T12:00:00Z",
+      "effective_at": "2026-11-04T12:00:00Z",
+      "type": "CASUALTY_INITIAL",
+      "ship_id": "KESSLER",
+      "record_id": "DDG991-26-017"
+    },
+    {
+      "event_id": "CHANGE-02",
+      "known_at": "2026-11-05T10:00:00Z",
+      "effective_at": "2026-11-05T10:00:00Z",
+      "type": "PART_DELAY_AND_ETR_UPDATE",
+      "ship_id": "KESSLER",
+      "record_id": "R991016308A001"
+    },
+    {
+      "event_id": "CHANGE-03",
+      "known_at": "2026-11-05T20:00:00Z",
+      "effective_at": "2026-11-05T20:00:00Z",
+      "type": "TENTATIVE_DOCUMENT_UPDATE",
+      "ship_id": "KESSLER",
+      "record_id": "KESSLER/daily_reports/daily_status_KESSLER_20261105.pdf"
+    },
+    {
+      "event_id": "CHANGE-04",
+      "known_at": "2026-11-06T10:00:00Z",
+      "effective_at": "2026-11-10T00:00:00Z",
+      "type": "CONFIRMED_PERSONNEL_ORDERS",
+      "ship_id": "KESSLER",
+      "record_id": "PE-KESSLER-0007;PE-KESSLER-0011"
+    },
+    {
+      "event_id": "CHANGE-05",
+      "known_at": "2026-11-07T15:00:00Z",
+      "effective_at": "2026-11-13T12:00:00Z",
+      "type": "EVENT_ADVANCED",
+      "ship_id": "KESSLER",
+      "record_id": "EVT-KESSLER-01"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+code,series,meaning,delay_regime,source,provenance
+BA,B,Processing for shipment from stock,NEAR,Repository AP7.16 research; not independently verified,proposed
+BB,B,Backordered against a due-in,DUE_IN,Repository AP7.16 research; not independently verified,proposed
+BC,B,Backordered; long delay expected,LONG,Repository AP7.16 research; not independently verified,proposed
+BV,B,On contract for direct vendor delivery,PROCUREMENT,Repository AP7.16 research; not independently verified,proposed
+BZ,B,Direct-delivery procurement in process,PROCUREMENT,Repository AP7.16 research; not independently verified,proposed
+B3,B,Requested delivery date unrealistic,LONG,Repository AP7.16 research; not independently verified,proposed
+B5,B,Follow-up received; working to improve shipping estimate,DUE_IN,Repository AP7.16 research; not independently verified,proposed
+CB,C,Rejected; quantity unavailable,REJECTED,Repository AP7.16 research; not independently verified,proposed
+CG,C,Rejected; item unidentified,REJECTED,Repository AP7.16 research; not independently verified,proposed
+CJ,C,Rejected; item obsolete,REJECTED,Repository AP7.16 research; not independently verified,proposed
+CU,C,Rejected; item no longer produced,REJECTED,Repository AP7.16 research; not independently verified,proposed

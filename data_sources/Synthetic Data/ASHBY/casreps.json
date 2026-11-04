@@ -1,0 +1,100 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "as_of": "2026-11-07T18:00:00Z",
+  "casreps": [
+    {
+      "casrep_id": "DDG993-26-004",
+      "ship_id": "ASHBY",
+      "uic": "99103",
+      "serial": "004",
+      "initial_dtg": "021000Z NOV 26",
+      "initial_time": "2026-11-02T10:00:00Z",
+      "known_at": "2026-11-02T10:00:00Z",
+      "category": 2,
+      "eic": "SATCOM-MOD",
+      "equipment": "SATELLITE COMMUNICATIONS TERMINAL SERVICE MODULE (SYNTH)",
+      "jcn": "",
+      "mission_areas_affected": [
+        "CCC"
+      ],
+      "assist": {
+        "required": false,
+        "type": "SHIP FORCE",
+        "org": "SYNTHETIC TECHNICAL SUPPORT",
+        "confirmed_available_at": ""
+      },
+      "parts": [
+        {
+          "nsn": "5998-01-999-0015",
+          "niin": "019990015",
+          "qty": 1,
+          "doc_number": "R991036306A001",
+          "pd": "02",
+          "rdd": "999"
+        }
+      ],
+      "etr_history": [
+        {
+          "dtg": "021000Z NOV 26",
+          "known_at": "2026-11-02T10:00:00Z",
+          "etr": "2026-11-12T12:00:00Z",
+          "report_type": "INITIAL"
+        }
+      ],
+      "state": "OPEN",
+      "closed": null,
+      "physical_asset_id": "ASSET-ASHBY-SATCOM-01",
+      "messages": [
+        "ASHBY/casrep_messages/DDG993-26-004_01_INITIAL.txt"
+      ],
+      "provenance": "placeholder"
+    },
+    {
+      "casrep_id": "DDG993-26-005",
+      "ship_id": "ASHBY",
+      "uic": "99103",
+      "serial": "005",
+      "initial_dtg": "281000Z OCT 26",
+      "initial_time": "2026-10-28T10:00:00Z",
+      "known_at": "2026-10-28T10:00:00Z",
+      "category": 2,
+      "eic": "SURFSEARCH-MOD",
+      "equipment": "SURFACE SEARCH SENSOR SERVICE MODULE (SYNTH)",
+      "jcn": "99103CE010801",
+      "mission_areas_affected": [
+        "SUW"
+      ],
+      "assist": {
+        "required": false,
+        "type": "SHIP FORCE",
+        "org": "SYNTHETIC TECHNICAL SUPPORT",
+        "confirmed_available_at": ""
+      },
+      "parts": [
+        {
+          "nsn": "5998-01-999-0009",
+          "niin": "019990009",
+          "qty": 1,
+          "doc_number": "R991036301A002",
+          "pd": "02",
+          "rdd": "999"
+        }
+      ],
+      "etr_history": [
+        {
+          "dtg": "281000Z OCT 26",
+          "known_at": "2026-10-28T10:00:00Z",
+          "etr": "2026-11-13T12:00:00Z",
+          "report_type": "INITIAL"
+        }
+      ],
+      "state": "OPEN",
+      "closed": null,
+      "physical_asset_id": "ASSET-ASHBY-SURFSEARCH-01",
+      "messages": [
+        "ASHBY/casrep_messages/DDG993-26-005_01_INITIAL.txt"
+      ],
+      "provenance": "placeholder"
+    }
+  ]
+}

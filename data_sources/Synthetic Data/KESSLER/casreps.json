@@ -1,0 +1,167 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "as_of": "2026-11-07T18:00:00Z",
+  "casreps": [
+    {
+      "casrep_id": "DDG991-26-017",
+      "ship_id": "KESSLER",
+      "uic": "99101",
+      "serial": "017",
+      "initial_dtg": "041200Z NOV 26",
+      "initial_time": "2026-11-04T12:00:00Z",
+      "known_at": "2026-11-04T12:00:00Z",
+      "category": 3,
+      "eic": "SPY1D-CW",
+      "equipment": "COOLING WATER PUMP (SYNTH)",
+      "jcn": "99101CF010042",
+      "mission_areas_affected": [
+        "AW"
+      ],
+      "assist": {
+        "required": true,
+        "type": "FTS",
+        "org": "SYNTHETIC TECHNICAL SUPPORT",
+        "confirmed_available_at": "2026-11-09T08:00:00Z"
+      },
+      "parts": [
+        {
+          "nsn": "4320-01-999-0001",
+          "niin": "019990001",
+          "qty": 1,
+          "doc_number": "R991016308A001",
+          "pd": "02",
+          "rdd": "999"
+        }
+      ],
+      "etr_history": [
+        {
+          "dtg": "041200Z NOV 26",
+          "known_at": "2026-11-04T12:00:00Z",
+          "etr": "2026-11-12T12:00:00Z",
+          "report_type": "INITIAL"
+        },
+        {
+          "dtg": "051000Z NOV 26",
+          "known_at": "2026-11-05T10:00:00Z",
+          "etr": "2026-11-22T12:00:00Z",
+          "report_type": "UPDATE"
+        }
+      ],
+      "state": "OPEN",
+      "closed": null,
+      "physical_asset_id": "ASSET-KESSLER-SPY1D-01",
+      "messages": [
+        "KESSLER/casrep_messages/DDG991-26-017_01_INITIAL.txt",
+        "KESSLER/casrep_messages/DDG991-26-017_02_UPDATE.txt"
+      ],
+      "provenance": "placeholder"
+    },
+    {
+      "casrep_id": "DDG991-26-018",
+      "ship_id": "KESSLER",
+      "uic": "99101",
+      "serial": "018",
+      "initial_dtg": "020900Z NOV 26",
+      "initial_time": "2026-11-02T09:00:00Z",
+      "known_at": "2026-11-02T09:00:00Z",
+      "category": 2,
+      "eic": "POWER-MOD",
+      "equipment": "ELECTRICAL GENERATION AND DISTRIBUTION SERVICE MODULE (SYNTH)",
+      "jcn": "99101EE010801",
+      "mission_areas_affected": [
+        "MOB"
+      ],
+      "assist": {
+        "required": false,
+        "type": "SHIP FORCE",
+        "org": "SYNTHETIC TECHNICAL SUPPORT",
+        "confirmed_available_at": ""
+      },
+      "parts": [
+        {
+          "nsn": "5998-01-999-0012",
+          "niin": "019990012",
+          "qty": 1,
+          "doc_number": "R991016306A002",
+          "pd": "02",
+          "rdd": "999"
+        }
+      ],
+      "etr_history": [
+        {
+          "dtg": "020900Z NOV 26",
+          "known_at": "2026-11-02T09:00:00Z",
+          "etr": "2026-11-13T12:00:00Z",
+          "report_type": "INITIAL"
+        }
+      ],
+      "state": "OPEN",
+      "closed": null,
+      "physical_asset_id": "ASSET-KESSLER-POWER-01",
+      "messages": [
+        "KESSLER/casrep_messages/DDG991-26-018_01_INITIAL.txt"
+      ],
+      "provenance": "placeholder"
+    },
+    {
+      "casrep_id": "DDG991-26-015",
+      "ship_id": "KESSLER",
+      "uic": "99101",
+      "serial": "015",
+      "initial_dtg": "230900Z OCT 26",
+      "initial_time": "2026-10-23T09:00:00Z",
+      "known_at": "2026-10-23T09:00:00Z",
+      "category": 2,
+      "eic": "NAVRADAR-MOD",
+      "equipment": "NAVIGATION RADAR SERVICE MODULE (SYNTH)",
+      "jcn": "99101OD010802",
+      "mission_areas_affected": [
+        "MOB"
+      ],
+      "assist": {
+        "required": false,
+        "type": "SHIP FORCE",
+        "org": "SYNTHETIC TECHNICAL SUPPORT",
+        "confirmed_available_at": ""
+      },
+      "parts": [
+        {
+          "nsn": "5998-01-999-0013",
+          "niin": "019990013",
+          "qty": 1,
+          "doc_number": "R991016296A003",
+          "pd": "02",
+          "rdd": "999"
+        }
+      ],
+      "etr_history": [
+        {
+          "dtg": "230900Z OCT 26",
+          "known_at": "2026-10-23T09:00:00Z",
+          "etr": "2026-11-14T12:00:00Z",
+          "report_type": "INITIAL"
+        },
+        {
+          "dtg": "011400Z NOV 26",
+          "known_at": "2026-11-01T14:00:00Z",
+          "etr": "2026-11-01T14:00:00Z",
+          "report_type": "CORRECT"
+        }
+      ],
+      "state": "CORRECTED",
+      "closed": {
+        "type": "CORRECT",
+        "dtg": "011400Z NOV 26",
+        "parts_received": "2026-11-01T08:00:00Z",
+        "supply_delay_hrs": 98,
+        "man_hours": 22
+      },
+      "physical_asset_id": "ASSET-KESSLER-NAVRADAR-01",
+      "messages": [
+        "KESSLER/casrep_messages/DDG991-26-015_01_INITIAL.txt",
+        "KESSLER/casrep_messages/DDG991-26-015_02_CORRECT.txt"
+      ],
+      "provenance": "placeholder"
+    }
+  ]
+}

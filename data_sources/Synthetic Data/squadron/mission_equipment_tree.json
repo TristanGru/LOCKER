@@ -1,0 +1,507 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "ship_class": "DDG (notional)",
+  "scoring": {
+    "status_score_map": {
+      "0": 1.0,
+      "1": 0.8,
+      "3": 0.6,
+      "2": 0.0
+    },
+    "bands": {
+      "green": 0.8,
+      "amber": 0.6
+    },
+    "rollup": "Weighted systems; critical zero caps mission index at 59",
+    "rating_policy": "Reported Y/Q/N is independent; index is not a probability",
+    "provenance": "proposed; score map and bands informed by historical MFOM patent"
+  },
+  "missions": [
+    {
+      "mission_area": "AW",
+      "tasks": [
+        {
+          "nta_id": "NTA-AW-01 (SYNTH)",
+          "name": "Exercise Air Warfare task",
+          "functional_areas": [
+            {
+              "name": "Air Warfare",
+              "systems": [
+                {
+                  "eic": "SPY1D",
+                  "name": "Radar (SPY-1D-style)",
+                  "critical": true,
+                  "weight": 0.6,
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4310",
+                      "k": 2
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "SPY1D-CW",
+                      "name": "COOLING WATER PUMP (SYNTH)",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990001",
+                          "name": "COOLING WATER PUMP (SYNTH)",
+                          "installed_qty": 2,
+                          "min_working": 2
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "eic": "CIWS",
+                  "name": "Close-in weapon system",
+                  "critical": false,
+                  "weight": 0.25,
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4320",
+                      "k": 1
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "CIWS-MOD",
+                      "name": "CLOSE-IN WEAPON SYSTEM SERVICE MODULE (SYNTH)",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990003",
+                          "name": "CLOSE-IN WEAPON SYSTEM SERVICE MODULE (SYNTH)",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "eic": "AEGIS",
+                  "name": "Combat direction processor",
+                  "critical": false,
+                  "weight": 0.15,
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4330",
+                      "k": 2
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "AEGIS-MOD",
+                      "name": "COMBAT DIRECTION PROCESSOR SERVICE MODULE (SYNTH)",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990004",
+                          "name": "COMBAT DIRECTION PROCESSOR SERVICE MODULE (SYNTH)",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mission_area": "ASW",
+      "tasks": [
+        {
+          "nta_id": "NTA-ASW-01 (SYNTH)",
+          "name": "Exercise Anti-Submarine Warfare task",
+          "functional_areas": [
+            {
+              "name": "Anti-Submarine Warfare",
+              "systems": [
+                {
+                  "eic": "SQQ89",
+                  "name": "Sonar processing suite",
+                  "critical": true,
+                  "weight": 0.6,
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4410",
+                      "k": 2
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "SQQ89-LAN",
+                      "name": "SHARED NETWORK SWITCH (SYNTH)",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990044",
+                          "name": "SHARED NETWORK SWITCH (SYNTH)",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "eic": "TOWED",
+                  "name": "Towed sensor handling system",
+                  "critical": false,
+                  "weight": 0.25,
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4420",
+                      "k": 1
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "TOWED-MOD",
+                      "name": "TOWED SENSOR HANDLING SYSTEM SERVICE MODULE (SYNTH)",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990006",
+                          "name": "TOWED SENSOR HANDLING SYSTEM SERVICE MODULE (SYNTH)",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "eic": "SONARPROC",
+                  "name": "Acoustic workstation",
+                  "critical": false,
+                  "weight": 0.15,
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4430",
+                      "k": 1
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "SONARPROC-MOD",
+                      "name": "ACOUSTIC WORKSTATION SERVICE MODULE (SYNTH)",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990007",
+                          "name": "ACOUSTIC WORKSTATION SERVICE MODULE (SYNTH)",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mission_area": "SUW",
+      "tasks": [
+        {
+          "nta_id": "NTA-SUW-01 (SYNTH)",
+          "name": "Exercise Surface Warfare task",
+          "functional_areas": [
+            {
+              "name": "Surface Warfare",
+              "systems": [
+                {
+                  "eic": "GUN5",
+                  "name": "Forward gun mount",
+                  "critical": true,
+                  "weight": 0.6,
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4510",
+                      "k": 2
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "GUN5-MOD",
+                      "name": "FORWARD GUN MOUNT SERVICE MODULE (SYNTH)",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990008",
+                          "name": "FORWARD GUN MOUNT SERVICE MODULE (SYNTH)",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "eic": "SURFSEARCH",
+                  "name": "Surface search sensor",
+                  "critical": false,
+                  "weight": 0.25,
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4520",
+                      "k": 1
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "SURFSEARCH-MOD",
+                      "name": "SURFACE SEARCH SENSOR SERVICE MODULE (SYNTH)",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990009",
+                          "name": "SURFACE SEARCH SENSOR SERVICE MODULE (SYNTH)",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "eic": "FIRECONTROL",
+                  "name": "Surface fire-control console",
+                  "critical": false,
+                  "weight": 0.15,
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4530",
+                      "k": 1
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "FIRECONTROL-MOD",
+                      "name": "SURFACE FIRE-CONTROL CONSOLE SERVICE MODULE (SYNTH)",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990010",
+                          "name": "SURFACE FIRE-CONTROL CONSOLE SERVICE MODULE (SYNTH)",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mission_area": "MOB",
+      "tasks": [
+        {
+          "nta_id": "NTA-MOB-01 (SYNTH)",
+          "name": "Exercise Mobility task",
+          "functional_areas": [
+            {
+              "name": "Mobility",
+              "systems": [
+                {
+                  "eic": "PROPULSION",
+                  "name": "Propulsion plant",
+                  "critical": true,
+                  "weight": 0.6,
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4610",
+                      "k": 2
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "PROPULSION-MOD",
+                      "name": "PROPULSION PLANT SERVICE MODULE (SYNTH)",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990011",
+                          "name": "PROPULSION PLANT SERVICE MODULE (SYNTH)",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "eic": "POWER",
+                  "name": "Electrical generation and distribution",
+                  "critical": false,
+                  "weight": 0.25,
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4620",
+                      "k": 2
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "POWER-MOD",
+                      "name": "ELECTRICAL GENERATION AND DISTRIBUTION SERVICE MODULE (SYNTH)",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990012",
+                          "name": "ELECTRICAL GENERATION AND DISTRIBUTION SERVICE MODULE (SYNTH)",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "eic": "NAVRADAR",
+                  "name": "Navigation radar",
+                  "critical": false,
+                  "weight": 0.15,
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4630",
+                      "k": 1
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "NAVRADAR-MOD",
+                      "name": "NAVIGATION RADAR SERVICE MODULE (SYNTH)",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990013",
+                          "name": "NAVIGATION RADAR SERVICE MODULE (SYNTH)",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mission_area": "CCC",
+      "tasks": [
+        {
+          "nta_id": "NTA-CCC-01 (SYNTH)",
+          "name": "Exercise Command and Communications task",
+          "functional_areas": [
+            {
+              "name": "Command and Communications",
+              "systems": [
+                {
+                  "eic": "CSLAN",
+                  "name": "Combat-system local network",
+                  "critical": true,
+                  "weight": 0.6,
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4710",
+                      "k": 2
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "CSLAN-SW",
+                      "name": "SHARED NETWORK SWITCH (SYNTH)",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990044",
+                          "name": "SHARED NETWORK SWITCH (SYNTH)",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "eic": "SATCOM",
+                  "name": "Satellite communications terminal",
+                  "critical": false,
+                  "weight": 0.25,
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4720",
+                      "k": 1
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "SATCOM-MOD",
+                      "name": "SATELLITE COMMUNICATIONS TERMINAL SERVICE MODULE (SYNTH)",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990015",
+                          "name": "SATELLITE COMMUNICATIONS TERMINAL SERVICE MODULE (SYNTH)",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "eic": "DATALINK",
+                  "name": "Tactical data-link terminal",
+                  "critical": false,
+                  "weight": 0.15,
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4730",
+                      "k": 1
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "DATALINK-MOD",
+                      "name": "TACTICAL DATA-LINK TERMINAL SERVICE MODULE (SYNTH)",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990016",
+                          "name": "TACTICAL DATA-LINK TERMINAL SERVICE MODULE (SYNTH)",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "provenance": "proposed"
+}

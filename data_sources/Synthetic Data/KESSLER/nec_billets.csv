@@ -1,0 +1,39 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+ship_id,uic,billet_id,billet_title,rate_required,nec_required,work_center,fltmps_holder_member_id,holder_prd,gap_start,inbound_member_id,inbound_report_date,as_of,provenance
+KESSLER,99101,B-SPY1D-01,Radar (SPY-1D-style) technician (SYNTH),FC1,F9A1,CF01,M-0007,2026-11-10,2026-11-10,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-SPY1D-02,Radar (SPY-1D-style) technician (SYNTH),FC2,F9A1,CF01,M-0011,2027-03-07,2027-03-07,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-SPY1D-03,Radar (SPY-1D-style) technician (SYNTH),FC2,F9A1,CF01,,,2026-10-25,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-CIWS-01,Close-in weapon system technician (SYNTH),FC2,F9B2,CF02,M-0014,2027-03-16,2027-03-16,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-CIWS-02,Close-in weapon system technician (SYNTH),FC2,F9B2,CF02,M-0026,2027-04-21,2027-04-21,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-AEGIS-01,Combat direction processor technician (SYNTH),FC1,F9B2,CF01,M-0007,2026-11-10,2026-11-10,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-AEGIS-02,Combat direction processor technician (SYNTH),FC2,F9B2,CF01,M-0011,2027-03-07,2027-03-07,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-AEGIS-03,Combat direction processor technician (SYNTH),FC2,F9B2,CF01,M-0013,2027-03-13,2027-03-13,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-SQQ89-01,Sonar processing suite technician (SYNTH),STG3,S9A1,CA01,M-0003,2027-02-11,2027-02-11,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-SQQ89-02,Sonar processing suite technician (SYNTH),STG3,S9A1,CA01,M-0015,2027-03-19,2027-03-19,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-SQQ89-03,Sonar processing suite technician (SYNTH),STG1,S9A1,CA01,M-0027,2027-04-24,2027-04-24,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-TOWED-01,Towed sensor handling system technician (SYNTH),STG3,S9A1,CA01,M-0003,2027-02-11,2027-02-11,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-TOWED-02,Towed sensor handling system technician (SYNTH),STG3,S9A1,CA01,M-0015,2027-03-19,2027-03-19,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-SONARPROC-01,Acoustic workstation technician (SYNTH),STG3,S9B2,CA01,M-0003,2027-02-11,2027-02-11,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-SONARPROC-02,Acoustic workstation technician (SYNTH),STG3,S9B2,CA01,M-0015,2027-03-19,2027-03-19,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-GUN5-01,Forward gun mount technician (SYNTH),GM2,G9A1,CW01,M-0004,2027-02-14,2027-02-14,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-GUN5-02,Forward gun mount technician (SYNTH),GM2,G9A1,CW01,M-0016,2027-03-22,2027-03-22,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-GUN5-03,Forward gun mount technician (SYNTH),GM2,G9A1,CW01,M-0028,2027-04-27,2027-04-27,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-SURFSEARCH-01,Surface search sensor technician (SYNTH),ET2,E9A1,CE01,M-0005,2027-02-17,2027-02-17,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-SURFSEARCH-02,Surface search sensor technician (SYNTH),ET1,E9A1,CE01,M-0017,2027-03-25,2027-03-25,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-FIRECONTROL-01,Surface fire-control console technician (SYNTH),FC2,F9B2,CF02,M-0014,2027-03-16,2027-03-16,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-FIRECONTROL-02,Surface fire-control console technician (SYNTH),FC2,F9B2,CF02,M-0026,2027-04-21,2027-04-21,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-PROPULSION-01,Propulsion plant technician (SYNTH),GSM3,M9D1,ER01,M-0006,2027-02-20,2027-02-20,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-PROPULSION-02,Propulsion plant technician (SYNTH),GSM3,M9D1,ER01,M-0018,2027-03-28,2027-03-28,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-PROPULSION-03,Propulsion plant technician (SYNTH),GSM3,M9D1,ER01,M-0030,2027-05-03,2027-05-03,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-POWER-01,Electrical generation and distribution technician (SYNTH),EM2,M9E1,EE01,M-0031,2027-05-06,2027-05-06,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-POWER-02,Electrical generation and distribution technician (SYNTH),EM2,M9E1,EE01,M-0043,2027-06-11,2027-06-11,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-POWER-03,Electrical generation and distribution technician (SYNTH),EM2,M9E1,EE01,M-0055,2027-07-17,2027-07-17,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-NAVRADAR-01,Navigation radar technician (SYNTH),QM2,Q9A1,OD01,M-0008,2027-02-26,2027-02-26,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-NAVRADAR-02,Navigation radar technician (SYNTH),QM2,Q9A1,OD01,M-0020,2027-04-03,2027-04-03,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-CSLAN-01,Combat-system local network technician (SYNTH),ET2,E9C1,CE01,M-0005,2027-02-17,2027-02-17,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-CSLAN-02,Combat-system local network technician (SYNTH),ET1,E9C1,CE01,M-0017,2027-03-25,2027-03-25,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-CSLAN-03,Combat-system local network technician (SYNTH),ET2,E9C1,CE01,M-0029,2027-04-30,2027-04-30,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-SATCOM-01,Satellite communications terminal technician (SYNTH),ET2,E9C1,CE01,M-0005,2027-02-17,2027-02-17,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-SATCOM-02,Satellite communications terminal technician (SYNTH),ET1,E9C1,CE01,M-0017,2027-03-25,2027-03-25,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-DATALINK-01,Tactical data-link terminal technician (SYNTH),ET2,E9C1,CE01,M-0005,2027-02-17,2027-02-17,,,2026-11-07T06:00:00Z,placeholder
+KESSLER,99101,B-DATALINK-02,Tactical data-link terminal technician (SYNTH),ET1,E9C1,CE01,M-0017,2027-03-25,2027-03-25,,,2026-11-07T06:00:00Z,placeholder

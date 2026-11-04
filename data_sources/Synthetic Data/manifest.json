@@ -1,0 +1,784 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "seed": 20261104,
+  "scenario_start": "2026-11-04T08:00:00Z",
+  "default_snapshot": "2026-11-07T18:00:00Z",
+  "ships": [
+    "KESSLER",
+    "VARNELL",
+    "ASHBY"
+  ],
+  "mission_areas": [
+    "AW",
+    "ASW",
+    "SUW",
+    "MOB",
+    "CCC"
+  ],
+  "files": [
+    {
+      "file": "ASHBY/availabilities.csv",
+      "sha256": "d5fe3ca519cadb80463e8765ba64fa017a9dc0908c28820f238ea1040c279b4a",
+      "bytes": 392,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/casrep_messages/DDG993-26-004_01_INITIAL.txt",
+      "sha256": "3d45733bca9e27d38e6da688af7373dd96d447de13e7ab1480987596f99ec8d2",
+      "bytes": 611,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/casrep_messages/DDG993-26-005_01_INITIAL.txt",
+      "sha256": "fc4a8efb652be4276646d6ff9300c93e91be90f7d42d871a0ffda897b388f88f",
+      "bytes": 609,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/casreps.json",
+      "sha256": "7371fdd81873558cda59c6130ffd70fc2a22cc1eeb2a03652a1cbdce24abbb2f",
+      "bytes": 2760,
+      "record_count": 2
+    },
+    {
+      "file": "ASHBY/cert_status.csv",
+      "sha256": "4557403939ac0685115a284abd329597936c3524750e8a4dafb8f445889c9beb",
+      "bytes": 819,
+      "record_count": 5
+    },
+    {
+      "file": "ASHBY/csmp.csv",
+      "sha256": "d697f6283ab167b60b3de7b49ce32f74dcc243498558d53792f820ac9cdea9a6",
+      "bytes": 14449,
+      "record_count": 46
+    },
+    {
+      "file": "ASHBY/daily_reports/daily_status_ASHBY_20261101.pdf",
+      "sha256": "ab7fc8fbd48140376b8366920dc23a268b9103e771079f136289166fb437e9b7",
+      "bytes": 2149,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/daily_reports/daily_status_ASHBY_20261101.txt",
+      "sha256": "fced5974686541d975bb39c691e5fbb7cbf1439413cb69292f4f0575b83dfd66",
+      "bytes": 545,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/daily_reports/daily_status_ASHBY_20261102.pdf",
+      "sha256": "bf1a5c31a96d69367d7bb9e71b10b4e121a4e6e0670a8224c72ba0d4c99f7506",
+      "bytes": 2149,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/daily_reports/daily_status_ASHBY_20261102.txt",
+      "sha256": "98069adf5d418a12b027f4ba5f5b5935fc7fb3bb1d2b42f216a213e4a7c8b47b",
+      "bytes": 545,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/daily_reports/daily_status_ASHBY_20261103.pdf",
+      "sha256": "501b08a278197dd1b5fceeefbb31c713f7ea1a712db3a5787cbbc4b62c22aa38",
+      "bytes": 2149,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/daily_reports/daily_status_ASHBY_20261103.txt",
+      "sha256": "b20967bcb4d25c405e70923b72ab2c3830e3739567016137bdbc68cf90b83b95",
+      "bytes": 545,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/daily_reports/daily_status_ASHBY_20261104.pdf",
+      "sha256": "5a1920566e8cd194615bfb144c3d4b501057fd77e9f1ed33d5b3ea4d329c096b",
+      "bytes": 2149,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/daily_reports/daily_status_ASHBY_20261104.txt",
+      "sha256": "74247cf9770e5e7ae0d5ae37c5f30b296753190831a6ece8d37e068a600236df",
+      "bytes": 545,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/daily_reports/daily_status_ASHBY_20261105.pdf",
+      "sha256": "dc8e9f08274cf4aa8bc6d9e1216d502575658f04d2499fb2d2d744bef6d051e3",
+      "bytes": 2149,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/daily_reports/daily_status_ASHBY_20261105.txt",
+      "sha256": "b167755431cd9561ef4be49a5783dabb3d7cdfaaef82c2bccc928f154315f098",
+      "bytes": 545,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/daily_reports/daily_status_ASHBY_20261106.pdf",
+      "sha256": "e07e53f77190892dc767b248e09f112cb547f31a983ff26b8e0e118efe817487",
+      "bytes": 2149,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/daily_reports/daily_status_ASHBY_20261106.txt",
+      "sha256": "756e6182f6850920952c232edf947a62312b3087489cf060a0975e9b677743af",
+      "bytes": 545,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/daily_reports/pod_ASHBY_20261107.pdf",
+      "sha256": "b3385efb23ca09ace44adb3fa3e8f043d6c4ee43aae9d623dcbc10935dcfa994",
+      "bytes": 1928,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/installed_equipment.csv",
+      "sha256": "2b8d3e15412c780646be124947a6da037976e8a5bd15f0d1b0c144e013ed8484",
+      "bytes": 1995,
+      "record_count": 15
+    },
+    {
+      "file": "ASHBY/logreq/SCH-ASHBY-02.txt",
+      "sha256": "77165950957595d501b4a4c34e109e173e0fb8a5c3078d59612e3a1a302719e5",
+      "bytes": 315,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/logreq/SCH-ASHBY-04.txt",
+      "sha256": "c03ccb7730aba3382eb4db0e204e4b5512313f27d96c9c4f27e2ed9528d593ca",
+      "bytes": 315,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/movrep/SCH-ASHBY-01.txt",
+      "sha256": "fdae4416c54bd1ad0e89d53a3f3849950faf94a74428665cb2e4dadc4114291d",
+      "bytes": 273,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/movrep/SCH-ASHBY-03.txt",
+      "sha256": "946c7a32cbc92e3e1f6925af038b3096caa0cfa89632463f58eef5348d59b668",
+      "bytes": 273,
+      "record_count": 1
+    },
+    {
+      "file": "ASHBY/nec_billets.csv",
+      "sha256": "37fabfe86e06e6c40a6b4419188d1a0217f166b467cb545f37830eb41fba370a",
+      "bytes": 5689,
+      "record_count": 37
+    },
+    {
+      "file": "ASHBY/onboard_allowance_cosal.csv",
+      "sha256": "b4a9578ec467795be9bd50b41ad693fa6674b6edac9cdf07609a36c985fa6799",
+      "bytes": 2744,
+      "record_count": 14
+    },
+    {
+      "file": "ASHBY/quals.csv",
+      "sha256": "ed4a91cb96abd9580b4939319f1f4098ebb23b8e0b4c7efd207afa66dca51719",
+      "bytes": 71454,
+      "record_count": 472
+    },
+    {
+      "file": "ASHBY/requisition_status.csv",
+      "sha256": "74825828e18664a34e689d9d45195e8a503c19b57495feeb01ac63f1a1115938",
+      "bytes": 5412,
+      "record_count": 17
+    },
+    {
+      "file": "ASHBY/roster.csv",
+      "sha256": "dd9308792f1291ec044ea27d2cee4d806402da9ed7e84edc28aa602363d6813c",
+      "bytes": 44289,
+      "record_count": 300
+    },
+    {
+      "file": "ASHBY/schedule_30day.csv",
+      "sha256": "bbc6504c3fbe716710c1b1788b5ce2a899dde53dc165c10cf16d64fb876590ca",
+      "bytes": 852,
+      "record_count": 4
+    },
+    {
+      "file": "ASHBY/sked_loep.csv",
+      "sha256": "a4eb3d66f124bfaf42e7d68a0a844acce87091e61b70b5feb1db3275442b118a",
+      "bytes": 1974,
+      "record_count": 15
+    },
+    {
+      "file": "ASHBY/sked_schedule.csv",
+      "sha256": "dc7d18fd7de8729a3cc199f051136584e7a5f2565b09bbf9ba46ba65a56863d9",
+      "bytes": 46998,
+      "record_count": 165
+    },
+    {
+      "file": "ASHBY/training_readiness.csv",
+      "sha256": "824d8b168f05ebe552df264e28d14cbb1e635af344e0ab34146dcb7fc6fb10d8",
+      "bytes": 1563,
+      "record_count": 10
+    },
+    {
+      "file": "ASHBY/watchbill.csv",
+      "sha256": "eccb9799b84a40dedb36e1401bbf3bf5c0d499b6f570e867960059a13de28bd9",
+      "bytes": 172982,
+      "record_count": 1350
+    },
+    {
+      "file": "KESSLER/availabilities.csv",
+      "sha256": "26cc0e6b0942222ce996537a3c2820717737d9e9a8cbf0b1dba54ba5582aa630",
+      "bytes": 396,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/casrep_messages/DDG991-26-015_01_INITIAL.txt",
+      "sha256": "f005d15a9d7c5f1c1f6ec41ac60790c0aaa9d189e22ac660e1b17d5d2075ac9d",
+      "bytes": 601,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/casrep_messages/DDG991-26-015_02_CORRECT.txt",
+      "sha256": "2775b8b578254eeb7514d40e53c8f1c14e3960b5112b6de62a3d5c62793eae02",
+      "bytes": 714,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/casrep_messages/DDG991-26-017_01_INITIAL.txt",
+      "sha256": "67290447c7bd47c38265469765aa308999d6bbd083bf0b731b8720b8019a9bc6",
+      "bytes": 582,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/casrep_messages/DDG991-26-017_02_UPDATE.txt",
+      "sha256": "02c4946ae1aedc2dd85ad41441c9a83d50f3fb06b67868d680e5d10dbbbc572d",
+      "bytes": 621,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/casrep_messages/DDG991-26-018_01_INITIAL.txt",
+      "sha256": "d837b55d9403577d7f62a46cca971258f0aae77d899cab1b30b59e7ea2bcd073",
+      "bytes": 642,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/casreps.json",
+      "sha256": "d0fe8555bd49a7a4ef325f57e81ddb91f9a13b7733adddf24c50ef50889702dd",
+      "bytes": 4767,
+      "record_count": 3
+    },
+    {
+      "file": "KESSLER/cert_status.csv",
+      "sha256": "eaec44208489a4810d1f9dcda659634b4658b8f755c3f9fe6fc493b212f5c3fd",
+      "bytes": 839,
+      "record_count": 5
+    },
+    {
+      "file": "KESSLER/csmp.csv",
+      "sha256": "87a62e22584ebb9a5a111256192916d2818412977c28129fa2cc287ae4df162f",
+      "bytes": 24805,
+      "record_count": 78
+    },
+    {
+      "file": "KESSLER/daily_reports/daily_status_KESSLER_20261101.pdf",
+      "sha256": "aac7d4a5e600b1977726c4a482a9cdde3bf59fe0e64e98ddf71c0b03578ced1a",
+      "bytes": 2151,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/daily_reports/daily_status_KESSLER_20261101.txt",
+      "sha256": "a0cfff7884e9d9dd37a2fe4da6f40f90bb3ff1b561f3ea6c17a1b6e9a525b4e6",
+      "bytes": 547,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/daily_reports/daily_status_KESSLER_20261102.pdf",
+      "sha256": "19a62c2b4e17b9096d78d025ecdb7430ba0918ec3afb7586b79584dfde13ae3a",
+      "bytes": 2151,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/daily_reports/daily_status_KESSLER_20261102.txt",
+      "sha256": "0824f503fcbcb41656567178418132fa9ec7fb00fa3ba73e7ba695c74042cf29",
+      "bytes": 547,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/daily_reports/daily_status_KESSLER_20261103.pdf",
+      "sha256": "227d5d7419bcdd6b4fa293c18cb5835cc0a32e133d2a648c8df9d28e96f20451",
+      "bytes": 2151,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/daily_reports/daily_status_KESSLER_20261103.txt",
+      "sha256": "6b2319cca8caad7ceabc383a40c16d526811d87859b85eaf5b7d1a8029420618",
+      "bytes": 547,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/daily_reports/daily_status_KESSLER_20261104.pdf",
+      "sha256": "e8702f451b180e1562caa125280d24a8faf288ba6bdccb637c070872511ab9eb",
+      "bytes": 2269,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/daily_reports/daily_status_KESSLER_20261104.txt",
+      "sha256": "2220c8a44b26d44fad1787688121e262fd4b34e4291774762c1787bf783bc7b0",
+      "bytes": 691,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/daily_reports/daily_status_KESSLER_20261105.pdf",
+      "sha256": "f8fd3fbd5e9eeb98e8eb9b31264b835cf0b0fc638d9309a30b0c7844fef053f2",
+      "bytes": 2321,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/daily_reports/daily_status_KESSLER_20261105.txt",
+      "sha256": "4603b930b0e03dcd49d1a8b1639c80976be644c1f5dc6ff5c24120fae9fd81f9",
+      "bytes": 761,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/daily_reports/daily_status_KESSLER_20261106.pdf",
+      "sha256": "922e229be0a265d8ac4dad249725c97228729eccbda747ec41e7776228b945da",
+      "bytes": 2381,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/daily_reports/daily_status_KESSLER_20261106.txt",
+      "sha256": "3c1f6e115ea0654d2c418fd2057680e26bc16fae31525432c00f655cbc12fd5c",
+      "bytes": 821,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/daily_reports/pod_KESSLER_20261107.pdf",
+      "sha256": "f61749a813e331b01fac670eb1f52b2545b13e896d52f5ebc8b1ff32e30e815f",
+      "bytes": 1931,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/installed_equipment.csv",
+      "sha256": "54ee79f36cfe2dcf3567c5c9dadc7e2f53783b6455e92e8c7adc4c8d42f2f1b5",
+      "bytes": 2038,
+      "record_count": 15
+    },
+    {
+      "file": "KESSLER/logreq/SCH-KESSLER-05.txt",
+      "sha256": "ec12d3cc2ccd9cec373e0150e42d97bf87f9577444fcc6cb045a5902b7206499",
+      "bytes": 319,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/logreq/SCH-KESSLER-07.txt",
+      "sha256": "670605b82a505fb4e431edb90e50b7049708d879a9a03890ded22a4e34bb9595",
+      "bytes": 319,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/movrep/SCH-KESSLER-06.txt",
+      "sha256": "34e50ba43ab9f051ccd52b453044286a1058b46e968e4235c2e9421657339544",
+      "bytes": 277,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/movrep/SCH-KESSLER-08.txt",
+      "sha256": "f4a0c03bbf122a739ca8080e8206b096ea57ae660fecc0a07728e5393b0e73e8",
+      "bytes": 277,
+      "record_count": 1
+    },
+    {
+      "file": "KESSLER/nec_billets.csv",
+      "sha256": "02b49ff7742b27e0d6242ba1d17b45a68f2e2b73492721b1e5863a3b4a1ca3af",
+      "bytes": 5747,
+      "record_count": 37
+    },
+    {
+      "file": "KESSLER/onboard_allowance_cosal.csv",
+      "sha256": "39d5d427866e3e34e70acf8c963ee9d786efab959c455b8e5e9f886d3b4bd5e7",
+      "bytes": 2772,
+      "record_count": 14
+    },
+    {
+      "file": "KESSLER/quals.csv",
+      "sha256": "96d223dac1d84f38940d0cde99caaa20571c710aa4c22b721b1c6a1b72aaada9",
+      "bytes": 72386,
+      "record_count": 472
+    },
+    {
+      "file": "KESSLER/requisition_status.csv",
+      "sha256": "dc39d156d16049470b6fcb00232a972067ecaaa075faa4dd26c4d0238a528299",
+      "bytes": 8767,
+      "record_count": 28
+    },
+    {
+      "file": "KESSLER/roster.csv",
+      "sha256": "cd6c3d7935c09c3d35e2263925a863f6841e939f48afbb27ebb54945d2ca3a7d",
+      "bytes": 44885,
+      "record_count": 300
+    },
+    {
+      "file": "KESSLER/schedule_30day.csv",
+      "sha256": "828aea4e64deddb4cc4515ad4836d5d5e52e99b90aabeb9f95866fbab7a3f03d",
+      "bytes": 1616,
+      "record_count": 8
+    },
+    {
+      "file": "KESSLER/sked_loep.csv",
+      "sha256": "4c77489201f0af47425178d510376952fc617988bcc4bc778441afcda28889b8",
+      "bytes": 2004,
+      "record_count": 15
+    },
+    {
+      "file": "KESSLER/sked_schedule.csv",
+      "sha256": "2de5d9d4a105a3271c3684755191ae568acb97b9ae53e30969e53bfa27bc07a0",
+      "bytes": 47320,
+      "record_count": 165
+    },
+    {
+      "file": "KESSLER/training_readiness.csv",
+      "sha256": "aaece9442bd245c9065176645c33c4d4fedb49c0aa0a12e323603988524fa240",
+      "bytes": 1603,
+      "record_count": 10
+    },
+    {
+      "file": "KESSLER/watchbill.csv",
+      "sha256": "453b96cda05d584027d187ccd1699642f79740b36decb7990004600144d4fdf4",
+      "bytes": 175448,
+      "record_count": 1350
+    },
+    {
+      "file": "VARNELL/availabilities.csv",
+      "sha256": "007379d0f854867914daecebac2994019616046a513fdd06acaa15cc4d2bc711",
+      "bytes": 414,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/casrep_messages/DDG992-26-008_01_INITIAL.txt",
+      "sha256": "cb8f40266298428a62e75aab98703aaba1f2713d3e59a8d70d874fe6fc18cffc",
+      "bytes": 594,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/casrep_messages/DDG992-26-009_01_INITIAL.txt",
+      "sha256": "b562a1028ea57a5b99cea3a893085b2f4d1c036fb3e2830033c66e82bcf414cf",
+      "bytes": 598,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/casreps.json",
+      "sha256": "bf7edda791a0fd42da0f244d1ee5d179362031682a3f3dd39f360e08ec4d4e69",
+      "bytes": 2726,
+      "record_count": 2
+    },
+    {
+      "file": "VARNELL/cert_status.csv",
+      "sha256": "bb95f23c0315ba92a97b77a2de5ae86cc811567249e5f947bf145a3a6c203574",
+      "bytes": 857,
+      "record_count": 5
+    },
+    {
+      "file": "VARNELL/csmp.csv",
+      "sha256": "5c96e6a6240e4c1a7e73758727157876a6ed8aeffd8bd39721ce6ce14371e2a8",
+      "bytes": 19716,
+      "record_count": 62
+    },
+    {
+      "file": "VARNELL/daily_reports/daily_status_VARNELL_20261101.pdf",
+      "sha256": "5de4137095a966d2b653dec27c02c1236c50e5e35fe20234434f0487ac891ab2",
+      "bytes": 2151,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/daily_reports/daily_status_VARNELL_20261101.txt",
+      "sha256": "a35ad4e4180767653f1729966b662143d655abcf5622f0b7ae9b57ea2004d8db",
+      "bytes": 547,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/daily_reports/daily_status_VARNELL_20261102.pdf",
+      "sha256": "08fdcce9cbee262e538ecceb383fb5e6feab9231bdf13c13bfdfcc826a177307",
+      "bytes": 2151,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/daily_reports/daily_status_VARNELL_20261102.txt",
+      "sha256": "df4c1b1ab01e56dfda0c1a96147b290234f8abdccb69aaa143baf63df35e6c64",
+      "bytes": 547,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/daily_reports/daily_status_VARNELL_20261103.pdf",
+      "sha256": "8bc69367a8cb3f2a006463e2eadbd8541232db91f38b7a70208a11ae44224538",
+      "bytes": 2151,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/daily_reports/daily_status_VARNELL_20261103.txt",
+      "sha256": "154ea4786c36bdb4f42457ce6e0105dd55bb2c0819badd0edd9a6c9e8c424d09",
+      "bytes": 547,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/daily_reports/daily_status_VARNELL_20261104.pdf",
+      "sha256": "bf2b2fc4f28c0ff32d16b4e05f580b21139ae33e46cd5f1a1c2f28bff0bda3b5",
+      "bytes": 2152,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/daily_reports/daily_status_VARNELL_20261104.txt",
+      "sha256": "a2fd24e74b675dd5bf84f798c9d3d47705d825de091003bb02b13e577aed014b",
+      "bytes": 547,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/daily_reports/daily_status_VARNELL_20261105.pdf",
+      "sha256": "3c24e55433429a440532db63a883d867abcfb7d568fff04922580d58dd737f63",
+      "bytes": 2152,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/daily_reports/daily_status_VARNELL_20261105.txt",
+      "sha256": "30a39a51050c6b9820046f9632b10fb1c9e2a3f72949a759649b22966534bd3f",
+      "bytes": 547,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/daily_reports/daily_status_VARNELL_20261106.pdf",
+      "sha256": "2e9cdb9fac4de7cd540bd0edce5ddebe412d92659a4054f090867e555321d862",
+      "bytes": 2152,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/daily_reports/daily_status_VARNELL_20261106.txt",
+      "sha256": "5572df2d2c2a5705c33d1b82e30183efd96030ff5f003062404a4f4b99c5b18d",
+      "bytes": 547,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/daily_reports/pod_VARNELL_20261107.pdf",
+      "sha256": "9614f12f75b4fc63ea29345c6bf1f1c239ac5080439a4c1d7efc33836f932f56",
+      "bytes": 1931,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/installed_equipment.csv",
+      "sha256": "6359831b3e8042fd6a20f829afc43a0bb9f5c1e8701ce5e03f8fa7b98cacaa51",
+      "bytes": 2039,
+      "record_count": 15
+    },
+    {
+      "file": "VARNELL/logreq/SCH-VARNELL-01.txt",
+      "sha256": "0be06c70569ed517cbc43b2af901ce2cde607cded442c4f702dfc540fe0d88af",
+      "bytes": 319,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/logreq/SCH-VARNELL-02.txt",
+      "sha256": "573d585e9bedfa3c7ea5f1eb9f8b86a844ce836b410f9a2788c652fd53cb1752",
+      "bytes": 319,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/logreq/SCH-VARNELL-04.txt",
+      "sha256": "616047c09fd3fde2f0d56c94915ebb9ff111aa403ecad5bf3f9d01758508d14c",
+      "bytes": 319,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/movrep/SCH-VARNELL-03.txt",
+      "sha256": "8d56ab4da28e20ad636e6d2db157e87d16be67580ec3aa1b6b9a2d3f9c019054",
+      "bytes": 277,
+      "record_count": 1
+    },
+    {
+      "file": "VARNELL/nec_billets.csv",
+      "sha256": "9bf0f5594bd73a472058c5b90ae13f6ce794c75bd1731531b70eb0b81e7286fc",
+      "bytes": 5763,
+      "record_count": 37
+    },
+    {
+      "file": "VARNELL/onboard_allowance_cosal.csv",
+      "sha256": "ea6076ceb9a4358822e62e3309f1a9df8ba051c200ca7697af1ba4b5a9300d6d",
+      "bytes": 2771,
+      "record_count": 14
+    },
+    {
+      "file": "VARNELL/quals.csv",
+      "sha256": "c9570c09636091fcc831a3ca216c1f75c31fb46915948171555b802d7dfc9168",
+      "bytes": 72393,
+      "record_count": 472
+    },
+    {
+      "file": "VARNELL/requisition_status.csv",
+      "sha256": "8794e4efcd7e7d80cbc5de13e8b21545e815f4e5d6f081998f8ab21f454b7a7c",
+      "bytes": 6924,
+      "record_count": 22
+    },
+    {
+      "file": "VARNELL/roster.csv",
+      "sha256": "55bb642a3945607f197bdf05572e0d59027821c755b6bef78b9022a43a6d1dcc",
+      "bytes": 44890,
+      "record_count": 300
+    },
+    {
+      "file": "VARNELL/schedule_30day.csv",
+      "sha256": "5557114f16f74dedf2910a163d741cb3b0f6235bce2f8997dc6f4ea2bcb7413a",
+      "bytes": 843,
+      "record_count": 4
+    },
+    {
+      "file": "VARNELL/sked_loep.csv",
+      "sha256": "3f027953b3e27c4b7c71cf809f3ea812a2d4869c8aed8103a699f4764b45edd5",
+      "bytes": 2004,
+      "record_count": 15
+    },
+    {
+      "file": "VARNELL/sked_schedule.csv",
+      "sha256": "474ba5823f3034d6ae94a37e2b93d3af8b3f13178c54177450d2bf07380ff04d",
+      "bytes": 47328,
+      "record_count": 165
+    },
+    {
+      "file": "VARNELL/training_readiness.csv",
+      "sha256": "865753517890b9e8b5f31ba7ede444800c7a3b30e002b5c0ad35e3bef07adf75",
+      "bytes": 1603,
+      "record_count": 10
+    },
+    {
+      "file": "VARNELL/watchbill.csv",
+      "sha256": "51dea8b08aab09142cae772bf8f93f39744b568b2b4351efdc85e127b0bcd5da",
+      "bytes": 175682,
+      "record_count": 1350
+    },
+    {
+      "file": "squadron/action_candidates.json",
+      "sha256": "748c9d39606fe5579846e29d15384b25fdf0addce0bf49e6d5edc0cac528d297",
+      "bytes": 1926,
+      "record_count": 4
+    },
+    {
+      "file": "squadron/data_catalog.json",
+      "sha256": "bf4b34a1cf9193bcec997f298623427d71f078304e2dc2b6905a45534acdb1e2",
+      "bytes": 91374,
+      "record_count": 126
+    },
+    {
+      "file": "squadron/data_dictionary.json",
+      "sha256": "33a5a86a44e4d0ac50dacd2714c986fb7fc6e46c17c2c17432c8957b31d19eb4",
+      "bytes": 230286,
+      "record_count": 55
+    },
+    {
+      "file": "squadron/delay_model_params.yaml",
+      "sha256": "50d0a8662ae03967dcba30cc952228570e1f5f9a272ace1c38de8c42979ac78f",
+      "bytes": 2488,
+      "record_count": 1
+    },
+    {
+      "file": "squadron/events_missions.json",
+      "sha256": "2e94a7f781d33c8afb5bf0ab68cd728cec9c315348b26b1561493e5b0a7d316d",
+      "bytes": 11549,
+      "record_count": 4
+    },
+    {
+      "file": "squadron/fleet_onboard_stock.csv",
+      "sha256": "807117f59403411c07e49f5ab654d9b57431644773b1ef3c665dca1431c21c92",
+      "bytes": 4647,
+      "record_count": 42
+    },
+    {
+      "file": "squadron/insurv_findings.csv",
+      "sha256": "2b8dddafd9f555bd2b3638836a70950537d50fbd71f5a96dffa2aeee9fa3c6fe",
+      "bytes": 1715,
+      "record_count": 15
+    },
+    {
+      "file": "squadron/mission_equipment_tree.json",
+      "sha256": "edb46d77239002d8edd12f37b79e65487d2b46aea6f90d5de23c95e56ac8a932",
+      "bytes": 17242,
+      "record_count": 5
+    },
+    {
+      "file": "squadron/part_catalog.csv",
+      "sha256": "d7794d6975a427a38cec1eb319330aa4ad8c80550dbe6615655e757d5ee01614",
+      "bytes": 1535,
+      "record_count": 14
+    },
+    {
+      "file": "squadron/personnel_events.csv",
+      "sha256": "943626a7209f144a47e085d9098b556abf3055a2e3be9b92cf2068c53cf6e52b",
+      "bytes": 486,
+      "record_count": 2
+    },
+    {
+      "file": "squadron/readiness_baseline.csv",
+      "sha256": "ca51c4ab4e49ba603c723e0cb4cfd79c428d72c078d3999816bebc3ede421afa",
+      "bytes": 3414,
+      "record_count": 15
+    },
+    {
+      "file": "squadron/readiness_current.csv",
+      "sha256": "a9b924fdc6d7048da9df44f12563bebcb00070288092ab9a58a8e8e55eb990b5",
+      "bytes": 3415,
+      "record_count": 15
+    },
+    {
+      "file": "squadron/roc_poe_mission_map.csv",
+      "sha256": "21805270baed590c0a593088ba91a6edbfce98e3835d4341bbb026893165f9ae",
+      "bytes": 458,
+      "record_count": 5
+    },
+    {
+      "file": "squadron/scenario_events.json",
+      "sha256": "9dde0f135168c0130d0d92cc9385317f8beb298132f4a7268ca17763c65e0003",
+      "bytes": 1612,
+      "record_count": 5
+    },
+    {
+      "file": "squadron/ship_positions.csv",
+      "sha256": "f3c2ecd22d08c146868f2051741df57a2931c9479709c33cfdcc6a8a821f0a23",
+      "bytes": 14689,
+      "record_count": 90
+    },
+    {
+      "file": "squadron/ships.csv",
+      "sha256": "4c9da2b32e29c0771ef842942bcbc83f9c8104bbffd6b9d1e9cd9180b91168d9",
+      "bytes": 964,
+      "record_count": 3
+    },
+    {
+      "file": "squadron/status_code_reference.csv",
+      "sha256": "fec60b3ef31f3fefc8f1f9eefdf837f7b8cda117427436c5fb29354a14244085",
+      "bytes": 1344,
+      "record_count": 11
+    },
+    {
+      "file": "squadron/system_status.csv",
+      "sha256": "6d0e3486a0980518d9a19f0e893a8e93cb119205771878e96714dbddfb370dd1",
+      "bytes": 3202,
+      "record_count": 45
+    },
+    {
+      "file": "squadron/visual_system_map.csv",
+      "sha256": "b187e9ec38e6460abb3f5bf8b4fbac332b87fcb50159650558a9574433be51c7",
+      "bytes": 2554,
+      "record_count": 15
+    },
+    {
+      "file": "squadron/wholesale_stock.csv",
+      "sha256": "658325131af89b029612eb70b946ba8b6e5f13cd27bab98a89bee02d6f3e5d65",
+      "bytes": 6138,
+      "record_count": 28
+    },
+    {
+      "file": "validation/daily_status_expected_facts.json",
+      "sha256": "125078823264c64b9163afed533296237342946ae4825a84fc0c06d4f0a0eda9",
+      "bytes": 4396,
+      "record_count": 18
+    },
+    {
+      "file": "validation/expected_anomalies.json",
+      "sha256": "914c4278c8464b9685d3926da79e90d2c3f84543141da117dee62d66987d8dda",
+      "bytes": 3732,
+      "record_count": 10
+    }
+  ],
+  "contains_real_operational_data": false,
+  "provenance": "proposed"
+}

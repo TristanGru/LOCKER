@@ -1,0 +1,494 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "as_of": "2026-11-07T18:00:00Z",
+  "events": [
+    {
+      "event_id": "EVT-KESSLER-01",
+      "label": "Mission A",
+      "ship_id": "KESSLER",
+      "name": "Group Sail / SWATT exercise serial",
+      "ofrp_phase": "INTEGRATED",
+      "start": "2026-11-13T12:00:00Z",
+      "end": "2026-11-19T20:00:00Z",
+      "mission_areas": [
+        "AW",
+        "MOB",
+        "CCC"
+      ],
+      "original_start": "2026-11-16T12:00:00Z",
+      "known_at": "2026-11-07T15:00:00Z",
+      "required_systems": [
+        {
+          "eic": "SPY1D",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "CIWS",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "AEGIS",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "PROPULSION",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "POWER",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "NAVRADAR",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "CSLAN",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "SATCOM",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "DATALINK",
+          "min_status_score": 0.6
+        }
+      ],
+      "required_watch_teams": [
+        {
+          "watchstation_code": "4310",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4320",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4330",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4610",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4620",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4630",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4710",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4720",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4730",
+          "k": 1
+        }
+      ],
+      "prerequisite_events": [],
+      "prerequisite_certs": [
+        "CERT-KESSLER-AW",
+        "CERT-KESSLER-MOB",
+        "CERT-KESSLER-CCC"
+      ],
+      "training_requirements": [
+        "TRQ-KESSLER-AW-01",
+        "TRQ-KESSLER-MOB-01",
+        "TRQ-KESSLER-CCC-01"
+      ],
+      "consequence_if_missed": "Follow-on exercise sequence requires human rescheduling",
+      "schedule_block_id": "SCH-KESSLER-06",
+      "schedule_change_allowed": true,
+      "max_shift_days": 3,
+      "provenance": "proposed"
+    },
+    {
+      "event_id": "EVT-KESSLER-02",
+      "label": "Mission B",
+      "ship_id": "KESSLER",
+      "name": "COMPTUEX exercise",
+      "ofrp_phase": "INTEGRATED",
+      "start": "2026-11-25T12:00:00Z",
+      "end": "2026-12-01T20:00:00Z",
+      "mission_areas": [
+        "AW",
+        "ASW",
+        "SUW",
+        "MOB",
+        "CCC"
+      ],
+      "original_start": "2026-11-25T12:00:00Z",
+      "known_at": "2026-11-03T06:00:00Z",
+      "required_systems": [
+        {
+          "eic": "SPY1D",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "CIWS",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "AEGIS",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "SQQ89",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "TOWED",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "SONARPROC",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "GUN5",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "SURFSEARCH",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "FIRECONTROL",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "PROPULSION",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "POWER",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "NAVRADAR",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "CSLAN",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "SATCOM",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "DATALINK",
+          "min_status_score": 0.6
+        }
+      ],
+      "required_watch_teams": [
+        {
+          "watchstation_code": "4310",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4320",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4330",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4410",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4420",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4430",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4510",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4520",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4530",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4610",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4620",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4630",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4710",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4720",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4730",
+          "k": 1
+        }
+      ],
+      "prerequisite_events": [
+        "EVT-KESSLER-01"
+      ],
+      "prerequisite_certs": [
+        "CERT-KESSLER-AW",
+        "CERT-KESSLER-ASW",
+        "CERT-KESSLER-SUW",
+        "CERT-KESSLER-MOB",
+        "CERT-KESSLER-CCC"
+      ],
+      "training_requirements": [
+        "TRQ-KESSLER-AW-01",
+        "TRQ-KESSLER-ASW-01",
+        "TRQ-KESSLER-SUW-01",
+        "TRQ-KESSLER-MOB-01",
+        "TRQ-KESSLER-CCC-01"
+      ],
+      "consequence_if_missed": "Follow-on exercise sequence requires human rescheduling",
+      "schedule_block_id": "SCH-KESSLER-08",
+      "schedule_change_allowed": true,
+      "max_shift_days": 3,
+      "provenance": "proposed"
+    },
+    {
+      "event_id": "EVT-VARNELL-01",
+      "label": "Mission C",
+      "ship_id": "VARNELL",
+      "name": "ASW certification exercise",
+      "ofrp_phase": "BASIC",
+      "start": "2026-11-18T12:00:00Z",
+      "end": "2026-11-21T20:00:00Z",
+      "mission_areas": [
+        "ASW",
+        "MOB",
+        "CCC"
+      ],
+      "original_start": "2026-11-18T12:00:00Z",
+      "known_at": "2026-11-03T06:00:00Z",
+      "required_systems": [
+        {
+          "eic": "SQQ89",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "TOWED",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "SONARPROC",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "PROPULSION",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "POWER",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "NAVRADAR",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "CSLAN",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "SATCOM",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "DATALINK",
+          "min_status_score": 0.6
+        }
+      ],
+      "required_watch_teams": [
+        {
+          "watchstation_code": "4410",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4420",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4430",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4610",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4620",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4630",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4710",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4720",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4730",
+          "k": 1
+        }
+      ],
+      "prerequisite_events": [],
+      "prerequisite_certs": [
+        "CERT-VARNELL-ASW",
+        "CERT-VARNELL-MOB",
+        "CERT-VARNELL-CCC"
+      ],
+      "training_requirements": [
+        "TRQ-VARNELL-ASW-01",
+        "TRQ-VARNELL-MOB-01",
+        "TRQ-VARNELL-CCC-01"
+      ],
+      "consequence_if_missed": "Follow-on exercise sequence requires human rescheduling",
+      "schedule_block_id": "SCH-VARNELL-03",
+      "schedule_change_allowed": true,
+      "max_shift_days": 3,
+      "provenance": "proposed"
+    },
+    {
+      "event_id": "EVT-ASHBY-01",
+      "label": "Mission D",
+      "ship_id": "ASHBY",
+      "name": "Sustainment exercise",
+      "ofrp_phase": "SUSTAINMENT",
+      "start": "2026-11-22T12:00:00Z",
+      "end": "2026-11-28T20:00:00Z",
+      "mission_areas": [
+        "SUW",
+        "MOB",
+        "CCC"
+      ],
+      "original_start": "2026-11-22T12:00:00Z",
+      "known_at": "2026-11-03T06:00:00Z",
+      "required_systems": [
+        {
+          "eic": "GUN5",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "SURFSEARCH",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "FIRECONTROL",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "PROPULSION",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "POWER",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "NAVRADAR",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "CSLAN",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "SATCOM",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "DATALINK",
+          "min_status_score": 0.6
+        }
+      ],
+      "required_watch_teams": [
+        {
+          "watchstation_code": "4510",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4520",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4530",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4610",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4620",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4630",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4710",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4720",
+          "k": 1
+        },
+        {
+          "watchstation_code": "4730",
+          "k": 1
+        }
+      ],
+      "prerequisite_events": [],
+      "prerequisite_certs": [
+        "CERT-ASHBY-SUW",
+        "CERT-ASHBY-MOB",
+        "CERT-ASHBY-CCC"
+      ],
+      "training_requirements": [
+        "TRQ-ASHBY-SUW-01",
+        "TRQ-ASHBY-MOB-01",
+        "TRQ-ASHBY-CCC-01"
+      ],
+      "consequence_if_missed": "Follow-on exercise sequence requires human rescheduling",
+      "schedule_block_id": "SCH-ASHBY-03",
+      "schedule_change_allowed": true,
+      "max_shift_days": 3,
+      "provenance": "proposed"
+    }
+  ]
+}
