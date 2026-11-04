@@ -10,9 +10,12 @@ __pycache__/
 # Node
 node_modules/
 dist/
+test-results/
+playwright-report/
 
 # App runtime output (activity log is the app's own, never a source record)
 logs/
+data/normalized/
 
 # Secrets and local config
 .env

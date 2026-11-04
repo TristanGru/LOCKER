@@ -231,11 +231,18 @@ class World:
 
 # ====================================================================== scenario (R4)
 class Scenario:
-    def __init__(self, baseline: Baseline, log_path: Path | None = None):
+    def __init__(self, baseline: Baseline, log_path: Path | None = None, persist: bool = True):
         self.b = baseline
         self.changes: list[dict] = []
         self.version = 0
         self.log_path = log_path or (LOG_DIR / "activity.jsonl")
+        self.persist = persist
+
+    def fork(self):
+        scenario = Scenario(self.b, self.log_path, persist=False)
+        scenario.changes = copy.deepcopy(self.changes)
+        scenario.version = self.version
+        return scenario
 
     # derived state
     def played(self) -> list[str]:
@@ -298,6 +305,8 @@ class Scenario:
         self._log({"op": "reset"})
 
     def _log(self, rec: dict):
+        if not self.persist:
+            return
         try:
             self.log_path.parent.mkdir(parents=True, exist_ok=True)
             with open(self.log_path, "a", encoding="utf-8") as f:
@@ -374,6 +383,8 @@ def inport_place(sw: ShipWorld, t: float) -> str | None:
 
 def build_world(scn: Scenario) -> World:
     b = scn.b
+    if b.configuration_errors:
+        raise ValueError("; ".join(b.configuration_errors))
     cursor_dt = scn.cursor_dt()
     cursor = day_of(cursor_dt)
     v = b.view(cursor_dt)
@@ -931,8 +942,23 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
     grid = np.arange(0, H + 1, dtype=float) + 0.5
     bands = pval(world.params, "bands")
     T_by_ship = {}
+    interval_columns = {}
     for s, sw in world.ships.items():
-        T_by_ship[s] = np.concatenate([grid, np.array([m.start for m in sw.missions], dtype=float)])
+        times = list(grid) + [mission.start for mission in sw.missions]
+        if detail:
+            for mission in sw.missions:
+                boundaries = [mission.start, max(mission.start, mission.end - 1e-6)]
+                for holders in sw.holders.values():
+                    for holder in holders:
+                        for beginning, ending, reason, source in holder.off:
+                            boundaries.extend([beginning, ending])
+                boundaries.extend(training["expires"] + 1e-6 for training in sw.trainings)
+                boundaries.extend(cert["expires"] + 1e-6 for cert in sw.certs.values())
+                samples = sorted(set(list(np.arange(mission.start, mission.end, .25)) +
+                    [point for point in boundaries if mission.start <= point < mission.end]))
+                interval_columns[mission.event_id] = list(range(len(times), len(times) + len(samples)))
+                times.extend(samples)
+        T_by_ship[s] = np.array(times, dtype=float)
     r = _evaluate(world, T_by_ship, n, seed, planned=False)
     G = len(grid)
     missions_out = []
@@ -995,12 +1021,25 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
             for pe, arr in prereq_arrays:
                 ok &= arr[:, None]
             curve = [round(float(x), 4) for x in ok.mean(axis=0)]
+        interval_probability = None
+        interval_gates = []
+        if detail:
+            interval_ok = np.ones(n, bool)
+            for gate in _gates(world, world.ships[s], m, r[s], interval_columns[eid]):
+                gate_ok = gate["ok"].all(axis=1)
+                interval_ok &= gate_ok
+                interval_gates.append({"gate_id": gate["id"], "label": gate["label"], "p_ok": round(float(gate_ok.mean()), 4)})
+            for prerequisite, values in prereq_arrays:
+                interval_ok &= values
+            interval_probability = round(float(interval_ok.mean()), 4)
         missions_out.append({
             "event_id": eid, "label": m.label, "ship_id": s, "name": m.name, "start": iso(dt_of(m.start)),
             "start_dtg": format_dtg(dt_of(m.start)), "start_local": local_label(dt_of(m.start)), "day": round(m.start, 2),
             "p_ready": round(p, 4), "band": band(p, bands), "next_domino": nd, "gates": gate_rows, "curve": curve,
             "planned": planned.get(eid), "areas": m.areas, "moved_note": m.moved_note, "consequence": m.consequence,
             "sources": [x.model_dump() for x in m.sources], "prereqs": m.prereqs,
+            "end": iso(dt_of(m.end)), "interval_p_ready": interval_probability,
+            "interval_gates": interval_gates, "interval_sampling_hours": 6,
         })
     ships_out = {}
     for s, sw in world.ships.items():
@@ -1176,10 +1215,13 @@ def domino_graph(fc: dict, ship_id: str, event_id: str | None = None) -> dict:
         if m["ship_id"] != ship_id or (event_id and m["event_id"] != event_id):
             continue
         mid = f"mission:{m['event_id']}"
-        G.add_node(mid, kind="mission", label=f"{m['label']}: {m['name']}", p=m["p_ready"], band=m["band"])
+        G.add_node(mid, kind="mission", label=f"{m['label']}: {m['name']}", p=m["p_ready"], band=m["band"], sources=m["sources"])
         for g in m["gates"]:
             gid = f"{m['event_id']}|{g['gate_id']}"
-            G.add_node(gid, kind=g["kind"], label=g["label"], p=g["p_ok"], uplift=g["uplift"], next=(g["gate_id"] == m["next_domino"]))
+            entity = g["gate_id"].split(":", 1)[1]
+            G.add_node(gid, kind=g["kind"], label=g["label"], p=g["p_ok"], uplift=g["uplift"], next=(g["gate_id"] == m["next_domino"]),
+                       gate_id=g["gate_id"], eic=entity if g["kind"] == "system" else None,
+                       sources=[source for item in g.get("items", []) for source in item.get("sources", [])])
             G.add_edge(gid, mid)
             for it in g.get("items", []):
                 iid = f"{gid}|{it['key']}"
@@ -1187,7 +1229,8 @@ def domino_graph(fc: dict, ship_id: str, event_id: str | None = None) -> dict:
                 p_ok = (1 - pa) if pa is not None else it.get("p_aboard_at_mission", 1 - (it.get("p_fail_before_mission") or 0))
                 if it["kind"] == "hazard" and (it.get("p_fail_before_mission") or 0) < 0.01:
                     continue
-                G.add_node(iid, kind=it["kind"], label=it["title"], p=p_ok)
+                G.add_node(iid, kind=it["kind"], label=it["title"], p=p_ok,
+                           eic=it.get("eic"), sources=it.get("sources", []))
                 G.add_edge(iid, gid)
     assert nx.is_directed_acyclic_graph(G)
     return {"nodes": [{"id": n, **d} for n, d in G.nodes(data=True)], "edges": [{"source": a, "target": b} for a, b in G.edges()]}

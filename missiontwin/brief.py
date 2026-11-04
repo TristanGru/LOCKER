@@ -25,7 +25,8 @@ def build_brief(fc: dict, ship_id: str, ranking: dict | None, contradictions: li
     info = SHIPS[ship_id]
     now = parse_ts(fc["cursor"])
     L = [BANNER, f"READINESS BRIEF  {info['name']} ({info['hull']})",
-         f"As of {fc['cursor_dtg']} ({local_label(now)}). Seed {fc['seed']}, {fc['runs']:,} runs. Read-only; the captain decides.", "",
+         f"As of {fc['cursor_dtg']} ({local_label(now)}). Seed {fc['seed']}, {fc['runs']:,} runs. Read-only; the captain decides.",
+         "Exercise estimates, not official readiness ratings. Headline probabilities assess event start.", "",
          "BOTTOM LINE"]
     ctx_missions = []
     for m in fc["missions"]:
@@ -43,6 +44,8 @@ def build_brief(fc: dict, ship_id: str, ranking: dict | None, contradictions: li
                  f"{plan_txt}. {cite(srcs)}")
         if m.get("moved_note"):
             L.append(f"  Mission date {m['moved_note']}.")
+        if m.get("interval_p_ready") is not None:
+            L.append(f"  Interval checks: {m['interval_p_ready'] * 100:.0f}%, sampled every six hours plus known boundaries; not a continuous guarantee.")
         ctx_missions.append({"label": m["label"], "p_ready": m["p_ready"], "band": m["band"], "planned": pl.get("result"), "margin_days": margin})
     L += ["", "NEXT DOMINO"]
     for m in fc["missions"]:

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import os
+import json
 import threading
 from pathlib import Path
 
@@ -21,6 +22,8 @@ from .fixes import rank_fixes
 from .ingest import find_contradictions, load_baseline, read_pdf_pages
 from .llm import LLMClient, llm_brief, nl_to_action
 from .models import ACTION_TYPES, ActionAdapter, BriefBody, ChangeBody, FixDecisionBody, ParseBody, VersionBody, action_schema
+from .visualization import registry
+from .normalize import NORMALIZED_ROOT, REFERENCE_ROOT
 
 
 class AppState:
@@ -31,8 +34,11 @@ class AppState:
         self.baseline = load_baseline(self.data_dir, self.client)
         self.scenario = Scenario(self.baseline, log_path=log_path)
         self.rankings: dict = {}
+        self.initial_forecast = None
 
     def world(self):
+        if self.baseline.configuration_errors:
+            raise HTTPException(422, {"configuration_errors": self.baseline.configuration_errors})
         return build_world(self.scenario)
 
     def fc(self, detail=True):
@@ -51,6 +57,23 @@ class AppState:
     def check_version(self, v: int):
         if v != self.scenario.version:
             raise HTTPException(status_code=409, detail={"error": "scenario changed, refresh", "version": self.scenario.version})
+
+    def validate_action(self, action: dict):
+        ship = action.get("ship_id")
+        if ship and ship not in SHIP_IDS:
+            raise HTTPException(422, "Unknown ship")
+        kind = action["type"]
+        if kind == "remove_person":
+            if not any(row["member_id"] == action["member_id"] for row in self.baseline.r(ship, "roster.csv")):
+                raise HTTPException(422, "Unknown member for selected ship")
+            if action.get("until_time") and action["until_time"] <= action["from_time"]:
+                raise HTTPException(422, "Return must follow absence start")
+        elif kind == "delay_part" and not any(row["doc_number"] == action["doc_number"] for row in self.view().rows(ship, "requisition_status.csv")):
+            raise HTTPException(422, "Requisition is not known for this ship at the scenario cursor")
+        elif kind == "add_casrep" and action["eic"] not in set(SYSTEMS) | set(COMPONENT_TO_SYSTEM):
+            raise HTTPException(422, "Unknown equipment identity")
+        elif kind == "shift_mission" and not any(event["event_id"] == action["event_id"] for event in self.baseline.events):
+            raise HTTPException(422, "Unknown event identity")
 
 
 def create_app(state: AppState | None = None) -> FastAPI:
@@ -97,7 +120,66 @@ def create_app(state: AppState | None = None) -> FastAPI:
     def get_forecast():
         s = S()
         with s.lock:
-            return s.fc()
+            return {**s.fc(), "version": s.scenario.version}
+
+    @app.get("/api/dashboard")
+    def dashboard():
+        state = S()
+        with state.lock:
+            if state.baseline.configuration_errors:
+                raise HTTPException(422, {"configuration_errors": state.baseline.configuration_errors})
+            if state.initial_forecast is None:
+                state.initial_forecast = forecast(build_world(Scenario(state.baseline, persist=False)))
+            return {"state": state_(), "forecast": get_forecast(),
+                    "baseline": state.initial_forecast, "issues": issues(),
+                    "assumptions": assumptions(), "log": log(), "visualization": registry()}
+
+    @app.get("/api/visualization")
+    def visualization():
+        return registry()
+
+    @app.get("/api/data-contract")
+    def data_contract():
+        report_path = NORMALIZED_ROOT / "import_report.json"
+        report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.exists() else None
+        if report:
+            report = {key: value for key, value in report.items() if key != "quarantine"}
+        return {"active_profile": "canonical", "active_path": "data/synthetic",
+                "reference": report, "catalog": S().baseline.catalog}
+
+    @app.post("/api/preview")
+    def preview(body: ChangeBody):
+        state = S()
+        with state.lock:
+            state.check_version(body.base_version)
+            scenario = state.scenario.fork()
+            before = state.fc()
+            if body.action is not None:
+                state.validate_action(body.action.model_dump(mode="json"))
+        if body.kind == "action" and body.action is not None:
+            action = body.action.model_dump(mode="json")
+            if action["type"] == "apply_fix":
+                raise HTTPException(422, "Use the ranked fix comparison to preview a fix package")
+            if action.get("ship_id") and action["ship_id"] not in SHIP_IDS:
+                raise HTTPException(422, "Unknown ship")
+            scenario.apply("action", action, actor="preview")
+        elif body.kind == "set_assumption" and body.key in EDITABLE_NUMERIC:
+            low, high = EDITABLE_NUMERIC[body.key]
+            try:
+                value = float(body.value)
+            except (TypeError, ValueError):
+                raise HTTPException(422, "Numeric assumption required")
+            if not low <= value <= high:
+                raise HTTPException(422, "Assumption outside allowed range")
+            scenario.apply("set_assumption", {"key": body.key, "value": value}, actor="preview")
+        else:
+            raise HTTPException(422, "Preview supports an action or editable assumption")
+        try:
+            after = forecast(build_world(scenario))
+        except (KeyError, ValueError) as error:
+            raise HTTPException(422, f"Invalid proposal: {error}")
+        return {"base_version": body.base_version, "before": before, "after": after,
+                "persisted": False, "proposal": body.model_dump(mode="json")}
 
     @app.get("/api/graph/{ship_id}")
     def graph(ship_id: str, event_id: str | None = None):
@@ -132,9 +214,11 @@ def create_app(state: AppState | None = None) -> FastAPI:
                     "stale": v.stale_files(thr)}
 
     @app.get("/api/source")
-    def source(file: str, loc: str = "", span: str = ""):
+    def source(file: str, loc: str = "", span: str = "", profile: str = "canonical"):
         s = S()
-        base = s.data_dir.resolve()
+        if profile not in {"canonical", "reference"}:
+            raise HTTPException(422, "Unknown data profile")
+        base = REFERENCE_ROOT.resolve() if profile == "reference" else s.data_dir.resolve()
         if file.startswith("logs/"):
             return {"file": file, "kind": "note", "lines": ["What-if or approved fix recorded in the app's own activity log (not a source record)."], "highlight": None}
         p = (base / file).resolve()
@@ -142,11 +226,13 @@ def create_app(state: AppState | None = None) -> FastAPI:
             raise HTTPException(400, "path outside data directory")
         if not p.exists() or p.is_dir():
             raise HTTPException(404, f"{file} not found")
-        cat = next((c for c in s.baseline.catalog if file.startswith(c["file"].rstrip("/"))), None)
+        cat = next((c for c in s.baseline.catalog if file.startswith(c["file"].rstrip("/"))), None) if profile == "canonical" else None
         meta = {"real_system": cat["real_system"], "steward": cat["steward"], "as_of": cat["as_of"],
                 "fielded_access_path": cat["fielded_access_path"], "spec": cat["spec"]} if cat else {}
         stale = s.view().stale_files(pval(s.scenario.params(), "staleness_threshold_days"))
         meta["stale"] = next((v for k, v in stale.items() if file.startswith(k.rstrip("/"))), None)
+        if profile == "reference":
+            meta = {"real_system": "Reference exercise / NOT used by forecast", "steward": "Synthetic package", "as_of": "See record timestamp", "stale": None}
         if p.suffix == ".pdf":
             pages = read_pdf_pages(p)
             n = int(loc.split()[-1]) if loc.startswith("page") else 1
@@ -222,6 +308,7 @@ def create_app(state: AppState | None = None) -> FastAPI:
                 if body.action is None:
                     raise HTTPException(422, "action required")
                 a = body.action.model_dump(mode="json")
+                s.validate_action(a)
                 if a["type"] == "apply_fix":
                     return _decide(s, a["fix_id"], "approve", 0.0, "via plain-English action")
                 c = s.scenario.apply("action", a)
@@ -237,6 +324,8 @@ def create_app(state: AppState | None = None) -> FastAPI:
                     raise HTTPException(422, f"value out of range [{lo}, {hi}]")
                 c = s.scenario.apply("set_assumption", {"key": body.key, "value": val})
             elif body.kind == "confirm_fact":
+                if body.fact_id not in {fact.fact_id for fact in s.view().facts_with_corroboration()}:
+                    raise HTTPException(422, "Fact is not known at this scenario cursor")
                 c = s.scenario.apply("confirm_fact", {"fact_id": body.fact_id, "include": bool(body.include)})
             elif body.kind == "play_event":
                 c = s.scenario.apply("play_event", {})

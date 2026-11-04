@@ -212,10 +212,9 @@ AREAS = {
     "SUW": ("Surface Warfare", [("GUN5", 0.6), ("SSM", 0.4)]),
     "MOB": ("Mobility", [("GTM", 0.35), ("SSDG", 0.25), ("STEER", 0.2), ("NAVRAD", 0.1), ("HM", 0.1)]),
     "CCC": ("Command, Control and Communications", [("LAN", 0.6), ("COMMS", 0.4)]),
-    "STW": ("Strike Warfare", [("VLS", 1.0)]),
 }
-ROC_WEIGHTS = {"AW": 0.30, "ASW": 0.20, "SUW": 0.20, "MOB": 0.15, "CCC": 0.10, "STW": 0.05}
-ROC_PRIMARY = {"AW": "P", "ASW": "P", "SUW": "P", "MOB": "P", "CCC": "P", "STW": "S"}
+ROC_WEIGHTS = {"AW": 0.30, "ASW": 0.20, "SUW": 0.20, "MOB": 0.20, "CCC": 0.10}
+ROC_PRIMARY = {area: "P" for area in AREAS}
 
 COMPONENT_TO_SYSTEM = {c["eic"]: s["eic"] for s in SYSTEMS.values() for c in s["components"]}
 ALL_EICS = set(SYSTEMS) | set(COMPONENT_TO_SYSTEM)

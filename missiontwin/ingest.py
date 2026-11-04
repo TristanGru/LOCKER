@@ -20,7 +20,7 @@ import yaml
 
 from . import BANNER
 from .domain import (ALL_EICS, DATA_DIR, MONTHS, SCENARIO_NOW, SHIP_IDS, SHIPS, STATUS_SCORE, UTC, date_dt, hull_key,
-                     parse_date, parse_dtg, parse_ts)
+                     parse_date, parse_dtg, parse_ts, mission_tree_json)
 from .llm import LLMClient, build_name_index, extract_facts, surname_of
 from .models import Contradiction, ExtractedFact, IngestIssue, SourceRef
 
@@ -113,6 +113,7 @@ class Baseline:
     name_index: dict = field(default_factory=dict)
     expected_facts: dict = field(default_factory=dict)
     extraction_methods: dict = field(default_factory=dict)
+    configuration_errors: list[str] = field(default_factory=list)
 
     def r(self, ship: str, fname: str) -> list[dict]:
         return self.rows.get((ship, fname), [])
@@ -333,6 +334,8 @@ def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) ->
             b.issues.append(IngestIssue(file=f"squadron/{name}", loc="file", reason=str(e)))
             return {}
     b.tree = j("mission_equipment_tree.json")
+    if b.tree.get("missions") != mission_tree_json()["missions"]:
+        b.configuration_errors.append("Mission tree differs from the canonical five-area configuration. Normalize or regenerate the dataset before forecasting.")
     b.events = j("events_missions.json").get("events", [])
     for ev in b.events:
         for k in ("start", "end"):

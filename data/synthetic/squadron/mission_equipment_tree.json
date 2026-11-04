@@ -479,57 +479,6 @@
           ]
         }
       ]
-    },
-    {
-      "mission_area": "STW",
-      "mission_area_name": "Strike Warfare",
-      "tasks": [
-        {
-          "nta_id": "NTA-STW-01 (SYNTH)",
-          "name": "Conduct strike warfare",
-          "functional_areas": [
-            {
-              "name": "Strike Warfare systems",
-              "systems": [
-                {
-                  "eic": "VLS",
-                  "name": "Vertical launching system",
-                  "critical": true,
-                  "work_center": "CF02",
-                  "required_quals": [
-                    {
-                      "watchstation_code": "4330",
-                      "k": 1
-                    }
-                  ],
-                  "components": [
-                    {
-                      "eic": "VLS-LSEQ",
-                      "name": "Launch sequencers",
-                      "critical": true,
-                      "parts": [
-                        {
-                          "niin": "019990088",
-                          "name": "CIRCUIT CARD, LAUNCH SEQUENCER",
-                          "installed_qty": 2,
-                          "min_working": 1
-                        }
-                      ]
-                    },
-                    {
-                      "eic": "VLS-LCH",
-                      "name": "Launcher modules",
-                      "critical": true,
-                      "parts": []
-                    }
-                  ],
-                  "weight": 1.0
-                }
-              ]
-            }
-          ]
-        }
-      ]
     }
   ],
   "ship_overrides": {
