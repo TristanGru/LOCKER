@@ -41,7 +41,7 @@ export function Header() {
           <button className="m-2 underline" onClick={async()=>{if(!confirm('Validate and refresh sources? Active decisions block changed imports.'))return;try{await backend('sources/refresh',{base_version:snapshot.state.version});}catch(e){alert(String(e));}finally{bump();}}}>Refresh sources</button>
           <button className="m-2 underline" onClick={async()=>{if(!confirm('Refresh sources and reset playback/decisions if changed?'))return;try{await backend('sources/refresh',{base_version:snapshot.state.version,reset_scenario:true});}catch(e){alert(String(e));}finally{bump();}}}>Refresh with reset</button>
           <button className="m-2 underline" onClick={async()=>{try{await backend('undo',{base_version:snapshot.state.version});bump();}catch(e){alert(String(e));}}}>Undo last change</button>
-          <p>Thresholds: Ready {snapshot?.forecast.bands.green*100}% / Watch {snapshot?.forecast.bands.amber*100}%. Unknown evidence is not a probability.</p>
+          <p>Thresholds: Ready {snapshot?.forecast.bands.green*100}% / Watch {snapshot?.forecast.bands.yellow*100}%. Unknown evidence is not a probability.</p>
           {snapshot?.sources.sources.map((s:any)=><p className="my-2 border-b border-line" key={s.file}>{s.file}: {s.status} / {s.usage}<br/>{s.explanation}</p>)}
           <h3>Reported baseline (not forecast probabilities)</h3><pre className="whitespace-pre-wrap">{JSON.stringify(snapshot?.forecast.reported_baseline[ship],null,2)}</pre>
           <a href="/?legacy=1" className="underline">Advanced workspace: full source review, assumptions and action preview/apply</a>

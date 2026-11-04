@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_id,cert_id,cert_name,mission_area,status,certified_date,expires,planned_start,depends_on_avail_id,as_of,provenance
 VARNELL,CERT-VARNELL-AW,Air Warfare exercise certification,AW,CERTIFIED,2026-05-20,2027-05-20,,,2026-11-07T06:00:00Z,proposed
 VARNELL,CERT-VARNELL-ASW,Anti-Submarine Warfare exercise certification,ASW,NOT_STARTED,,2027-05-20,2026-11-09,AV-VARNELL-26-02,2026-11-07T06:00:00Z,proposed

@@ -364,7 +364,9 @@ export default function Workspace() {
         <div className="sidebar-bottom">
           <span className="connection-dot" />
           Local exercise /{" "}
-          {data.state.llm.configured ? data.state.llm.model : "offline rules"}
+          {data.state.llm.demo_mode
+            ? `offline cache (${data.state.llm.model})`
+            : data.state.llm.configured ? data.state.llm.model : "offline rules"}
           <small>
             Version {data.state.version} / seed {data.state.seed}
           </small>
@@ -493,7 +495,7 @@ export default function Workspace() {
                 </span>
               ))}
               <span className="threshold-key">
-                Includes interval checks / Watch {percent(bands.amber)} / Ready{" "}
+                Includes interval checks / Watch {percent(bands.yellow)} / Ready{" "}
                 {percent(bands.green)}
               </span>
             </div>
@@ -960,7 +962,7 @@ function MissionRow({
         </div>
         <div className="probability-bar">
           <div style={{ width: percent(mission.p_assessed ?? 0) }} />
-          <i style={{ left: percent(data.forecast.bands.amber) }} />
+          <i style={{ left: percent(data.forecast.bands.yellow) }} />
           <i style={{ left: percent(data.forecast.bands.green) }} />
         </div>
         <div className="assessment-detail">

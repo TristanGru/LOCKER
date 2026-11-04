@@ -54,11 +54,11 @@ export function fmtAge(hours: number): string {
 }
 
 export const pct = (p: number) => Number.isFinite(p) ? `${Math.round(p * 100)}%` : 'Unknown';
-let bands = {green:.8, amber:.6};
+let bands = {green:.8, yellow:.6};
 export const getBands = () => bands;
 export function configureBands(value: typeof bands) { bands = value; }
 
 /** Mission status for an odds value (same thresholds as the engine: Ready >= 82%, Watch >= 50%). */
 export function oddsStatus(odds: number): Status {
-  return !Number.isFinite(odds) ? 'unknown' : odds >= bands.green ? 'ready' : odds >= bands.amber ? 'watch' : 'risk';
+  return !Number.isFinite(odds) ? 'unknown' : odds >= bands.green ? 'ready' : odds >= bands.yellow ? 'watch' : 'risk';
 }

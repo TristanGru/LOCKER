@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 niin,ship_id,uic,storeroom_on_hand,storeroom_allowance,installed_qty,installed_system_eic,cross_deck_eligible,cannibalize_eligible,donor_cost_note,as_of,provenance
 019990001,KESSLER,99101,0,0,2,SPY1D-CW,false,false,drops below allowance,2026-11-07T06:00:00Z,proposed
 019990003,KESSLER,99101,2,2,1,CIWS-MOD,true,false,drops below allowance,2026-11-07T06:00:00Z,proposed

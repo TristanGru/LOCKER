@@ -28,11 +28,13 @@ def workspace(data_dir, offline_client, tmp_path):
 def change_csv(root, relative, transform):
     path = root / relative
     lines = path.read_text(encoding='utf-8').splitlines()
-    reader = csv.DictReader(lines[1:])
+    banner = lines[:1] if lines and lines[0].startswith('#') else []  # banner line is optional
+    reader = csv.DictReader(lines[len(banner):])
     columns, rows = reader.fieldnames, list(reader)
     rows = transform(rows)
     with path.open('w', encoding='utf-8', newline='') as stream:
-        stream.write(lines[0] + '\n')
+        for line in banner:
+            stream.write(line + '\n')
         writer = csv.DictWriter(stream, fieldnames=columns)
         writer.writeheader(); writer.writerows(rows)
 
@@ -40,7 +42,7 @@ def change_csv(root, relative, transform):
 def delay_source(root):
     def alter(rows):
         for row in rows:
-            if row['doc_number'] == 'R991016308A001':
+            if row['doc_number'] == 'V9910163080001':
                 row['status_history'] = row['status_history'].replace('BB 2026-11-05', 'BB 2026-11-12')
         return rows
     change_csv(root, 'KESSLER/requisition_status.csv', alter)
@@ -146,7 +148,7 @@ def test_stale_refresh_cannot_discard_decisions(workspace):
 
 
 @pytest.mark.parametrize('key,value', [('repair_after_part_days.min', 3), ('repair_after_part_days.max', 1),
-                                      ('bands.amber', .99), ('program_office_release_days.min', 6)])
+                                      ('bands.yellow', .99), ('program_office_release_days.min', 6)])
 def test_invalid_assumptions_preview_and_apply_do_not_mutate(workspace, key, value):
     _, state, client = workspace
     body = {'base_version': 0, 'kind': 'set_assumption', 'key': key, 'value': value}
@@ -289,7 +291,10 @@ def test_interval_only_blocker_drives_headline_graph_and_options(workspace):
     graph = client.get('/api/graph/KESSLER', params={'event_id': mission['event_id']}).json()
     assert next(n for n in graph['nodes'] if n['kind'] == 'mission')['p'] == mission['p_assessed']
     assert any(any(s['kind'] == 'schedule_training' for s in c['steps']) for c in client.get('/api/fixes/KESSLER').json()['candidates'])
-    assert fc['grid_dates'][-1] >= max(m['end'] for m in fc['missions'])
+    # The daily series is a fixed 30-day cursor window (DEV2 contract); interval assessment is computed
+    # separately, so events ending beyond the window are still assessed.
+    assert len(fc['grid_dates']) == 30
+    assert all(m['p_assessed'] is not None for m in fc['missions'] if m['end'] > fc['grid_dates'][-1])
     small = forecast(build_world(state.scenario), detail=False)
     assert small['missions'][0]['p_assessed'] == mission['p_assessed']
 

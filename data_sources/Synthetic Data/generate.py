@@ -118,7 +118,6 @@ class Package:
         target = ROOT / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         with target.open("w", encoding="utf-8", newline="") as stream:
-            stream.write(f"# {BANNER}\n")
             writer = csv.DictWriter(stream, fieldnames=fields)
             writer.writeheader()
             for row in rows:
@@ -184,7 +183,7 @@ def build_reference(package):
     package.csv("squadron/part_catalog.csv", parts, "Notional parts reference", "04_r_supply_milstrip.md")
     package.csv("squadron/visual_system_map.csv", zones, "Dashboard exercise extension", "09_mfom_mission_tree.md")
     ships = [{"ship_id": ship, "name": f"USS {ship.title()} (SYNTH)", "hull": hull,
-        "uic": uic, "dodaac": f"R{uic}", "squadron": "DESRON 99 (SYNTH)",
+        "uic": uic, "dodaac": f"V{uic}", "squadron": "DESRON 99 (SYNTH)",
         "ship_class": "Notional guided-missile destroyer, Arleigh Burke-style Flight IIA",
         "visual_reference": "US Navy Combatant, DTMB 5415",
         "visual_relationship": "Generic combatant visualization only; not an exact class or installed fit",
@@ -210,7 +209,7 @@ def build_reference(package):
         trees.append({"mission_area": area, "tasks": [{"nta_id": f"NTA-{area}-01 (SYNTH)",
             "name": f"Exercise {name} task", "functional_areas": [{"name": name, "systems": nodes}]}]})
     package.json("squadron/mission_equipment_tree.json", {"ship_class": "DDG (notional)",
-        "scoring": {"status_score_map": SCORE_MAP, "bands": {"green": .8, "amber": .6},
+        "scoring": {"status_score_map": SCORE_MAP, "bands": {"green": .8, "yellow": .6},
             "rollup": "Weighted systems; critical zero caps mission index at 59",
             "rating_policy": "Reported Y/Q/N is independent; index is not a probability",
             "provenance": "proposed; score map and bands informed by historical MFOM patent"},
@@ -326,11 +325,11 @@ def build_maintenance(package, ship, uic, hull, offset, job_count):
             equipment = package.equipment[2]
         part = next(item for item in package.parts if item["niin"] == equipment["niin"])
         jcn = f"{uic}{equipment['work_center']}{number:04d}"
-        doc = f"R{uic}{moment(-20).strftime('%y')[-1]}{moment(-20).strftime('%j')}B{number:03d}" if number % 3 == 0 else ""
+        doc = f"V{uic}{moment(-20).strftime('%y')[-1]}{moment(-20).strftime('%j')}{number:04d}" if number % 3 == 0 else ""
         jobs.append({"jcn": jcn, "ship_id": ship, "uic": uic, "work_center": equipment["work_center"],
             "jsn": f"{number:04d}", "eic": equipment["eic"], "apl": part["apl"],
             "equipment_noun": equipment["name"], "location": "EXERCISE-LOCATION",
-            "date_discovered": day_date(-20), "when_discovered_code": "A", "status_code": "0",
+            "date_discovered": day_date(-20), "when_discovered_code": "6", "status_code": "0",
             "job_state": "OPEN_AWAITING_PARTS" if doc else "DEFERRED", "deferral_reason_code": "1" if doc else "3",
             "date_deferred": day_date(-19) if not doc else "", "priority": "3", "type_avail": 4,
             "est_man_hours": package.random.choice([2, 4, 6, 8]), "casrep_dtg": "", "casrep_id": "",
@@ -357,7 +356,7 @@ def build_maintenance(package, ship, uic, hull, offset, job_count):
         jcn = f"{uic}{equipment['work_center']}{42 if system_eic == 'SPY1D' else 800 + sequence:04d}"
         if system_eic == "SPY1D":
             jobs[:] = [item for item in jobs if item["jcn"] != jcn]
-        doc = f"R{uic}{initial.strftime('%y')[-1]}{initial.strftime('%j')}A{sequence + 1:03d}"
+        doc = f"V{uic}{initial.strftime('%y')[-1]}{initial.strftime('%j')}{sequence + 1:04d}"
         casrep_id = f"{hull.replace('-', '')}-26-{serial}"
         repair = moment(8, 12) if system_eic == "SPY1D" else moment(8 + sequence, 12)
         history = [{"dtg": dtg(initial), "known_at": stamp(initial), "etr": stamp(repair), "report_type": "INITIAL"}]
@@ -370,9 +369,10 @@ def build_maintenance(package, ship, uic, hull, offset, job_count):
                 "etr": stamp(moment(-3, 14)), "report_type": "CORRECT"})
         for message_number, update in enumerate(history, 1):
             path = f"{ship}/casrep_messages/{casrep_id}_{message_number:02d}_{update['report_type']}.txt"
-            reference = "" if message_number == 1 else f"REF/A/MSG/USS {ship}/{dtg(initial)}//\n"
+            reference = "" if message_number == 1 else f"REF/A/MSG/USS {ship}/{dtg(initial).replace(' ', '')}//\n"
+            message_serial = serial if message_number == 1 else f"{int(serial) + 50 + message_number:03d}"
             supplement = "\nAMPN/PARTS RECEIVED 010800Z NOV 26. SUPPLY DELAY 98 HRS. MANHOURS 22.//" if update["report_type"] == "CORRECT" else ""
-            package.text(path, f"FM USS {ship} (FICTIONAL)\nTO DESRON 99 EXERCISE CELL\nDTG/{update['dtg']}//\nBT\nMSGID/CASREP/USS {ship}/{serial}/NOV//\n{reference}CASUALTY/{update['report_type']}/{equipment['name']}/CAT:{category}/EIC:{equipment['component_eic']}//\nEQUIP/{part['nomenclature']}/APL:{part['apl']}{('/JCN:' + jcn) if not missing else ''}//\nESTIMATE/ETR:{dtg(parse_time(update['etr']))}//\nASSIST/REQ:{'YES' if system_eic == 'SPY1D' else 'NO'}/TYPE:{'FTS' if system_eic == 'SPY1D' else 'SHIP FORCE'}//\nPARTS/1/NSN:{part['nsn']}/QTY:1/DOC:{doc}/PD:02/RDD:999//\nAMPN/INVENTED EQUIPMENT DEFICIENCY FOR SOFTWARE EXERCISE ONLY.//{supplement}\nRMKS/DELIVERY WINDOWS ARE IN THE SYNTHETIC SCHEDULE.//\nBT", "CASREP-style record message", "03_casrep.md")
+            package.text(path, f"R {update['dtg']}\nFM USS {ship} (FICTIONAL)\nTO DESRON 99 EXERCISE CELL\nBT\nMSGID/CASREP/USS {ship}/{message_serial}/NOV//\n{reference}CASUALTY/{update['report_type']}/{equipment['name']}/CAT:{category}/EIC:{equipment['component_eic']}//\nPARTSID/{part['nomenclature']}/APL:{part['apl']}/JCN:{jcn if not missing else 'NONE'}//\nESTIMATE/ETR:{dtg(parse_time(update['etr']))}//\nASSIST/REQ:{'YES' if system_eic == 'SPY1D' else 'NO'}/TYPE:{'FTS' if system_eic == 'SPY1D' else 'SHIP FORCE'}//\n1PARTS/1/NSN:{part['nsn']}/QTY:1/DOC:{doc}/PD:02/RDD:999//\nAMPN/INVENTED EQUIPMENT DEFICIENCY FOR SOFTWARE EXERCISE ONLY.//{supplement}\nRMKS/DELIVERY WINDOWS ARE IN THE SYNTHETIC SCHEDULE.//\nBT", "CASREP-style record message", "03_casrep.md")
             messages.append(path)
         casualty = {"casrep_id": casrep_id, "ship_id": ship, "uic": uic, "serial": serial,
             "initial_dtg": dtg(initial), "initial_time": stamp(initial), "known_at": stamp(initial),
@@ -390,7 +390,7 @@ def build_maintenance(package, ship, uic, hull, offset, job_count):
         order = order_row(ship, "" if missing else jcn, casrep_id, doc, part, code,
             day_date(7 + sequence), initial_day)
         if system_eic == "SPY1D":
-            order.update(status_code="BC", status_date=day_date(1), esd=day_date(11), delay_regime="LONG",
+            order.update(status_code="BC", status_date=day_date(1), esd="2026-12-15", delay_regime="LONG",
                 status_history=f"{day_date()}:BB;{day_date(1)}:BC", known_at=stamp(moment(1, 10)), expedite_flag=True)
         if ship == "ASHBY" and serial == "005":
             order.update(esd="2026-10-30", status_date="2026-10-29", known_at="2026-10-29T10:00:00Z")
@@ -400,7 +400,7 @@ def build_maintenance(package, ship, uic, hull, offset, job_count):
         if not missing:
             jobs.append({**jobs[0], "jcn": jcn, "jsn": jcn[-4:], "work_center": equipment["work_center"],
                 "eic": equipment["component_eic"], "apl": part["apl"], "equipment_noun": part["nomenclature"],
-                "date_discovered": initial.date().isoformat(), "when_discovered_code": "C",
+                "date_discovered": initial.date().isoformat(), "when_discovered_code": "2",
                 "status_code": "0" if closed else status, "job_state": "COMPLETED" if closed else "OPEN_AWAITING_PARTS",
                 "deferral_reason_code": "2" if system_eic == "SPY1D" else "1", "date_deferred": "",
                 "priority": "1" if category == 3 else "2", "type_avail": 3 if system_eic == "SPY1D" else 4,
@@ -417,7 +417,7 @@ def build_maintenance(package, ship, uic, hull, offset, job_count):
 
 def order_row(ship, jcn, casualty, doc, part, code, esd, initial_day):
     uic = next(item[1] for item in SHIPS if item[0] == ship)
-    return {"doc_number": doc, "ship_id": ship, "dodaac": f"R{uic}", "jcn": jcn,
+    return {"doc_number": doc, "ship_id": ship, "dodaac": f"V{uic}", "jcn": jcn,
         "casrep_id": casualty, "nsn": part["nsn"], "niin": part["niin"], "nomenclature": part["nomenclature"],
         "qty": 1, "unit_of_issue": "EA", "priority_designator": "02" if casualty else "09",
         "issue_priority_group": 1 if casualty else 3, "rdd": "999" if casualty else day_date(20),
@@ -636,7 +636,7 @@ def build_squadron(package):
             for area, index in indices.items():
                 output.append({"ship_id": ship, "as_of": stamp(at), "mission_area": area,
                     "nmet_id": f"NMET-{area}-01 (SYNTH)", "rating": "Q" if index < 80 else "Y",
-                    "mfom_index": index, "band": "GREEN" if index >= 80 else "AMBER" if index >= 60 else "RED",
+                    "mfom_index": index, "band": "GREEN" if index >= 80 else "YELLOW" if index >= 60 else "RED",
                     "p_score": "", "e_score": index, "s_score": "", "t_score": "", "o_score": "",
                     "limiting_factor": "See linked casualty and job records" if index < 100 else "No modeled material limitation",
                     "rating_basis": "Invented exercise report, not an official rating calculation",
@@ -699,7 +699,7 @@ def build_events(package):
         "replay_rule": "Only reveal facts with known_at <= playback time; effective_at controls when they apply. Latest-state files are NOT historical snapshots.",
         "events": [
             {"event_id": "CHANGE-01", "known_at": stamp(moment(0, 12)), "effective_at": stamp(moment(0, 12)), "type": "CASUALTY_INITIAL", "ship_id": "KESSLER", "record_id": "DDG991-26-017"},
-            {"event_id": "CHANGE-02", "known_at": stamp(moment(1, 10)), "effective_at": stamp(moment(1, 10)), "type": "PART_DELAY_AND_ETR_UPDATE", "ship_id": "KESSLER", "record_id": "R991016308A001"},
+            {"event_id": "CHANGE-02", "known_at": stamp(moment(1, 10)), "effective_at": stamp(moment(1, 10)), "type": "PART_DELAY_AND_ETR_UPDATE", "ship_id": "KESSLER", "record_id": "V9910163080001"},
             {"event_id": "CHANGE-03", "known_at": stamp(moment(1, 20)), "effective_at": stamp(moment(1, 20)), "type": "TENTATIVE_DOCUMENT_UPDATE", "ship_id": "KESSLER", "record_id": "KESSLER/daily_reports/daily_status_KESSLER_20261105.pdf"},
             {"event_id": "CHANGE-04", "known_at": stamp(moment(2, 10)), "effective_at": stamp(moment(6, 0)), "type": "CONFIRMED_PERSONNEL_ORDERS", "ship_id": "KESSLER", "record_id": "PE-KESSLER-0007;PE-KESSLER-0011"},
             {"event_id": "CHANGE-05", "known_at": stamp(moment(3, 15)), "effective_at": stamp(moment(9, 12)), "type": "EVENT_ADVANCED", "ship_id": "KESSLER", "record_id": "EVT-KESSLER-01"}]}, "Exercise playback extension", "00_README.md", 5)
@@ -738,7 +738,7 @@ def build_metadata(package):
     params = {"_banner": BANNER, "scenario_now": stamp(START), "default_snapshot": stamp(SNAPSHOT),
         "seed": SEED, "horizon_days": 30, "provenance": "proposed", "forecast_computed": False,
         "parameters": {
-            "bands": {"value": {"green": .8, "amber": .6}, "evidence": "historical public MFOM patent cited in repository", "applies_to": "material index, not probability"},
+            "bands": {"value": {"green": .8, "yellow": .6}, "evidence": "historical public MFOM patent cited in repository", "applies_to": "material index, not probability"},
             "status_score_map": {"value": SCORE_MAP, "evidence": "historical public MFOM patent; not current policy"},
             "staleness_threshold_days": {"value": 5, "evidence": "assumed"},
             "critical_zero_cap": {"value": .59, "evidence": "assumed"},
@@ -772,7 +772,7 @@ def build_metadata(package):
                 "description": field.replace("_", " "), "list_separator": ";" if field in {"necs", "supported_eics", "req_doc_numbers", "unmodeled_pillars"} else None,
                 "evidence": "proposed schema; operational values are placeholders"})
         dictionary.append({"file": path, "columns": columns})
-    package.json("squadron/data_dictionary.json", {"csv_conventions": {"first_line": "comment banner", "header_line": 2,
+    package.json("squadron/data_dictionary.json", {"csv_conventions": {"first_line": "header row", "header_line": 1,
         "encoding": "UTF-8", "null": "empty string", "booleans": ["true", "false"], "identifiers": "strings; preserve leading zeros",
         "timestamps": "UTC ISO 8601", "dates": "ISO 8601"}, "datasets": dictionary,
         "json_contracts": {"casreps": "Per-ship casreps list; message paths relative to this package; etr_history preserves versions",
@@ -811,8 +811,10 @@ def generate():
 
 def read_csv(relative):
     content = (ROOT / relative).read_text(encoding="utf-8")
-    assert content.splitlines()[0] == f"# {BANNER}", relative
-    return list(csv.DictReader(io.StringIO(content.split("\n", 1)[1])))
+    lines = content.splitlines()
+    if lines and lines[0] == f"# {BANNER}":
+        lines = lines[1:]
+    return list(csv.DictReader(lines))
 
 
 def read_json(relative):
@@ -856,7 +858,7 @@ def validate():
         docs = {row["doc_number"] for row in orders}
         check(len(docs) == len(orders) and not (docs & all_orders), f"{ship}: unique requisitions")
         all_orders |= docs
-        check(all(re.fullmatch(r"R\d{5}\d{4}[AB]\d{3}", row["doc_number"]) and row["niin"] in niin_set and row["status_code"] in STATUS_CODES for row in orders), f"{ship}: requisition identifiers, parts and status codes")
+        check(all(re.fullmatch(r"V\d{5}\d{4}\d{4}", row["doc_number"]) and row["niin"] in niin_set and row["status_code"] in STATUS_CODES for row in orders), f"{ship}: requisition identifiers, parts and status codes")
         check(all(row["jcn"] in jcns for row in orders if row["jcn"]), f"{ship}: nonempty requisition/job references resolve")
         check(all(set(filter(None, row["req_doc_numbers"].split(";"))) <= docs for row in jobs), f"{ship}: job/order references resolve")
         casreps = read_json(f"{ship}/casreps.json")["casreps"]
@@ -872,7 +874,9 @@ def validate():
             check(all(part["doc_number"] in docs and part["niin"] in niin_set for part in casualty["parts"]), f"{casualty['casrep_id']}: casualty/parts/order joins")
             check(all(parse_time(update["known_at"]) <= SNAPSHOT for update in casualty["etr_history"]), f"{casualty['casrep_id']}: no future actual update in current snapshot")
             for message in casualty["messages"]:
-                check(casualty["initial_dtg"] in (ROOT / message).read_text(encoding="utf-8"), f"{message}: initial DTG present")
+                message_text = (ROOT / message).read_text(encoding="utf-8")
+                check(casualty["initial_dtg"] in message_text or casualty["initial_dtg"].replace(" ", "") in message_text,
+                      f"{message}: initial DTG present")
         check(all(row["eic"] in eics for row in jobs), f"{ship}: equipment identities resolve")
         inventory = read_csv(f"{ship}/onboard_allowance_cosal.csv")
         check({row["niin"] for row in inventory} == niin_set, f"{ship}: complete part coverage including zero balances")
@@ -936,7 +940,7 @@ def validate():
     for entry in manifest["files"]:
         path = ROOT / entry["file"]
         check(path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == entry["sha256"], f"{entry['file']}: manifest checksum")
-        if path.suffix in {".json", ".csv", ".txt", ".yaml"}:
+        if path.suffix in {".json", ".txt", ".yaml"}:
             check(BANNER in path.read_text(encoding="utf-8"), f"{entry['file']}: synthetic marking")
     result = {"_banner": BANNER, "passed": True, "check_count": len(checks),
         "ships": 3, "mission_areas": 5, "crew_records": 900,

@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_id,uic,billet_id,billet_title,rate_required,nec_required,work_center,fltmps_holder_member_id,holder_prd,gap_start,inbound_member_id,inbound_report_date,as_of,provenance
 KESSLER,99101,B-CF-014,AEGIS RADAR TECHNICIAN,FC2,F9A1,CF01,M-0007,2026-11-10,2026-11-10,,,2026-11-04T06:00:00Z,proposed
 KESSLER,99101,B-CF-015,AEGIS RADAR TECHNICIAN,FC2,F9A1,CF01,M-0011,2028-01-26,,,,2026-11-04T06:00:00Z,proposed

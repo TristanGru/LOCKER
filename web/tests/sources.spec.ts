@@ -75,5 +75,6 @@ test('system evidence remains accessible without WebGL', async ({ page }) => {
   await page.locator('.system-inspector .gate-evidence summary').first().click();
   await page.locator('.system-inspector .source-link').first().click();
   await expect(page.getByRole('dialog', { name: 'Source evidence' })).toBeVisible();
-  await expect(page.locator('.source-lines')).toContainText('SYNTHETIC');
+  // Source CSVs no longer carry a SYNTHETIC banner line; check the record itself is shown.
+  await expect(page.locator('.source-lines')).toContainText('KESSLER');
 });

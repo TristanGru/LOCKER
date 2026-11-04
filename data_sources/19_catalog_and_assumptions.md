@@ -45,7 +45,7 @@ _banner: "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA"
 scenario_now: "2026-11-04T08:00:00Z"
 seed: 20261104
 runs: 10000
-bands: {green: 0.80, amber: 0.60}                  # sourced: MFOM patent
+bands: {green: 0.80, yellow: 0.60}                 # sourced: MFOM patent
 status_score_map: {"0": 1.0, "1": 0.8, "3": 0.6, "2": 0.0}   # sourced: MFOM patent
 casualty_threshold_hours: 48                         # sourced (snippet): NETCINST 3040.1A
 casrep_rating_cap: {cat4: N, cat3: Q}                # sourced (snippet): carrier DRRS-S brief

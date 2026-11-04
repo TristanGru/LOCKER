@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_id,block_id,start_date,end_date,ofrp_phase,employment_code,event_id,oparea_or_port,status,source_msg_dtg,superseded_block_id,as_of,provenance
 KESSLER,SCH-KESSLER-01,2026-10-25,2026-10-29,INTEGRATED,UNDERWAY,,VACAPES OPAREA,FIRM,,,2026-10-25T12:00:00Z,proposed
 KESSLER,SCH-KESSLER-03,2026-10-30,2026-11-15,INTEGRATED,UPK,,NORFOLK VA,FIRM,,,2026-10-25T12:00:00Z,proposed

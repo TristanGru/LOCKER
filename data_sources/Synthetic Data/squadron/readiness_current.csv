@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_id,as_of,mission_area,nmet_id,rating,mfom_index,band,p_score,e_score,s_score,t_score,o_score,limiting_factor,rating_basis,unmodeled_pillars,provenance
 KESSLER,2026-11-07T18:00:00Z,AW,NMET-AW-01 (SYNTH),Q,40,RED,,40,,,,See linked casualty and job records,"Invented exercise report, not an official rating calculation",P;S;T;O numeric indices not supplied,proposed
 KESSLER,2026-11-07T18:00:00Z,ASW,NMET-ASW-01 (SYNTH),Y,100,GREEN,,100,,,,No modeled material limitation,"Invented exercise report, not an official rating calculation",P;S;T;O numeric indices not supplied,proposed
@@ -6,10 +5,10 @@ KESSLER,2026-11-07T18:00:00Z,SUW,NMET-SUW-01 (SYNTH),Y,100,GREEN,,100,,,,No mode
 KESSLER,2026-11-07T18:00:00Z,MOB,NMET-MOB-01 (SYNTH),Y,95,GREEN,,95,,,,See linked casualty and job records,"Invented exercise report, not an official rating calculation",P;S;T;O numeric indices not supplied,proposed
 KESSLER,2026-11-07T18:00:00Z,CCC,NMET-CCC-01 (SYNTH),Y,100,GREEN,,100,,,,No modeled material limitation,"Invented exercise report, not an official rating calculation",P;S;T;O numeric indices not supplied,proposed
 VARNELL,2026-11-07T18:00:00Z,AW,NMET-AW-01 (SYNTH),Y,100,GREEN,,100,,,,No modeled material limitation,"Invented exercise report, not an official rating calculation",P;S;T;O numeric indices not supplied,proposed
-VARNELL,2026-11-07T18:00:00Z,ASW,NMET-ASW-01 (SYNTH),Q,76,AMBER,,76,,,,See linked casualty and job records,"Invented exercise report, not an official rating calculation",P;S;T;O numeric indices not supplied,proposed
+VARNELL,2026-11-07T18:00:00Z,ASW,NMET-ASW-01 (SYNTH),Q,76,YELLOW,,76,,,,See linked casualty and job records,"Invented exercise report, not an official rating calculation",P;S;T;O numeric indices not supplied,proposed
 VARNELL,2026-11-07T18:00:00Z,SUW,NMET-SUW-01 (SYNTH),Y,100,GREEN,,100,,,,No modeled material limitation,"Invented exercise report, not an official rating calculation",P;S;T;O numeric indices not supplied,proposed
 VARNELL,2026-11-07T18:00:00Z,MOB,NMET-MOB-01 (SYNTH),Y,100,GREEN,,100,,,,No modeled material limitation,"Invented exercise report, not an official rating calculation",P;S;T;O numeric indices not supplied,proposed
-VARNELL,2026-11-07T18:00:00Z,CCC,NMET-CCC-01 (SYNTH),Q,76,AMBER,,76,,,,See linked casualty and job records,"Invented exercise report, not an official rating calculation",P;S;T;O numeric indices not supplied,proposed
+VARNELL,2026-11-07T18:00:00Z,CCC,NMET-CCC-01 (SYNTH),Q,76,YELLOW,,76,,,,See linked casualty and job records,"Invented exercise report, not an official rating calculation",P;S;T;O numeric indices not supplied,proposed
 ASHBY,2026-11-07T18:00:00Z,AW,NMET-AW-01 (SYNTH),Y,100,GREEN,,100,,,,No modeled material limitation,"Invented exercise report, not an official rating calculation",P;S;T;O numeric indices not supplied,proposed
 ASHBY,2026-11-07T18:00:00Z,ASW,NMET-ASW-01 (SYNTH),Y,100,GREEN,,100,,,,No modeled material limitation,"Invented exercise report, not an official rating calculation",P;S;T;O numeric indices not supplied,proposed
 ASHBY,2026-11-07T18:00:00Z,SUW,NMET-SUW-01 (SYNTH),Y,95,GREEN,,95,,,,See linked casualty and job records,"Invented exercise report, not an official rating calculation",P;S;T;O numeric indices not supplied,proposed

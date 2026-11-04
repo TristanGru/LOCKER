@@ -10,7 +10,7 @@
     },
     "bands": {
       "green": 0.8,
-      "amber": 0.6
+      "yellow": 0.6
     },
     "rollup": "weighted_average_with_critical_child",
     "critical_child_cap": 0.59,

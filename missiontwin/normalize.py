@@ -44,9 +44,11 @@ def normalize(source: Path = REFERENCE_ROOT, output: Path = NORMALIZED_ROOT):
         if path.suffix != ".csv":
             continue
         lines = path.read_text(encoding="utf-8").splitlines()
-        if not lines or BANNER not in lines[0]:
-            raise ValueError(f"Missing synthetic marking: {relative}")
-        for position, row in enumerate(csv.DictReader(io.StringIO("\n".join(lines[1:]))), 3):
+        if not lines:
+            raise ValueError(f"Empty dataset: {relative}")
+        # The synthetic banner line is optional in the current data contract; skip it when present.
+        first_data = 1 if lines[0].startswith("#") else 0
+        for position, row in enumerate(csv.DictReader(io.StringIO("\n".join(lines[first_data:]))), 2 + first_data):
             issues = []
             if row.get("ship_id") and row["ship_id"] not in SHIP_IDS:
                 issues.append("Unknown ship identity")

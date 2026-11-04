@@ -137,6 +137,7 @@ class Baseline:
     name_index: dict = field(default_factory=dict)
     expected_facts: dict = field(default_factory=dict)
     extraction_methods: dict = field(default_factory=dict)
+    extraction_documents: dict = field(default_factory=dict)
     configuration_errors: list[str] = field(default_factory=list)
     profile: Profile = field(default_factory=default_profile)
     source_revision: str = ""
@@ -148,6 +149,8 @@ class Baseline:
                     'cert_status.csv', 'schedule_30day.csv', 'availabilities.csv', 'onboard_allowance_cosal.csv', 'sked_schedule.csv'}
         out = {s: [] for s in self.profile.ship_ids}
         for issue in self.issues:
+            if issue.kind == 'extraction':
+                continue  # model/rules fact review; the standardized parser stays authoritative
             owner, _, name = issue.file.partition('/')
             if owner == 'squadron' and name == 'wholesale_stock.csv':
                 for reasons in out.values(): reasons.append(f'{issue.file}: {issue.reason}')
@@ -172,13 +175,12 @@ def read_csv(b: Baseline, path: Path, rel: str, fname: str, owner: str) -> list[
         b.issues.append(IngestIssue(file=rel, loc="file", reason=f"cannot read: {e}"))
         return out
     lines = text.splitlines()
-    if not lines or not lines[0].startswith("#") or BANNER not in lines[0]:
-        b.issues.append(IngestIssue(file=rel, loc="line 1", reason="missing SYNTHETIC banner line", kind="validation"))
-        body = lines
-        offset = 1
-    else:
+    if lines and lines[0].startswith("#") and BANNER in lines[0]:
         body = lines[1:]
         offset = 2
+    else:
+        body = lines
+        offset = 1
     reader = csv.DictReader(body)
     missing = set(COLUMNS.get(fname, [])) - set(reader.fieldnames or [])
     if missing:
@@ -209,9 +211,17 @@ def read_csv(b: Baseline, path: Path, rel: str, fname: str, owner: str) -> list[
 
 
 # ------------------------------------------------------------------ messages
+HEADER_DTG_RE = re.compile(r"^R\s+(\d{6}Z\s+[A-Z]{3}\s+\d{2})$", re.M)
 CAS_RE = re.compile(r"^CASUALTY/(INITIAL|UPDATE|CORRECT|CANCEL)/(.*)/CAT:(\d)/EIC:([A-Z0-9-]+)$")
 EQ_RE = re.compile(r"^EQUIP/(.*)/APL:([^/]*)/JCN:([A-Z0-9]+)$")
-PARTS_RE = re.compile(r"^PARTS/(\d+)/NSN:([\d-]+)/QTY:(\d+)/DOC:([A-Z0-9]+)/PD:(\d{2})/RDD:(\w+)$")
+PARTSID_RE = re.compile(r"^PARTSID/(.*)/APL:([^/]*)/JCN:([A-Z0-9]+)$")
+PARTS_RE = re.compile(r"^(?:PARTS|1PARTS)/(\d+)/NSN:([\d-]+)/QTY:(\d+)/DOC:([A-Z0-9]+)/PD:(\d{2})/RDD:(\w+)$")
+
+
+def _expand_dtg(dtg: str) -> str:
+    if g := re.fullmatch(r"(\d{6}Z)([A-Z]{3})(\d{2})", dtg):
+        return f"{g.group(1)} {g.group(2)} {g.group(3)}"
+    return dtg
 
 
 def _sets(text: str) -> tuple[list[tuple[int, str]], str]:
@@ -246,6 +256,9 @@ def parse_casrep(text: str, rel: str, profile: Profile | None = None) -> dict:
     if not ship:
         raise ValueError(f"unknown originator {fm!r}")
     m = {"ship_id": ship, "file": rel, "parts": [], "assist": None, "etr": None, "ref": None, "lines": {}}
+    if g := HEADER_DTG_RE.search(text):
+        m["dtg"] = g.group(1)
+        m["time"] = parse_dtg(m["dtg"])
     for line_no, s in sets:
         tag = s.split("/", 1)[0]
         m["lines"][tag] = line_no
@@ -256,7 +269,7 @@ def parse_casrep(text: str, rel: str, profile: Profile | None = None) -> dict:
             m["dtg"] = s[4:]
             m["time"] = parse_dtg(m["dtg"])
         elif tag == "REF":
-            m["ref"] = s.split("/")[-1]
+            m["ref"] = _expand_dtg(s.split("/")[-1])
         elif tag == "CASUALTY":
             g = CAS_RE.match(s)
             if not g:
@@ -270,6 +283,12 @@ def parse_casrep(text: str, rel: str, profile: Profile | None = None) -> dict:
                 raise ValueError(f"line {line_no}: bad EQUIP set")
             m["equipment"], m["apl"], jcn = g.groups()
             m["jcn"] = "" if jcn == "NONE" else jcn
+        elif tag == "PARTSID":
+            g = PARTSID_RE.match(s)
+            if not g:
+                raise ValueError(f"line {line_no}: bad PARTSID set")
+            m["equipment"], m["apl"], jcn = g.groups()
+            m["jcn"] = "" if jcn == "NONE" else jcn
         elif tag == "ESTIMATE":
             m["etr_dtg"] = s.split("ETR:")[1]
             m["etr"] = parse_dtg(m["etr_dtg"])
@@ -277,10 +296,10 @@ def parse_casrep(text: str, rel: str, profile: Profile | None = None) -> dict:
             if "REQ:YES" in s:
                 kv = dict(x.split(":", 1) for x in s.split("/")[1:] if ":" in x)
                 m["assist"] = {"type": kv.get("TYPE", ""), "org": kv.get("ORG", "")}
-        elif tag == "PARTS":
+        elif tag in ("PARTS", "1PARTS"):
             g = PARTS_RE.match(s)
             if not g:
-                raise ValueError(f"line {line_no}: bad PARTS set")
+                raise ValueError(f"line {line_no}: bad {tag} set")
             _, nsn, qty, doc, pd, rdd = g.groups()
             m["parts"].append({"nsn": nsn, "niin": nsn.replace("-", "")[4:], "qty": int(qty), "doc": doc, "pd": pd, "rdd": rdd})
         elif tag == "AMPN":
@@ -292,8 +311,12 @@ def parse_casrep(text: str, rel: str, profile: Profile | None = None) -> dict:
             raise ValueError(f"missing required set for {req}")
     if m["type"] != "INITIAL" and not m["ref"]:
         raise ValueError("UPDATE/CORRECT/CANCEL must reference the INITIAL DTG")
-    init = parse_dtg(m["ref"]) if m["ref"] else m["time"]
-    m["casrep_id"] = f"{profile.ships[ship]['hull'].replace('-', '')}-{init.year % 100:02d}-{m['serial']}"
+    thread = re.search(r"([A-Z]{3}\d{3}-\d{2}-\d{3})_", Path(rel).name)
+    if thread:
+        m["casrep_id"] = thread.group(1)
+    else:
+        init = parse_dtg(m["ref"]) if m["ref"] else m["time"]
+        m["casrep_id"] = f"{profile.ships[ship]['hull'].replace('-', '')}-{init.year % 100:02d}-{m['serial']}"
     if m['category'] not in (2, 3, 4):
         raise ValueError('CASREP category must be 2, 3 or 4')
     m["_known"] = m["time"]
@@ -422,6 +445,8 @@ def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) ->
         b.configuration_errors.append('Duplicate feed event identity')
     b.catalog = j("data_catalog.json").get("datasets", [])
     b.expected_facts = j("daily_status_expected_facts.json").get("documents", {})
+    if (sq / "casrep_expected_facts.json").exists():
+        b.expected_facts.update(j("casrep_expected_facts.json").get("documents", {}))
     try:
         b.params = yaml.safe_load((sq / "delay_model_params.yaml").read_text(encoding="utf-8"))
     except Exception as e:
@@ -439,6 +464,21 @@ def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) ->
     b.name_index = build_name_index(roster_all)
     client.forbidden_names = {surname_of(r["display_name"]) for r in roster_all if r.get("display_name")}
 
+    # Standardized sets remain authoritative for the engine. Model facts provide separately
+    # validated evidence, including AMPN/RMKS narratives, without duplicating casualties.
+    for message in b.messages:
+        rel = message["file"]
+        text = (data_dir / rel).read_text(encoding="utf-8")
+        b.docs[rel] = {"ship_id": message["ship_id"], "known": message["time"], "pages": [text], "document_type": "casrep"}
+        facts, method = extract_facts(client, rel, message["ship_id"], text, 1, message["time"],
+                                      b.name_index, document_type="casrep", casrep_id=message["casrep_id"])
+        b.facts.extend(facts)
+        b.extraction_methods[method] = b.extraction_methods.get(method, 0) + 1
+        b.extraction_documents[rel] = {"document_type": "casrep", "methods": [method]}
+        for fact in facts:
+            if fact.status == "NEEDS_REVIEW":
+                b.issues.append(IngestIssue(file=rel, loc=f"line {fact.line or 1}", reason=fact.reason, kind="extraction"))
+
     # daily reports
     for ship in SHIP_IDS:
         for p in sorted((data_dir / ship / "daily_reports").glob("*.pdf")):
@@ -454,10 +494,12 @@ def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) ->
             except Exception as e:
                 b.issues.append(IngestIssue(file=rel, loc="page 1", reason=str(e)))
                 continue
-            b.docs[rel] = {"ship_id": ship, "known": known, "pages": pages}
+            b.docs[rel] = {"ship_id": ship, "known": known, "pages": pages, "document_type": "daily_report"}
+            b.extraction_documents[rel] = {"document_type": "daily_report", "methods": []}
             for pi, text in enumerate(pages, 1):
                 facts, method = extract_facts(client, rel, ship, text, pi, known, b.name_index)
                 b.extraction_methods[method] = b.extraction_methods.get(method, 0) + 1
+                b.extraction_documents[rel]["methods"].append(method)
                 for f in facts:
                     if f.status == "NEEDS_REVIEW":
                         b.issues.append(IngestIssue(file=rel, loc=f"page {pi}", reason=f"{f.reason}: {f.span[:80]}", kind="extraction"))
@@ -611,6 +653,10 @@ class View:
     # -------------------------------------------------- corroboration of extracted facts (X4 and friends)
     def corroborate(self, f: ExtractedFact) -> tuple[str, str]:
         ship = f.ship_id
+        if f.document_type == "casrep":
+            if f.status == "NEEDS_REVIEW":
+                return "n/a", "CASREP extraction failed evidence validation"
+            return "corroborates", "Quoted CASREP set; standardized parser supplies the engine record"
         if f.type in ("personnel_transfer", "personnel_tad") and f.member_id:
             r = next((r for r in self.rows(ship, "roster.csv") if r["member_id"] == f.member_id), None)
             if r is None:

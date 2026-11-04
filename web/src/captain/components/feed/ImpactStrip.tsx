@@ -66,7 +66,7 @@ export function ImpactStrip({
                 transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
               />
               <div className="absolute inset-y-0 w-px bg-ready/70" style={{ left: `${getBands().green*100}%` }} title="Backend ready threshold" />
-              <div className="absolute inset-y-0 w-px bg-risk/70" style={{ left: `${getBands().amber*100}%` }} title="Backend watch threshold" />
+              <div className="absolute inset-y-0 w-px bg-risk/70" style={{ left: `${getBands().yellow*100}%` }} title="Backend watch threshold" />
             </div>
           </button>
         );

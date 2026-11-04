@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 member_id,ship_id,uic,display_name,rate,rating,paygrade,department,division,work_center,duty_section,onboard_status,status_start,status_end,report_date,prd,eaos,necs,as_of,provenance
 M-0001,KESSLER,99101,CDR HALVORSEN (SYNTH),CDR,CDR,O5,COMMAND,CO,CO01,4,ONBOARD,,,2026-02-24,2028-10-05,2029-04-29,,2026-10-14T08:00:00Z,placeholder
 M-0002,KESSLER,99101,FCC NAKAMURA (SYNTH),FCC,FC,E7,COMBAT SYSTEMS,CF,CF01,1,ONBOARD,,,2025-06-16,2027-12-19,2028-06-06,,2026-10-14T08:00:00Z,placeholder

@@ -22,8 +22,8 @@ def validate_params(params: dict):
         if key not in params or not isinstance(params[key], dict) or 'value' not in params[key]:
             raise ValueError(f'Missing assumption: {key}')
     bands = value('bands')
-    if not 0 <= bands['amber'] <= bands['green'] <= 1:
-        raise ValueError('Thresholds require 0 <= amber <= green <= 1')
+    if not 0 <= bands['yellow'] <= bands['green'] <= 1:
+        raise ValueError('Thresholds require 0 <= yellow <= green <= 1')
     scores = value('status_score_map')
     if not set(('0', '1', '2', '3')) <= set(scores) or any(not 0 <= score <= 1 for score in scores.values()):
         raise ValueError('Status score map requires codes 0, 1, 2, 3 with scores between zero and one')
@@ -99,8 +99,10 @@ def validate_world(world):
             if m.end <= m.start or m.start < 0:
                 raise ValueError('Mission interval must follow scenario start')
             for parent in m.prereqs:
-                if parent not in missions or missions[parent].end > m.start:
-                    raise ValueError('Mission conflicts with a prerequisite interval')
+                # A prerequisite that slips past this event's start is a valid what-if: the engine scores
+                # the dependent event as not ready rather than rejecting the schedule.
+                if parent not in missions:
+                    raise ValueError('Mission references an unknown prerequisite event')
         for ws, holders in sw.holders.items():
             ids = [h.member_id for h in holders]
             if len(ids) != len(set(ids)):

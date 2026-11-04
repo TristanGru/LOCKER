@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_id,uic,hull,tycom,force_rev,work_center,mip,equipment_desc,eic,egl_location,mrc,periodicity,man_hours,rate,min_skill_level,sched_week_start,assigned_to,status,status_date,recorded_by_pin,spot_check_score,iem_flag,situational_trigger,notes,as_of,provenance
 VARNELL,99102,DDG-992,CNSL (SYNTH),4-26 (SYNTH),CF01,PH-SPY1D,Radar (SPY-1D-style),SPY1D-CW,EXERCISE-LOCATION,M-1R,M,1.5,FC1,FC1,2026-09-21,M-0607,COMPLETE,2026-09-25,PIN-0607,,false,,"Illustrative instance, not a complete recurring PMS schedule",2026-11-07T06:00:00Z,placeholder
 VARNELL,99102,DDG-992,CNSL (SYNTH),4-26 (SYNTH),CF01,PH-SPY1D,Radar (SPY-1D-style),SPY1D-CW,EXERCISE-LOCATION,M-1R,M,1.5,FC1,FC1,2026-09-28,M-0607,COMPLETE,2026-10-02,PIN-0607,,false,,"Illustrative instance, not a complete recurring PMS schedule",2026-11-07T06:00:00Z,placeholder

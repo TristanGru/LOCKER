@@ -110,10 +110,10 @@ export function MissionRow({ mission: m, history, index }: { mission: Mission; h
 function ThresholdBar({ odds, color }: { odds: number; color: string }) {
   const width = Number.isFinite(odds) ? Math.max(0, Math.min(100, Math.round(odds * 100))) : 0;
   return (
-    <div className="relative mt-3 h-2.5" role="img" aria-label={`Interval readiness ${pct(odds)}. Watch ${pct(getBands().amber)}, ready ${pct(getBands().green)}.`}>
+    <div className="relative mt-3 h-2.5" role="img" aria-label={`Interval readiness ${pct(odds)}. Watch ${pct(getBands().yellow)}, ready ${pct(getBands().green)}.`}>
       <div className="absolute inset-0 rounded-full bg-white/[0.08]" />
       <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${width}%`, background: color }} />
-      <span className="absolute -top-1 bottom-[-4px] w-px bg-white/55" style={{ left: `${getBands().amber*100}%` }} />
+      <span className="absolute -top-1 bottom-[-4px] w-px bg-white/55" style={{ left: `${getBands().yellow*100}%` }} />
       <span className="absolute -top-1 bottom-[-4px] w-px bg-white/70" style={{ left: `${getBands().green*100}%` }} />
     </div>
   );

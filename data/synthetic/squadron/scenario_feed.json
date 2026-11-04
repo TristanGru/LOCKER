@@ -11,7 +11,7 @@
       "refs": [
         "KESSLER/casrep_messages/DDG991-26-017_01_INITIAL.txt",
         "KESSLER/csmp.csv#99101CF010042",
-        "KESSLER/requisition_status.csv#R991016308A001"
+        "KESSLER/requisition_status.csv#V9910163080001"
       ]
     },
     {
@@ -22,7 +22,7 @@
       "ship_id": "KESSLER",
       "refs": [
         "KESSLER/casrep_messages/DDG991-26-017_02_UPDATE.txt",
-        "KESSLER/requisition_status.csv#R991016308A001",
+        "KESSLER/requisition_status.csv#V9910163080001",
         "KESSLER/daily_reports/daily_status_KESSLER_20261104.pdf"
       ]
     },

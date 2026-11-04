@@ -73,7 +73,7 @@ Grain: one row per JCN (open, deferred or recently closed) per ship.
 | `est_man_hours` | float | `16` | | S field |
 | `casrep_dtg` | str | `041200Z NOV 26` | must match a CASREP when present | S rule |
 | `casrep_id` | str | `DDG991-26-017` | our derived key | PROP |
-| `req_doc_numbers` | str | `R991016308A001` | `;`-separated | UNV field name |
+| `req_doc_numbers` | str | `V9910163080001` | `;`-separated | UNV field name |
 | `remarks` | str | `CASREP 041200Z NOV 26. AWAITING NIIN 019990001. FTS ASSIST REQ.` | free text; DTG must appear verbatim | S rule |
 | `lead_wc` | str | `CF01` | Block G | S |
 | `verifier` | str | `M-0002` | Block H | S |
@@ -86,7 +86,7 @@ Grain: one row per JCN (open, deferred or recently closed) per ship.
 
 All values below are invented and must be marked `placeholder` in the file.
 
-- `when_discovered_code`: `A` during PMS, `B` during operation, `C` casualty, `D` inspection, `E` other.
+- `when_discovered_code`: synthetic numeric 2-Kilo-style categories. Use `2` for operations/casualty discovery, `4` for inspection, `6` for PMS, `1`/`0` for other routine discovery buckets.
 - `deferral_reason_code`: `1` lack of parts, `2` lack of tech capability (needs outside help), `3` lack of time / operations, `4` awaiting availability, `5` other.
 - `priority`: `1` mission critical, `2` mission degrading, `3` routine.
 
@@ -100,7 +100,7 @@ All values below are invented and must be marked `placeholder` in the file.
 
 ## 6. Demo scenario rows
 
-- **Kessler `99101CF010042`**: SPY-1D cooling water pump, `status_code 2`, `OPEN_AWAITING_PARTS`, `type_avail 3`, `casrep_dtg 041200Z NOV 26`, `req_doc_numbers R991016308A001`, remarks cite the DTG and "FTS ASSIST REQ".
+- **Kessler `99101CF010042`**: SPY-1D cooling water pump, `status_code 2`, `OPEN_AWAITING_PARTS`, `type_avail 3`, `casrep_dtg 041200Z NOV 26`, `req_doc_numbers V9910163080001`, remarks cite the DTG and "FTS ASSIST REQ".
 - Varnell: two jobs for the same ethernet switch NIIN, each with its own CASREP DTG (seeded **X2**).
 - **X1:** Ashby has a CASREP (`DDG993-26-004`) whose DTG matches **no** JCN.
 - **X7:** Kessler CIWS lost PMS (spec 01) has **no** 2-Kilo.

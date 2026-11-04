@@ -9,7 +9,7 @@ parameters:
   bands:
     value:
       green: 0.8
-      amber: 0.6
+      yellow: 0.6
     evidence: historical public MFOM patent cited in repository
     applies_to: material index, not probability
   status_score_map:
