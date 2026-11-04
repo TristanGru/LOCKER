@@ -1,0 +1,113 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "anomalies": [
+    {
+      "anomaly_id": "X1",
+      "ship_id": "ASHBY",
+      "description": "Casualty DDG993-26-004 has no matching JCN",
+      "files": [
+        "ASHBY/casreps.json",
+        "ASHBY/csmp.csv"
+      ],
+      "intentional": true,
+      "handling": "Surface for human review; never silently repair"
+    },
+    {
+      "anomaly_id": "X2",
+      "ship_id": "VARNELL",
+      "description": "Two casualties share NIIN 019990044 and ASSET-VARNELL-LAN-01; review demand before deduplication",
+      "files": [
+        "VARNELL/casreps.json",
+        "VARNELL/installed_equipment.csv"
+      ],
+      "intentional": true,
+      "handling": "Surface for human review; never silently repair"
+    },
+    {
+      "anomaly_id": "X3",
+      "ship_id": "ASHBY",
+      "description": "BA requisition has an expired 30 OCT shipping estimate",
+      "files": [
+        "ASHBY/requisition_status.csv"
+      ],
+      "intentional": true,
+      "handling": "Surface for human review; never silently repair"
+    },
+    {
+      "anomaly_id": "X4",
+      "ship_id": "KESSLER",
+      "description": "Report tentatively moves technical assistance to 12 NOV; structured confirmed date remains 09 NOV",
+      "files": [
+        "KESSLER/daily_reports/daily_status_KESSLER_20261105.pdf",
+        "KESSLER/casreps.json"
+      ],
+      "intentional": true,
+      "handling": "Surface for human review; never silently repair"
+    },
+    {
+      "anomaly_id": "X5",
+      "ship_id": "VARNELL",
+      "description": "Transferring the sole spare pump drops on-hand below allowance",
+      "files": [
+        "VARNELL/onboard_allowance_cosal.csv"
+      ],
+      "intentional": true,
+      "handling": "Surface for human review; never silently repair"
+    },
+    {
+      "anomaly_id": "X6",
+      "ship_id": "VARNELL",
+      "description": "09 NOV certification start follows original 08 NOV completion but precedes extended 11 NOV completion",
+      "files": [
+        "VARNELL/cert_status.csv",
+        "VARNELL/availabilities.csv"
+      ],
+      "intentional": true,
+      "handling": "Surface for human review; never silently repair"
+    },
+    {
+      "anomaly_id": "X7",
+      "ship_id": "KESSLER",
+      "description": "Lost CIWS PMS has no matching corrective job; this is a review signal, not proof a job is required",
+      "files": [
+        "KESSLER/sked_schedule.csv",
+        "KESSLER/csmp.csv"
+      ],
+      "intentional": true,
+      "handling": "Surface for human review; never silently repair"
+    },
+    {
+      "anomaly_id": "X8",
+      "ship_id": "KESSLER",
+      "description": "M-0019 holds synthetic NEC F9A1 while shore billet holder is blank",
+      "files": [
+        "KESSLER/roster.csv",
+        "KESSLER/nec_billets.csv"
+      ],
+      "intentional": true,
+      "handling": "Surface for human review; never silently repair"
+    },
+    {
+      "anomaly_id": "X9",
+      "ship_id": "KESSLER",
+      "description": "06 NOV first radar watch assigns M-0023 who is still IN_PROGRESS",
+      "files": [
+        "KESSLER/watchbill.csv",
+        "KESSLER/quals.csv"
+      ],
+      "intentional": true,
+      "handling": "Surface for human review; never silently repair"
+    },
+    {
+      "anomaly_id": "X10",
+      "ship_id": "KESSLER",
+      "description": "Roster source timestamp is 14 OCT; current orders are kept in a separate newer feed",
+      "files": [
+        "KESSLER/roster.csv",
+        "squadron/personnel_events.csv"
+      ],
+      "intentional": true,
+      "handling": "Surface for human review; never silently repair"
+    }
+  ]
+}

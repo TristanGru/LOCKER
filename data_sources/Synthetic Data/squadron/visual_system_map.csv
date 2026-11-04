@@ -1,0 +1,17 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+eic,component_eic,mission_area,visual_reference,zone_id,attachment_key,placement_basis,provenance
+SPY1D,SPY1D-CW,AW,"US Navy Combatant, DTMB 5415",radar,system_spy1d,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder
+CIWS,CIWS-MOD,AW,"US Navy Combatant, DTMB 5415",aft_weapons,system_ciws,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder
+AEGIS,AEGIS-MOD,AW,"US Navy Combatant, DTMB 5415",operations,system_aegis,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder
+SQQ89,SQQ89-LAN,ASW,"US Navy Combatant, DTMB 5415",sonar,system_sqq89,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder
+TOWED,TOWED-MOD,ASW,"US Navy Combatant, DTMB 5415",stern,system_towed,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder
+SONARPROC,SONARPROC-MOD,ASW,"US Navy Combatant, DTMB 5415",operations,system_sonarproc,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder
+GUN5,GUN5-MOD,SUW,"US Navy Combatant, DTMB 5415",forward_weapons,system_gun5,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder
+SURFSEARCH,SURFSEARCH-MOD,SUW,"US Navy Combatant, DTMB 5415",mast,system_surfsearch,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder
+FIRECONTROL,FIRECONTROL-MOD,SUW,"US Navy Combatant, DTMB 5415",operations,system_firecontrol,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder
+PROPULSION,PROPULSION-MOD,MOB,"US Navy Combatant, DTMB 5415",machinery,system_propulsion,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder
+POWER,POWER-MOD,MOB,"US Navy Combatant, DTMB 5415",machinery,system_power,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder
+NAVRADAR,NAVRADAR-MOD,MOB,"US Navy Combatant, DTMB 5415",bridge,system_navradar,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder
+CSLAN,CSLAN-SW,CCC,"US Navy Combatant, DTMB 5415",operations,system_cslan,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder
+SATCOM,SATCOM-MOD,CCC,"US Navy Combatant, DTMB 5415",mast,system_satcom,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder
+DATALINK,DATALINK-MOD,CCC,"US Navy Combatant, DTMB 5415",mast,system_datalink,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder

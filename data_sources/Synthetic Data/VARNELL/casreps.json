@@ -1,0 +1,100 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "as_of": "2026-11-07T18:00:00Z",
+  "casreps": [
+    {
+      "casrep_id": "DDG992-26-008",
+      "ship_id": "VARNELL",
+      "uic": "99102",
+      "serial": "008",
+      "initial_dtg": "311000Z OCT 26",
+      "initial_time": "2026-10-31T10:00:00Z",
+      "known_at": "2026-10-31T10:00:00Z",
+      "category": 2,
+      "eic": "SQQ89-LAN",
+      "equipment": "SHARED NETWORK SWITCH (SYNTH)",
+      "jcn": "99102CA010800",
+      "mission_areas_affected": [
+        "ASW"
+      ],
+      "assist": {
+        "required": false,
+        "type": "SHIP FORCE",
+        "org": "SYNTHETIC TECHNICAL SUPPORT",
+        "confirmed_available_at": ""
+      },
+      "parts": [
+        {
+          "nsn": "5998-01-999-0044",
+          "niin": "019990044",
+          "qty": 1,
+          "doc_number": "R991026304A001",
+          "pd": "02",
+          "rdd": "999"
+        }
+      ],
+      "etr_history": [
+        {
+          "dtg": "311000Z OCT 26",
+          "known_at": "2026-10-31T10:00:00Z",
+          "etr": "2026-11-12T12:00:00Z",
+          "report_type": "INITIAL"
+        }
+      ],
+      "state": "OPEN",
+      "closed": null,
+      "physical_asset_id": "ASSET-VARNELL-LAN-01",
+      "messages": [
+        "VARNELL/casrep_messages/DDG992-26-008_01_INITIAL.txt"
+      ],
+      "provenance": "placeholder"
+    },
+    {
+      "casrep_id": "DDG992-26-009",
+      "ship_id": "VARNELL",
+      "uic": "99102",
+      "serial": "009",
+      "initial_dtg": "011000Z NOV 26",
+      "initial_time": "2026-11-01T10:00:00Z",
+      "known_at": "2026-11-01T10:00:00Z",
+      "category": 2,
+      "eic": "CSLAN-SW",
+      "equipment": "SHARED NETWORK SWITCH (SYNTH)",
+      "jcn": "99102CE010801",
+      "mission_areas_affected": [
+        "CCC"
+      ],
+      "assist": {
+        "required": false,
+        "type": "SHIP FORCE",
+        "org": "SYNTHETIC TECHNICAL SUPPORT",
+        "confirmed_available_at": ""
+      },
+      "parts": [
+        {
+          "nsn": "5998-01-999-0044",
+          "niin": "019990044",
+          "qty": 1,
+          "doc_number": "R991026305A002",
+          "pd": "02",
+          "rdd": "999"
+        }
+      ],
+      "etr_history": [
+        {
+          "dtg": "011000Z NOV 26",
+          "known_at": "2026-11-01T10:00:00Z",
+          "etr": "2026-11-13T12:00:00Z",
+          "report_type": "INITIAL"
+        }
+      ],
+      "state": "OPEN",
+      "closed": null,
+      "physical_asset_id": "ASSET-VARNELL-LAN-01",
+      "messages": [
+        "VARNELL/casrep_messages/DDG992-26-009_01_INITIAL.txt"
+      ],
+      "provenance": "placeholder"
+    }
+  ]
+}

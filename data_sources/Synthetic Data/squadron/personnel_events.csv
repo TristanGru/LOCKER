@@ -1,0 +1,4 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+personnel_event_id,ship_id,member_id,event_type,confirmed,effective_at,effective_until,known_at,source,provenance
+PE-KESSLER-0007,KESSLER,M-0007,TRANSFERRING,true,2026-11-10T00:00:00Z,,2026-11-06T10:00:00Z,Synthetic admin orders; separate from stale roster,placeholder
+PE-KESSLER-0011,KESSLER,M-0011,TAD,true,2026-11-10T00:00:00Z,2026-11-25T00:00:00Z,2026-11-06T10:00:00Z,Synthetic admin orders; separate from stale roster,placeholder

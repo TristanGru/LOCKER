@@ -1,0 +1,65 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "note": "Unexecuted hypothetical candidates; not recommendations, approvals, or computed forecasts.",
+  "candidates": [
+    {
+      "option_id": "OPT-PUMP-XDECK",
+      "type": "STOREROOM_TRANSFER",
+      "from_ship": "VARNELL",
+      "to_ship": "KESSLER",
+      "niin": "019990001",
+      "qty": 1,
+      "transfer_days": 1,
+      "approval_required": true,
+      "donor_below_allowance": true,
+      "does_not_resolve": [
+        "Qualified-personnel shortfall",
+        "Technical assistance availability"
+      ]
+    },
+    {
+      "option_id": "OPT-PROGRAM",
+      "type": "PROGRAM_OFFICE_RELEASE",
+      "to_ship": "KESSLER",
+      "niin": "019990001",
+      "qty": 1,
+      "release_days": 3,
+      "transit_days": 5,
+      "engineering_validation_required": true,
+      "approval_required": true,
+      "does_not_resolve": [
+        "Qualified-personnel shortfall",
+        "Technical assistance availability"
+      ]
+    },
+    {
+      "option_id": "OPT-PERSON",
+      "type": "TEMPORARY_PERSONNEL_SUPPORT",
+      "from_ship": "ASHBY",
+      "to_ship": "KESSLER",
+      "member_id": "M-0412",
+      "watchstation_code": "4310",
+      "earliest_start": "2026-11-10T00:00:00Z",
+      "latest_return": "2026-11-21T00:00:00Z",
+      "approval_required": true,
+      "donor_qualified_before": 4,
+      "donor_qualified_after": 3,
+      "donor_minimum": 2,
+      "does_not_resolve": [
+        "Part deficiency",
+        "Technical assistance availability",
+        "Full three-section watchbill coverage"
+      ]
+    },
+    {
+      "option_id": "OPT-SHIFT",
+      "type": "REQUEST_EVENT_SHIFT",
+      "event_id": "EVT-KESSLER-01",
+      "shift_days": 3,
+      "approval_required": true,
+      "does_not_resolve": [
+        "Equipment and personnel deficiencies by itself"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+ship_id,cert_id,cert_name,mission_area,status,certified_date,expires,planned_start,depends_on_avail_id,as_of,provenance
+ASHBY,CERT-ASHBY-AW,Air Warfare exercise certification,AW,CERTIFIED,2026-05-20,2027-05-20,,,2026-11-07T06:00:00Z,proposed
+ASHBY,CERT-ASHBY-ASW,Anti-Submarine Warfare exercise certification,ASW,CERTIFIED,2026-05-20,2027-05-20,,,2026-11-07T06:00:00Z,proposed
+ASHBY,CERT-ASHBY-SUW,Surface Warfare exercise certification,SUW,CERTIFIED,2026-05-20,2027-05-20,,,2026-11-07T06:00:00Z,proposed
+ASHBY,CERT-ASHBY-MOB,Mobility exercise certification,MOB,CERTIFIED,2026-05-20,2027-05-20,,,2026-11-07T06:00:00Z,proposed
+ASHBY,CERT-ASHBY-CCC,Command and Communications exercise certification,CCC,CERTIFIED,2026-05-20,2027-05-20,,,2026-11-07T06:00:00Z,proposed
