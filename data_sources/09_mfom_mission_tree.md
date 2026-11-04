@@ -18,7 +18,7 @@ Tags: see `00_README.md` section 1.
 
 This is the closest public analog to MissionTwin's dependency graph, so we **model our graph on MFOM's shape** and borrow its sourced constants (status-to-score map, 80/60 bands). MissionTwin's contribution is the **forward projection over time** with probabilities, plus people (k-of-n quals) and parts as explicit dependencies.
 
-The bands match the design doc's readiness bands (green ≥ 80%, amber 60-80%, red < 60%).
+The bands match the design doc's readiness bands (green >= 80%, yellow 60-80%, red < 60%).
 
 ## 3. Mock file
 
@@ -32,7 +32,7 @@ One tree per ship class (DDG, notional), with per-ship overrides (installed quan
   "ship_class": "DDG (notional Flight IIA)",
   "scoring": {
     "status_score_map": {"0": 1.0, "1": 0.8, "3": 0.6, "2": 0.0},
-    "bands": {"green": 0.80, "amber": 0.60},
+    "bands": {"green": 0.80, "yellow": 0.60},
     "rollup": "weighted_average_with_critical_child",
     "provenance": "sourced (MFOM patent ~2012)"
   },

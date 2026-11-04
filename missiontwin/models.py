@@ -39,7 +39,7 @@ class DelayPart(BaseModel):
     """Push a requisition's arrival later by N days."""
     type: Literal["delay_part"] = "delay_part"
     ship_id: str
-    doc_number: str = Field(description="MILSTRIP document number, e.g. R991016308A001")
+    doc_number: str = Field(description="MILSTRIP document number, e.g. V9910163080001")
     days: float = Field(ge=-60, le=365)
 
 

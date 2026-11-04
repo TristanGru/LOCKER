@@ -131,13 +131,12 @@ def read_csv(b: Baseline, path: Path, rel: str, fname: str, owner: str) -> list[
         b.issues.append(IngestIssue(file=rel, loc="file", reason=f"cannot read: {e}"))
         return out
     lines = text.splitlines()
-    if not lines or not lines[0].startswith("#") or BANNER not in lines[0]:
-        b.issues.append(IngestIssue(file=rel, loc="line 1", reason="missing SYNTHETIC banner line", kind="validation"))
-        body = lines
-        offset = 1
-    else:
+    if lines and lines[0].startswith("#") and BANNER in lines[0]:
         body = lines[1:]
         offset = 2
+    else:
+        body = lines
+        offset = 1
     reader = csv.DictReader(body)
     for i, row in enumerate(reader):
         line_no = offset + 1 + i  # header is at `offset`
@@ -164,9 +163,17 @@ def read_csv(b: Baseline, path: Path, rel: str, fname: str, owner: str) -> list[
 
 
 # ------------------------------------------------------------------ messages
+HEADER_DTG_RE = re.compile(r"^R\s+(\d{6}Z\s+[A-Z]{3}\s+\d{2})$", re.M)
 CAS_RE = re.compile(r"^CASUALTY/(INITIAL|UPDATE|CORRECT|CANCEL)/(.*)/CAT:(\d)/EIC:([A-Z0-9-]+)$")
 EQ_RE = re.compile(r"^EQUIP/(.*)/APL:([^/]*)/JCN:([A-Z0-9]+)$")
-PARTS_RE = re.compile(r"^PARTS/(\d+)/NSN:([\d-]+)/QTY:(\d+)/DOC:([A-Z0-9]+)/PD:(\d{2})/RDD:(\w+)$")
+PARTSID_RE = re.compile(r"^PARTSID/(.*)/APL:([^/]*)/JCN:([A-Z0-9]+)$")
+PARTS_RE = re.compile(r"^(?:PARTS|1PARTS)/(\d+)/NSN:([\d-]+)/QTY:(\d+)/DOC:([A-Z0-9]+)/PD:(\d{2})/RDD:(\w+)$")
+
+
+def _expand_dtg(dtg: str) -> str:
+    if g := re.fullmatch(r"(\d{6}Z)([A-Z]{3})(\d{2})", dtg):
+        return f"{g.group(1)} {g.group(2)} {g.group(3)}"
+    return dtg
 
 
 def _sets(text: str) -> tuple[list[tuple[int, str]], str]:
@@ -200,6 +207,9 @@ def parse_casrep(text: str, rel: str) -> dict:
     if not ship:
         raise ValueError(f"unknown originator {fm!r}")
     m = {"ship_id": ship, "file": rel, "parts": [], "assist": None, "etr": None, "ref": None, "lines": {}}
+    if g := HEADER_DTG_RE.search(text):
+        m["dtg"] = g.group(1)
+        m["time"] = parse_dtg(m["dtg"])
     for line_no, s in sets:
         tag = s.split("/", 1)[0]
         m["lines"][tag] = line_no
@@ -210,7 +220,7 @@ def parse_casrep(text: str, rel: str) -> dict:
             m["dtg"] = s[4:]
             m["time"] = parse_dtg(m["dtg"])
         elif tag == "REF":
-            m["ref"] = s.split("/")[-1]
+            m["ref"] = _expand_dtg(s.split("/")[-1])
         elif tag == "CASUALTY":
             g = CAS_RE.match(s)
             if not g:
@@ -224,6 +234,12 @@ def parse_casrep(text: str, rel: str) -> dict:
                 raise ValueError(f"line {line_no}: bad EQUIP set")
             m["equipment"], m["apl"], jcn = g.groups()
             m["jcn"] = "" if jcn == "NONE" else jcn
+        elif tag == "PARTSID":
+            g = PARTSID_RE.match(s)
+            if not g:
+                raise ValueError(f"line {line_no}: bad PARTSID set")
+            m["equipment"], m["apl"], jcn = g.groups()
+            m["jcn"] = "" if jcn == "NONE" else jcn
         elif tag == "ESTIMATE":
             m["etr_dtg"] = s.split("ETR:")[1]
             m["etr"] = parse_dtg(m["etr_dtg"])
@@ -231,10 +247,10 @@ def parse_casrep(text: str, rel: str) -> dict:
             if "REQ:YES" in s:
                 kv = dict(x.split(":", 1) for x in s.split("/")[1:] if ":" in x)
                 m["assist"] = {"type": kv.get("TYPE", ""), "org": kv.get("ORG", "")}
-        elif tag == "PARTS":
+        elif tag in ("PARTS", "1PARTS"):
             g = PARTS_RE.match(s)
             if not g:
-                raise ValueError(f"line {line_no}: bad PARTS set")
+                raise ValueError(f"line {line_no}: bad {tag} set")
             _, nsn, qty, doc, pd, rdd = g.groups()
             m["parts"].append({"nsn": nsn, "niin": nsn.replace("-", "")[4:], "qty": int(qty), "doc": doc, "pd": pd, "rdd": rdd})
         elif tag == "AMPN":
@@ -246,8 +262,12 @@ def parse_casrep(text: str, rel: str) -> dict:
             raise ValueError(f"missing required set for {req}")
     if m["type"] != "INITIAL" and not m["ref"]:
         raise ValueError("UPDATE/CORRECT/CANCEL must reference the INITIAL DTG")
-    init = parse_dtg(m["ref"]) if m["ref"] else m["time"]
-    m["casrep_id"] = f"{hull_key(ship)}-{init.year % 100:02d}-{m['serial']}"
+    thread = re.search(r"([A-Z]{3}\d{3}-\d{2}-\d{3})_", Path(rel).name)
+    if thread:
+        m["casrep_id"] = thread.group(1)
+    else:
+        init = parse_dtg(m["ref"]) if m["ref"] else m["time"]
+        m["casrep_id"] = f"{hull_key(ship)}-{init.year % 100:02d}-{m['serial']}"
     m["_known"] = m["time"]
     m["_src"] = SourceRef(file=rel, loc=f"line {m['lines'].get('CASUALTY', 1)}", key=m["casrep_id"])
     return m

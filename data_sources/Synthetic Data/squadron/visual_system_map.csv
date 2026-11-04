@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 eic,component_eic,mission_area,visual_reference,zone_id,attachment_key,placement_basis,provenance
 SPY1D,SPY1D-CW,AW,"US Navy Combatant, DTMB 5415",radar,system_spy1d,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder
 CIWS,CIWS-MOD,AW,"US Navy Combatant, DTMB 5415",aft_weapons,system_ciws,Illustrative logical zone; not actual compartment or mesh coordinates,placeholder

@@ -1,4 +1,4 @@
-# 04 R-Supply / NOSS and MILSTRIP supply status
+# 04 R-Supply and MILSTRIP supply status
 
 Tags: see `00_README.md` section 1.
 
@@ -6,7 +6,7 @@ Tags: see `00_README.md` section 1.
 
 - **R-Supply (Relational Supply)**, NTCSS: the afloat inventory and requisition system. Unit Level (small ships) and Force Level (big decks) variants were in active sustainment in 2025 **[S-SNIP]** (Navy solicitation N00244-25-Q-0017). Interfaces with NALCOMIS, OMMS-NG, MFOM and NMRO **[S-SNIP]**.
 - **COSAL link.** NAVSEA calls the OMMS-NG/R-Supply database "the preferred and, most commonly used" channel for COSAL data **[S]** (PAFOS Ch. 6, Feb 2025). **Storeroom Items** = "allowed spares or repair parts carried in the ship's storeroom(s)" **[S]**.
-- **NOSS** (Naval Operational Supply System), NOBLE's supply component. One Network, ~$42.6M prototype award, Nov 2020 **[S]**. It will replace *ashore* R-Supply, with Minimum Viable Commercial Release 1 targeted for FY2027 **[secondary]**. There is no afloat fielding date or R-Supply sunset, so the files carry `system_of_record` instead of asserting a cutover.
+- **NOSS / eCANNAB note.** NOSS is tracked as an ashore/future supply modernization context item, and eCANNAB is noted as a cannibalization workflow reference. This package does not assert either as a shipboard system of record.
 - **MILSTRIP / DLMS** (DLM 4000.25): the DoD-wide standard R-Supply implements. Status codes live in **DLM 4000.25 Vol 2, Appendix AP7.16 (Change 18, Sep 2024)** **[S-SNIP]**. A secondary mirror lists 33 B-series, 33 C-series and 28 D-series codes **[S-SNIP]**.
 - **No official R-Supply table or field names are public.**
 
@@ -50,9 +50,9 @@ Grain: one row per requisition document number (latest status), plus `status_his
 
 | Column | Type | Example | Rule | Tag |
 |---|---|---|---|---|
-| `doc_number` | str(14) | `R991016308A001` | DoDAAC(6)+YDDD(4)+serial(4) | UNV |
+| `doc_number` | str(14) | `V9910163080001` | DoDAAC(6)+YDDD(4)+serial(4) | UNV |
 | `ship_id` | str | `KESSLER` | | PROP |
-| `dodaac` | str(6) | `R99101` | | UNV / PH |
+| `dodaac` | str(6) | `V99101` | | UNV / PH |
 | `jcn` | str(13) | `99101CF010042` | join to csmp | S fmt |
 | `casrep_id` | str | `DDG991-26-017` | empty if not CASREP | PROP |
 | `nsn` | str | `4320-01-999-0001` | | S fmt / PH |
@@ -73,7 +73,7 @@ Grain: one row per requisition document number (latest status), plus `status_his
 | `source_of_supply` | str | `NAVSUP WSS` | `NAVSUP WSS`, `DLA`, `VENDOR`, `PROGRAM OFFICE` | PROP |
 | `tcn` | str | | transportation control number once shipped | S (concept) / PH |
 | `expedite_flag` | bool | `true` | OTS/GDSC CASREP escalation | PROP |
-| `system_of_record` | enum | `RSUPPLY` | `RSUPPLY`, `NOSS` | PROP |
+| `system_of_record` | enum | `RSUPPLY` | `RSUPPLY` | PROP |
 | `as_of` | datetime | `2026-11-05T06:00:00Z` | | |
 | `provenance` | str | `proposed` | | |
 
@@ -106,11 +106,11 @@ Grain: one row per NIIN per ship (storeroom items, plus installed-equipment part
 - Every CASREP part line gets one requisition: PD 01-03, `rdd 999`, `nors true`.
 - Non-CASREP job parts: PD 05-15, RDD a date.
 - About 5-10% of `BA` rows have an ESD in the past with no newer status (realistic staleness; seeded **X3** on Ashby).
-- `system_of_record`: all `RSUPPLY` except two Ashby rows marked `NOSS` (shows the transition without asserting dates).
+- `system_of_record`: shipboard rows use `RSUPPLY`; NOSS/eCANNAB are documented as modernization context, not asserted afloat sources.
 
 ## 6. Demo scenario rows
 
-- **Kessler `R991016308A001`**: NIIN `019990001` cooling pump, PD `02`, RDD `999`, day 0 `BB` (ESD `2026-11-05`, which matches the INITIAL ETR of 12 NOV), day 1 `BC`, ESD `2026-11-15`, `expedite_flag true`.
+- **Kessler `V9910163080001`**: NIIN `019990001` cooling pump, PD `02`, RDD `999`, day 0 `BB` (ESD `2026-11-05`, which matches the INITIAL ETR of 12 NOV), day 1 `BC`, ESD `2026-12-15`, `expedite_flag true`.
 - **Kessler COSAL:** NIIN `019990001` storeroom allowance 0, on hand 0 (cannot self-fix).
 - **Varnell COSAL:** NIIN `019990001` storeroom allowance 1, on hand 1, `cross_deck_eligible true`. Cross-decking drops it below allowance (**X5**).
 - **Varnell X2:** two requisitions on ethernet switch NIIN `019990044`, one per CASREP; only one is actually needed.

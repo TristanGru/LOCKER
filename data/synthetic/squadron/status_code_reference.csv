@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 code,series,meaning,delay_regime,source,provenance
 BA,B,Being processed for shipment; ESD when known,NEAR,DLM 4000.25 Vol 2 AP7.16 via secondary mirror (snippet),sourced
 BB,B,Backordered against a due-in,DUE_IN,DLM 4000.25 Vol 2 AP7.16 via secondary mirror (snippet),sourced

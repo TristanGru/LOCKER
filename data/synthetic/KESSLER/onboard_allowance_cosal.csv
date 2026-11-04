@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_id,uic,niin,nsn,nomenclature,apl,item_type,allowance_qty,on_hand_qty,due_in_qty,sri_osi,cross_deck_eligible,last_inventory_date,system_of_record,as_of,provenance
 KESSLER,99101,019990001,4320-01-999-0001,"PUMP, CENTRIFUGAL, COOLING WATER",APL-PH-000123,STOREROOM,0,0,1,SRI,false,2026-09-30,RSUPPLY,2026-11-04T06:00:00Z,proposed
 KESSLER,99101,019990001,4320-01-999-0001,"PUMP, CENTRIFUGAL, COOLING WATER",APL-PH-000123,INSTALLED,2,2,0,,false,2026-09-30,RSUPPLY,2026-11-04T06:00:00Z,proposed

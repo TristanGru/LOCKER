@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_id,inspection_date,inspection_type,eic,finding_severity,finding_summary,corrected,as_of,provenance
 VARNELL,2023-10-01,MI,LAN-CORE,MINOR,LAN-CORE material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
 VARNELL,2023-10-01,MI,LAN-CORE,MAJOR,LAN-CORE material deficiency (synthetic),false,2026-11-04T06:00:00Z,placeholder

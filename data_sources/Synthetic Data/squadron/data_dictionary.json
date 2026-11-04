@@ -1,8 +1,8 @@
 {
   "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
   "csv_conventions": {
-    "first_line": "comment banner",
-    "header_line": 2,
+    "first_line": "header row",
+    "header_line": 1,
     "encoding": "UTF-8",
     "null": "empty string",
     "booleans": [

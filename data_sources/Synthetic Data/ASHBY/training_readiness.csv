@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_id,mission_area,requirement_id,requirement_name,team,last_completed,periodicity_days,expires,tfom_value,as_of,provenance
 ASHBY,AW,TRQ-ASHBY-AW-01,Air Warfare team trainer 1 (SYNTH),AW TEAM 1,2026-10-06,90,2027-01-04,0.86,2026-11-07T06:00:00Z,proposed
 ASHBY,AW,TRQ-ASHBY-AW-02,Air Warfare team trainer 2 (SYNTH),AW TEAM 2,2026-10-07,90,2027-01-05,0.86,2026-11-07T06:00:00Z,proposed

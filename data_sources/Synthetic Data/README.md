@@ -68,7 +68,7 @@ system status, and visual system map. Then load the per-ship source records for
 drill-downs. Use the data catalog to find sources and their extract timestamps.
 The data dictionary documents every CSV column and the main JSON containers.
 
-CSV line 1 is a comment banner; line 2 is the header. Use UTF-8, preserve IDs as
+CSV line 1 is the header. Use UTF-8, preserve IDs as
 strings, parse booleans from true/false, treat empty cells as null, and split
 semicolon lists only in documented list columns. JSON uses a top-level _banner.
 YAML parameters include an evidence label. All dates/timestamps use UTC.

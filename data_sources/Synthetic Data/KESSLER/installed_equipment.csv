@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_id,asset_id,niin,supported_eics,status,status_basis,as_of,provenance
 KESSLER,ASSET-KESSLER-SPY1D-01,019990001,SPY1D-CW,FAILED,Synthetic equipment/job status,2026-11-07T18:00:00Z,placeholder
 KESSLER,ASSET-KESSLER-SPY1D-02,019990001,SPY1D-CW,WORKING,Synthetic equipment/job status,2026-11-07T18:00:00Z,placeholder

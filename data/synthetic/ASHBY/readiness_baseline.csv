@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_id,as_of,mission_area,nmet_id,rating,mfom_index,band,p_score,e_score,s_score,t_score,o_score,limiting_factor,provenance
 ASHBY,2026-11-04T06:00:00Z,AW,NMET-AW-01 (SYNTH),Y,100,GREEN,84,100,95,92,89,,proposed
 ASHBY,2026-11-04T06:00:00Z,ASW,NMET-ASW-01 (SYNTH),Y,92,GREEN,86,92,94,75,95,,proposed

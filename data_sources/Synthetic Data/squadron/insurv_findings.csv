@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_id,inspection_date,inspection_type,eic,finding_severity,finding_summary,corrected,as_of,provenance
 KESSLER,2024-05-15,MI,SPY1D,MINOR,Exercise preservation finding 1,true,2026-11-07T06:00:00Z,placeholder
 KESSLER,2024-05-15,MI,CIWS,MINOR,Exercise preservation finding 2,true,2026-11-07T06:00:00Z,placeholder

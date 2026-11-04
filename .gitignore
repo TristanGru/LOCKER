@@ -23,3 +23,8 @@ logs/
 .DS_Store
 Thumbs.db
 .vscode/
+.tmp/
+
+# Downloaded reference documents (public, large; not redistributed)
+primary_docs/
+Data Source Docs/

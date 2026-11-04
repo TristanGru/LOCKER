@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_id,date,status,port,pier,lat,lon,in_company_with,next_port,next_eta,source,provenance
 KESSLER,2026-11-04,INPORT,NORFOLK VA,PIER 12,36.95,-76.33,VARNELL,,,schedule_30day;movrep,proposed
 KESSLER,2026-11-05,INPORT,NORFOLK VA,PIER 12,36.95,-76.33,VARNELL,,,schedule_30day;movrep,proposed

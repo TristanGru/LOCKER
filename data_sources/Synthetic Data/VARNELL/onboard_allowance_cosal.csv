@@ -1,4 +1,3 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 ship_id,uic,niin,nsn,nomenclature,apl,unit_of_issue,provenance,item_type,allowance_qty,on_hand_qty,due_in_qty,sri_osi,cross_deck_eligible,last_inventory_date,system_of_record,as_of
 VARNELL,99102,019990001,4320-01-999-0001,COOLING WATER PUMP (SYNTH),APL-PH-000123,EA,placeholder,STOREROOM,1,1,0,SRI,true,2026-11-02,RSUPPLY,2026-11-07T06:00:00Z
 VARNELL,99102,019990003,5998-01-999-0003,CLOSE-IN WEAPON SYSTEM SERVICE MODULE (SYNTH),APL-PH-000124,EA,placeholder,STOREROOM,2,1,1,SRI,true,2026-11-02,RSUPPLY,2026-11-07T06:00:00Z

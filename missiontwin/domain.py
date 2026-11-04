@@ -89,11 +89,11 @@ def local_label(dt: datetime) -> str:
 
 # ---------------------------------------------------------------- squadron (all placeholders)
 SHIPS = {
-    "KESSLER": {"name": "USS KESSLER", "hull": "DDG-991", "uic": "99101", "dodaac": "R99101",
+    "KESSLER": {"name": "USS KESSLER", "hull": "DDG-991", "uic": "99101", "dodaac": "V99101",
                 "role": "Primary ship; full demo scenario", "depth": "full", "ofrp_phase": "INTEGRATED"},
-    "VARNELL": {"name": "USS VARNELL", "hull": "DDG-992", "uic": "99102", "dodaac": "R99102",
+    "VARNELL": {"name": "USS VARNELL", "hull": "DDG-992", "uic": "99102", "dodaac": "V99102",
                 "role": "Donor; holds the spare cooling pump", "depth": "full", "ofrp_phase": "BASIC"},
-    "ASHBY": {"name": "USS ASHBY", "hull": "DDG-993", "uic": "99103", "dodaac": "R99103",
+    "ASHBY": {"name": "USS ASHBY", "hull": "DDG-993", "uic": "99103", "dodaac": "V99103",
               "role": "Third ship for the squadron view", "depth": "light", "ofrp_phase": "SUSTAINMENT"},
 }
 SHIP_IDS = list(SHIPS)
@@ -260,7 +260,7 @@ def mission_tree_json() -> dict:
         "ship_class": "DDG (notional Flight IIA)",
         "scoring": {
             "status_score_map": STATUS_SCORE,
-            "bands": {"green": 0.80, "amber": 0.60},
+            "bands": {"green": 0.80, "yellow": 0.60},
             "rollup": "weighted_average_with_critical_child",
             "critical_child_cap": CRITICAL_CAP,
             "provenance": "sourced (MFOM patent ~2012); cap value proposed",
@@ -277,7 +277,7 @@ DEFAULT_PARAMS: dict = {
     "seed": {"value": 20261104, "tag": "assumed", "source": "fixed seed; shown in UI"},
     "runs": {"value": 500, "tag": "assumed", "source": "DEV 2 demo simulation budget"},
     "ranking_runs": {"value": 2000, "tag": "assumed", "source": "design doc performance budget"},
-    "bands": {"value": {"green": 0.80, "amber": 0.60}, "tag": "sourced", "source": "MFOM patent US20120215734A1 (80/60 bands)"},
+    "bands": {"value": {"green": 0.80, "yellow": 0.60}, "tag": "sourced", "source": "MFOM patent US20120215734A1 (80/60 bands)"},
     "status_score_map": {"value": dict(STATUS_SCORE), "tag": "sourced", "source": "MFOM patent US20120215734A1"},
     "casualty_threshold_hours": {"value": 48, "tag": "sourced", "source": "NETCINST 3040.1A (snippet)"},
     "casrep_rating_cap": {"value": {"cat4": "N", "cat3": "Q"}, "tag": "sourced", "source": "2023 carrier DRRS-S brief (snippet)"},
@@ -329,15 +329,15 @@ EDITABLE_NUMERIC = {
     "part_arrival_days_by_regime.LONG.median": (0, 365),
     "part_arrival_days_by_regime.LONG.sigma": (0.01, 3),
     "bands.green": (0, 1),
-    "bands.amber": (0, 1),
+    "bands.yellow": (0, 1),
 }
 
 
 def band(p: float, bands: dict) -> str:
     if p >= bands["green"]:
         return "GREEN"
-    if p >= bands["amber"]:
-        return "AMBER"
+    if p >= bands["yellow"]:
+        return "YELLOW"
     return "RED"
 
 

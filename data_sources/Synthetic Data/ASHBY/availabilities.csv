@@ -1,3 +1,2 @@
-# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
 avail_id,ship_id,avail_type,planned_start,planned_completion,forecast_completion,actual_completion,a120_date,package_lock_date,growth_work_items,slip_reason,source_msg_dtg,known_at,as_of,provenance
 AV-ASHBY-26-02,ASHBY,CMAV,2026-09-01,2026-09-14,2026-09-14,2026-09-14,,,0,,051400Z NOV 26,2026-11-05T14:00:00Z,2026-11-07T06:00:00Z,placeholder

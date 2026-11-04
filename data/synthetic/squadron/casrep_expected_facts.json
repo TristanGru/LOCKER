@@ -29,8 +29,8 @@
           "type": "part_requirement",
           "niin": "019990401",
           "quantity": 1,
-          "doc_number": "R991016293A002",
-          "span": "PARTS/1/NSN:5960-01-999-0401/QTY:1/DOC:R991016293A002/PD:03/RDD:999//",
+          "doc_number": "V9910162930002",
+          "span": "1PARTS/1/NSN:5960-01-999-0401/QTY:1/DOC:V9910162930002/PD:03/RDD:999//",
           "hedged": false
         },
         {
@@ -67,8 +67,8 @@
           "type": "part_requirement",
           "niin": "019990401",
           "quantity": 1,
-          "doc_number": "R991016293A002",
-          "span": "PARTS/1/NSN:5960-01-999-0401/QTY:1/DOC:R991016293A002/PD:03/RDD:999//",
+          "doc_number": "V9910162930002",
+          "span": "1PARTS/1/NSN:5960-01-999-0401/QTY:1/DOC:V9910162930002/PD:03/RDD:999//",
           "hedged": false
         },
         {
@@ -111,8 +111,8 @@
           "type": "part_requirement",
           "niin": "019990601",
           "quantity": 1,
-          "doc_number": "R991016301A003",
-          "span": "PARTS/1/NSN:4130-01-999-0601/QTY:1/DOC:R991016301A003/PD:03/RDD:999//",
+          "doc_number": "V9910163010003",
+          "span": "1PARTS/1/NSN:4130-01-999-0601/QTY:1/DOC:V9910163010003/PD:03/RDD:999//",
           "hedged": false
         },
         {
@@ -155,8 +155,8 @@
           "type": "part_requirement",
           "niin": "019990001",
           "quantity": 1,
-          "doc_number": "R991016308A001",
-          "span": "PARTS/1/NSN:4320-01-999-0001/QTY:1/DOC:R991016308A001/PD:02/RDD:999//",
+          "doc_number": "V9910163080001",
+          "span": "1PARTS/1/NSN:4320-01-999-0001/QTY:1/DOC:V9910163080001/PD:02/RDD:999//",
           "hedged": false
         },
         {
@@ -199,13 +199,13 @@
           "type": "part_requirement",
           "niin": "019990001",
           "quantity": 1,
-          "doc_number": "R991016308A001",
-          "span": "PARTS/1/NSN:4320-01-999-0001/QTY:1/DOC:R991016308A001/PD:02/RDD:999//",
+          "doc_number": "V9910163080001",
+          "span": "1PARTS/1/NSN:4320-01-999-0001/QTY:1/DOC:V9910163080001/PD:02/RDD:999//",
           "hedged": false
         },
         {
           "type": "casrep_narrative",
-          "span": "AMPN/SUPPLY STATUS BC LONG DELAY. ESD 15 NOV 26 PLUS 5 DAYS CONUS TRANSIT\nPLUS 2 DAYS INSTALL. ETR REVISED.//",
+          "span": "AMPN/SUPPLY STATUS BC LONG DELAY. ESD 15 DEC 26 PLUS 5 DAYS CONUS TRANSIT\nPLUS 2 DAYS INSTALL. ETR REVISED.//",
           "hedged": false
         },
         {
@@ -243,8 +243,8 @@
           "type": "part_requirement",
           "niin": "019990044",
           "quantity": 1,
-          "doc_number": "R991026303A011",
-          "span": "PARTS/1/NSN:5895-01-999-0044/QTY:1/DOC:R991026303A011/PD:03/RDD:999//",
+          "doc_number": "V9910263030011",
+          "span": "1PARTS/1/NSN:5895-01-999-0044/QTY:1/DOC:V9910263030011/PD:03/RDD:999//",
           "hedged": false
         },
         {
@@ -287,8 +287,8 @@
           "type": "part_requirement",
           "niin": "019990044",
           "quantity": 1,
-          "doc_number": "R991026304A014",
-          "span": "PARTS/1/NSN:5895-01-999-0044/QTY:1/DOC:R991026304A014/PD:03/RDD:999//",
+          "doc_number": "V9910263040014",
+          "span": "1PARTS/1/NSN:5895-01-999-0044/QTY:1/DOC:V9910263040014/PD:03/RDD:999//",
           "hedged": false
         },
         {
