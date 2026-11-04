@@ -742,6 +742,8 @@ class Gen:
                "1. SHIP UNDERWAY VACAPES UNTIL 09 NOV. TECH ASSIST ON RETURN.")], ["CCC"]),
         ]
         from .domain import parse_dtg
+        import re
+        casrep_expected = {}
         for ship in SHIP_IDS:
             out = []
             for (s, cid, serial, cat, eic, noun, apl, jcn, parts, assist, msgs, areas) in casrep_defs:
@@ -754,6 +756,22 @@ class Gen:
                     text = msg(s, serial, mtype, dtg, cat, eic, noun, apl, jcn, etr, assist, parts, ampn, rmks,
                                ref=init_dtg if i > 1 else None)
                     self.write_text(self.sdir(s) / fname, text)
+                    def span_for(tag, index=0):
+                        return list(re.finditer(r"(?m)^" + tag + r"/[\s\S]*?//", text))[index].group(0)
+                    # Expected fields come from the fixture definitions, independently of the ingest/LLM parsers.
+                    facts = [{"type": "casrep_status", "report_type": mtype, "category": cat, "eic": eic,
+                              "span": span_for("CASUALTY"), "hedged": False}]
+                    if etr:
+                        facts.append({"type": "repair_estimate", "timestamp": iso(parse_dtg(etr)),
+                                      "span": span_for("ESTIMATE"), "hedged": False})
+                    facts.append({"type": "assistance_request", "value": "YES" if assist else "NO",
+                                  "span": span_for("ASSIST"), "hedged": False})
+                    for pi, part in enumerate(parts):
+                        facts.append({"type": "part_requirement", "niin": part["niin"], "quantity": 1,
+                                      "doc_number": part["doc"], "span": span_for("PARTS", pi), "hedged": False})
+                    for tag in ("AMPN", "RMKS"):
+                        facts.append({"type": "casrep_narrative", "span": span_for(tag), "hedged": False})
+                    casrep_expected[f"{s}/{fname}"] = {"ship_id": s, "known_at": iso(parse_dtg(dtg)), "facts": facts}
                     files.append(fname)
                     if etr:
                         etr_hist.append({"dtg": dtg, "etr": iso(parse_dtg(etr)), "report_type": mtype})
@@ -770,6 +788,9 @@ class Gen:
             self.write_json(self.sdir(ship) / "casreps.json", {"_banner": BANNER, "casreps": out})
             self.cat(ship, "casrep_messages/", "CASREP messages (NTTP 1-03.1)", "Fleet Forces / MFOM (notional)", "per message",
                      "Message traffic via MFOM to Jupiter (inferred)", BASE_AS_OF, 7)
+
+        self.write_json(self.out / "squadron" / "casrep_expected_facts.json",
+                        {"_banner": BANNER, "documents": casrep_expected})
 
         # ---- COSAL (spec 04), fleet stock (spec 06), wholesale (spec 05), status codes
         pidx = parts_index()

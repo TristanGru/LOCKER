@@ -113,6 +113,7 @@ class Baseline:
     name_index: dict = field(default_factory=dict)
     expected_facts: dict = field(default_factory=dict)
     extraction_methods: dict = field(default_factory=dict)
+    extraction_documents: dict = field(default_factory=dict)
 
     def r(self, ship: str, fname: str) -> list[dict]:
         return self.rows.get((ship, fname), [])
@@ -342,6 +343,8 @@ def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) ->
         ev["known_at"] = parse_ts(ev["known_at"])
     b.catalog = j("data_catalog.json").get("datasets", [])
     b.expected_facts = j("daily_status_expected_facts.json").get("documents", {})
+    if (sq / "casrep_expected_facts.json").exists():
+        b.expected_facts.update(j("casrep_expected_facts.json").get("documents", {}))
     try:
         b.params = yaml.safe_load((sq / "delay_model_params.yaml").read_text(encoding="utf-8"))
     except Exception as e:
@@ -353,6 +356,21 @@ def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) ->
     roster_all = [r for s in SHIP_IDS for r in b.r(s, "roster.csv")]
     b.name_index = build_name_index(roster_all)
     client.forbidden_names = {surname_of(r["display_name"]) for r in roster_all if r.get("display_name")}
+
+    # Standardized sets remain authoritative for the engine. Model facts provide separately
+    # validated evidence, including AMPN/RMKS narratives, without duplicating casualties.
+    for message in b.messages:
+        rel = message["file"]
+        text = (data_dir / rel).read_text(encoding="utf-8")
+        b.docs[rel] = {"ship_id": message["ship_id"], "known": message["time"], "pages": [text], "document_type": "casrep"}
+        facts, method = extract_facts(client, rel, message["ship_id"], text, 1, message["time"],
+                                      b.name_index, document_type="casrep", casrep_id=message["casrep_id"])
+        b.facts.extend(facts)
+        b.extraction_methods[method] = b.extraction_methods.get(method, 0) + 1
+        b.extraction_documents[rel] = {"document_type": "casrep", "methods": [method]}
+        for fact in facts:
+            if fact.status == "NEEDS_REVIEW":
+                b.issues.append(IngestIssue(file=rel, loc=f"line {fact.line or 1}", reason=fact.reason, kind="extraction"))
 
     # daily reports
     for ship in SHIP_IDS:
@@ -369,10 +387,12 @@ def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) ->
             except Exception as e:
                 b.issues.append(IngestIssue(file=rel, loc="page 1", reason=str(e)))
                 continue
-            b.docs[rel] = {"ship_id": ship, "known": known, "pages": pages}
+            b.docs[rel] = {"ship_id": ship, "known": known, "pages": pages, "document_type": "daily_report"}
+            b.extraction_documents[rel] = {"document_type": "daily_report", "methods": []}
             for pi, text in enumerate(pages, 1):
                 facts, method = extract_facts(client, rel, ship, text, pi, known, b.name_index)
                 b.extraction_methods[method] = b.extraction_methods.get(method, 0) + 1
+                b.extraction_documents[rel]["methods"].append(method)
                 for f in facts:
                     if f.status == "NEEDS_REVIEW":
                         b.issues.append(IngestIssue(file=rel, loc=f"page {pi}", reason=f"{f.reason}: {f.span[:80]}", kind="extraction"))
@@ -486,6 +506,10 @@ class View:
     # -------------------------------------------------- corroboration of extracted facts (X4 and friends)
     def corroborate(self, f: ExtractedFact) -> tuple[str, str]:
         ship = f.ship_id
+        if f.document_type == "casrep":
+            if f.status == "NEEDS_REVIEW":
+                return "n/a", "CASREP extraction failed evidence validation"
+            return "corroborates", "Quoted CASREP set; standardized parser supplies the engine record"
         if f.type in ("personnel_transfer", "personnel_tad") and f.member_id:
             r = next((r for r in self.rows(ship, "roster.csv") if r["member_id"] == f.member_id), None)
             if r is None:

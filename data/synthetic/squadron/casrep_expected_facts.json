@@ -1,0 +1,343 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "documents": {
+    "KESSLER/casrep_messages/DDG991-26-015_01_INITIAL.txt": {
+      "ship_id": "KESSLER",
+      "known_at": "2026-10-20T09:00:00Z",
+      "facts": [
+        {
+          "type": "casrep_status",
+          "report_type": "INITIAL",
+          "category": 2,
+          "eic": "NAVRAD-TX",
+          "span": "CASUALTY/INITIAL/NAVIGATION RADARS/CAT:2/EIC:NAVRAD-TX//",
+          "hedged": false
+        },
+        {
+          "type": "repair_estimate",
+          "timestamp": "2026-10-30T12:00:00Z",
+          "span": "ESTIMATE/ETR:301200Z OCT 26//",
+          "hedged": false
+        },
+        {
+          "type": "assistance_request",
+          "value": "NO",
+          "span": "ASSIST/REQ:NO//",
+          "hedged": false
+        },
+        {
+          "type": "part_requirement",
+          "niin": "019990401",
+          "quantity": 1,
+          "doc_number": "R991016293A002",
+          "span": "PARTS/1/NSN:5960-01-999-0401/QTY:1/DOC:R991016293A002/PD:03/RDD:999//",
+          "hedged": false
+        },
+        {
+          "type": "casrep_narrative",
+          "span": "AMPN/NAV RADAR NO. 1 TRANSMITTER FAILED. NO. 2 RADAR IN USE.//",
+          "hedged": false
+        },
+        {
+          "type": "casrep_narrative",
+          "span": "RMKS/1. SHIP AVAILABLE TO RECEIVE PARTS NORFOLK 21 OCT-05 NOV.//",
+          "hedged": false
+        }
+      ]
+    },
+    "KESSLER/casrep_messages/DDG991-26-015_02_CORRECT.txt": {
+      "ship_id": "KESSLER",
+      "known_at": "2026-11-01T14:00:00Z",
+      "facts": [
+        {
+          "type": "casrep_status",
+          "report_type": "CORRECT",
+          "category": 2,
+          "eic": "NAVRAD-TX",
+          "span": "CASUALTY/CORRECT/NAVIGATION RADARS/CAT:2/EIC:NAVRAD-TX//",
+          "hedged": false
+        },
+        {
+          "type": "assistance_request",
+          "value": "NO",
+          "span": "ASSIST/REQ:NO//",
+          "hedged": false
+        },
+        {
+          "type": "part_requirement",
+          "niin": "019990401",
+          "quantity": 1,
+          "doc_number": "R991016293A002",
+          "span": "PARTS/1/NSN:5960-01-999-0401/QTY:1/DOC:R991016293A002/PD:03/RDD:999//",
+          "hedged": false
+        },
+        {
+          "type": "casrep_narrative",
+          "span": "AMPN/PARTS RECEIVED 311400Z OCT 26. SUPPLY DELAY 98 HRS. MANHOURS 22.//",
+          "hedged": false
+        },
+        {
+          "type": "casrep_narrative",
+          "span": "RMKS/1. CASUALTY CORRECTED.//",
+          "hedged": false
+        }
+      ]
+    },
+    "KESSLER/casrep_messages/DDG991-26-016_01_INITIAL.txt": {
+      "ship_id": "KESSLER",
+      "known_at": "2026-10-28T13:00:00Z",
+      "facts": [
+        {
+          "type": "casrep_status",
+          "report_type": "INITIAL",
+          "category": 2,
+          "eic": "HM-CHW",
+          "span": "CASUALTY/INITIAL/SHIP SUPPORT (HVAC, CHILLED WATER)/CAT:2/EIC:HM-CHW//",
+          "hedged": false
+        },
+        {
+          "type": "repair_estimate",
+          "timestamp": "2026-11-08T12:00:00Z",
+          "span": "ESTIMATE/ETR:081200Z NOV 26//",
+          "hedged": false
+        },
+        {
+          "type": "assistance_request",
+          "value": "NO",
+          "span": "ASSIST/REQ:NO//",
+          "hedged": false
+        },
+        {
+          "type": "part_requirement",
+          "niin": "019990601",
+          "quantity": 1,
+          "doc_number": "R991016301A003",
+          "span": "PARTS/1/NSN:4130-01-999-0601/QTY:1/DOC:R991016301A003/PD:03/RDD:999//",
+          "hedged": false
+        },
+        {
+          "type": "casrep_narrative",
+          "span": "AMPN/NO. 3 CHILLED WATER COMPRESSOR FAILED. TWO OF THREE PLANTS ON LINE.//",
+          "hedged": false
+        },
+        {
+          "type": "casrep_narrative",
+          "span": "RMKS/1. SHIP AVAILABLE TO RECEIVE PARTS NORFOLK 29 OCT-11 NOV.//",
+          "hedged": false
+        }
+      ]
+    },
+    "KESSLER/casrep_messages/DDG991-26-017_01_INITIAL.txt": {
+      "ship_id": "KESSLER",
+      "known_at": "2026-11-04T12:00:00Z",
+      "facts": [
+        {
+          "type": "casrep_status",
+          "report_type": "INITIAL",
+          "category": 3,
+          "eic": "SPY1D-CW",
+          "span": "CASUALTY/INITIAL/AN/SPY-1D(V) RADAR/CAT:3/EIC:SPY1D-CW//",
+          "hedged": false
+        },
+        {
+          "type": "repair_estimate",
+          "timestamp": "2026-11-12T12:00:00Z",
+          "span": "ESTIMATE/ETR:121200Z NOV 26//",
+          "hedged": false
+        },
+        {
+          "type": "assistance_request",
+          "value": "YES",
+          "span": "ASSIST/REQ:YES/TYPE:FTS/ORG:NSWC TECH REP//",
+          "hedged": false
+        },
+        {
+          "type": "part_requirement",
+          "niin": "019990001",
+          "quantity": 1,
+          "doc_number": "R991016308A001",
+          "span": "PARTS/1/NSN:4320-01-999-0001/QTY:1/DOC:R991016308A001/PD:02/RDD:999//",
+          "hedged": false
+        },
+        {
+          "type": "casrep_narrative",
+          "span": "AMPN/COOLING WATER PUMP SEIZED DURING LIGHT-OFF. SPY-1D DEGRADED TO\nSINGLE ARRAY FACE OPERATION. AW MISSION MAJOR DEGRADATION.//",
+          "hedged": false
+        },
+        {
+          "type": "casrep_narrative",
+          "span": "RMKS/1. SHIP AVAILABLE TO RECEIVE PARTS AND ASSIST NORFOLK 05-15 NOV.\n2. UNDERWAY GROUP SAIL 16 NOV.//",
+          "hedged": false
+        }
+      ]
+    },
+    "KESSLER/casrep_messages/DDG991-26-017_02_UPDATE.txt": {
+      "ship_id": "KESSLER",
+      "known_at": "2026-11-05T10:00:00Z",
+      "facts": [
+        {
+          "type": "casrep_status",
+          "report_type": "UPDATE",
+          "category": 3,
+          "eic": "SPY1D-CW",
+          "span": "CASUALTY/UPDATE/AN/SPY-1D(V) RADAR/CAT:3/EIC:SPY1D-CW//",
+          "hedged": false
+        },
+        {
+          "type": "repair_estimate",
+          "timestamp": "2026-11-22T12:00:00Z",
+          "span": "ESTIMATE/ETR:221200Z NOV 26//",
+          "hedged": false
+        },
+        {
+          "type": "assistance_request",
+          "value": "YES",
+          "span": "ASSIST/REQ:YES/TYPE:FTS/ORG:NSWC TECH REP//",
+          "hedged": false
+        },
+        {
+          "type": "part_requirement",
+          "niin": "019990001",
+          "quantity": 1,
+          "doc_number": "R991016308A001",
+          "span": "PARTS/1/NSN:4320-01-999-0001/QTY:1/DOC:R991016308A001/PD:02/RDD:999//",
+          "hedged": false
+        },
+        {
+          "type": "casrep_narrative",
+          "span": "AMPN/SUPPLY STATUS BC LONG DELAY. ESD 15 NOV 26 PLUS 5 DAYS CONUS TRANSIT\nPLUS 2 DAYS INSTALL. ETR REVISED.//",
+          "hedged": false
+        },
+        {
+          "type": "casrep_narrative",
+          "span": "RMKS/1. SHIP AVAILABLE TO RECEIVE PARTS AND ASSIST NORFOLK 05-15 NOV.\n2. UNDERWAY GROUP SAIL 16 NOV.//",
+          "hedged": false
+        }
+      ]
+    },
+    "VARNELL/casrep_messages/DDG992-26-008_01_INITIAL.txt": {
+      "ship_id": "VARNELL",
+      "known_at": "2026-10-30T15:00:00Z",
+      "facts": [
+        {
+          "type": "casrep_status",
+          "report_type": "INITIAL",
+          "category": 2,
+          "eic": "SQQ89-PROC",
+          "span": "CASUALTY/INITIAL/AN/SQQ-89 ASW COMBAT SYSTEM/CAT:2/EIC:SQQ89-PROC//",
+          "hedged": false
+        },
+        {
+          "type": "repair_estimate",
+          "timestamp": "2026-11-08T12:00:00Z",
+          "span": "ESTIMATE/ETR:081200Z NOV 26//",
+          "hedged": false
+        },
+        {
+          "type": "assistance_request",
+          "value": "YES",
+          "span": "ASSIST/REQ:YES/TYPE:FTS/ORG:NSWC ISEA//",
+          "hedged": false
+        },
+        {
+          "type": "part_requirement",
+          "niin": "019990044",
+          "quantity": 1,
+          "doc_number": "R991026303A011",
+          "span": "PARTS/1/NSN:5895-01-999-0044/QTY:1/DOC:R991026303A011/PD:03/RDD:999//",
+          "hedged": false
+        },
+        {
+          "type": "casrep_narrative",
+          "span": "AMPN/SQQ-89 PROCESSING SEGMENT DEGRADED. ETHERNET SWITCH FAULT.//",
+          "hedged": false
+        },
+        {
+          "type": "casrep_narrative",
+          "span": "RMKS/1. SHIP IN CMAV NORFOLK. AVAILABLE TO RECEIVE PARTS.//",
+          "hedged": false
+        }
+      ]
+    },
+    "VARNELL/casrep_messages/DDG992-26-009_01_INITIAL.txt": {
+      "ship_id": "VARNELL",
+      "known_at": "2026-10-31T09:00:00Z",
+      "facts": [
+        {
+          "type": "casrep_status",
+          "report_type": "INITIAL",
+          "category": 2,
+          "eic": "LAN-CORE",
+          "span": "CASUALTY/INITIAL/COMBAT-SYSTEM LAN/CAT:2/EIC:LAN-CORE//",
+          "hedged": false
+        },
+        {
+          "type": "repair_estimate",
+          "timestamp": "2026-11-09T12:00:00Z",
+          "span": "ESTIMATE/ETR:091200Z NOV 26//",
+          "hedged": false
+        },
+        {
+          "type": "assistance_request",
+          "value": "YES",
+          "span": "ASSIST/REQ:YES/TYPE:FTS/ORG:NSWC ISEA//",
+          "hedged": false
+        },
+        {
+          "type": "part_requirement",
+          "niin": "019990044",
+          "quantity": 1,
+          "doc_number": "R991026304A014",
+          "span": "PARTS/1/NSN:5895-01-999-0044/QTY:1/DOC:R991026304A014/PD:03/RDD:999//",
+          "hedged": false
+        },
+        {
+          "type": "casrep_narrative",
+          "span": "AMPN/COMBAT-SYSTEM LAN SEGMENT DEGRADED. ETHERNET SWITCH FAULT.//",
+          "hedged": false
+        },
+        {
+          "type": "casrep_narrative",
+          "span": "RMKS/1. SHIP IN CMAV NORFOLK. AVAILABLE TO RECEIVE PARTS.//",
+          "hedged": false
+        }
+      ]
+    },
+    "ASHBY/casrep_messages/DDG993-26-004_01_INITIAL.txt": {
+      "ship_id": "ASHBY",
+      "known_at": "2026-11-01T07:00:00Z",
+      "facts": [
+        {
+          "type": "casrep_status",
+          "report_type": "INITIAL",
+          "category": 2,
+          "eic": "COMMS-HF",
+          "span": "CASUALTY/INITIAL/EXTERIOR COMMUNICATIONS/CAT:2/EIC:COMMS-HF//",
+          "hedged": false
+        },
+        {
+          "type": "repair_estimate",
+          "timestamp": "2026-11-08T12:00:00Z",
+          "span": "ESTIMATE/ETR:081200Z NOV 26//",
+          "hedged": false
+        },
+        {
+          "type": "assistance_request",
+          "value": "YES",
+          "span": "ASSIST/REQ:YES/TYPE:FTS/ORG:NIWC TECH REP//",
+          "hedged": false
+        },
+        {
+          "type": "casrep_narrative",
+          "span": "AMPN/HF TRANSCEIVER NO. 1 FAILED. NO. 2 IN USE, NO REDUNDANCY.//",
+          "hedged": false
+        },
+        {
+          "type": "casrep_narrative",
+          "span": "RMKS/1. SHIP UNDERWAY VACAPES UNTIL 09 NOV. TECH ASSIST ON RETURN.//",
+          "hedged": false
+        }
+      ]
+    }
+  }
+}

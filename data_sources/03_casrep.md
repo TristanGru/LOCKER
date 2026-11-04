@@ -1,5 +1,9 @@
 # 03 CASREP: casualty report messages
 
+Implementation: standardized sets are parsed for the engine, and the optional LLM extracts typed facts with source lines
+and spans from the same messages, including AMPN/RMKS narratives. `squadron/casrep_expected_facts.json` provides the
+synthetic evaluation oracle. See [DEV 2 setup and evaluation](../docs/DEV2.md).
+
 Tags: see `00_README.md` section 1.
 
 ## 1. The real source

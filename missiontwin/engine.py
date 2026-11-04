@@ -473,7 +473,8 @@ def build_world(scn: Scenario) -> World:
                 facts_used.append(f.fact_id)
         sw.facts_assist = {}
         for f in v.facts(s):
-            if f.type == "assist_eta" and (f.status == "VERIFIED" or confirmed.get(f.fact_id)) and f.date:
+            if (f.type == "assist_eta" and f.date and confirmed.get(f.fact_id) is not False
+                    and (f.status == "VERIFIED" or (f.status == "UNCONFIRMED" and confirmed.get(f.fact_id)))):
                 sw.facts_assist[f.fact_id] = (day_of(fact_date(f.date, f.known_at)), SourceRef(file=f.doc, loc=f"page {f.page}", span=f.span, key=f.fact_id))
                 facts_used.append(f.fact_id)
         # equipment items: CSMP jobs + CASREPs
@@ -728,15 +729,16 @@ def apply_fix(world: World, fix: dict, at: float):
 
 # ====================================================================== forecast
 def horizon_days(world: World) -> int:
-    last = max(m.start for sw in world.ships.values() for m in sw.missions)
-    return int(math.ceil(last)) + 3
+    """Thirty daily samples starting at the scenario cursor, regardless of mission dates."""
+    return 30
 
 
 def _items_scores(sw: ShipWorld, T: np.ndarray, n: int, seed: int, planned: bool):
-    """Returns ({eic: (n,K) score}, item_info) where eic is a component or system eic."""
+    """Return component scores, item samples, and each impairment's daily absence probability."""
     K = len(T)
     scores: dict[str, np.ndarray] = {}
     info = []
+    item_ready = {}
     for it in sw.items:
         if planned:
             end = np.array([it.planned_end()])
@@ -746,6 +748,7 @@ def _items_scores(sw: ShipWorld, T: np.ndarray, n: int, seed: int, planned: bool
         val = np.where(active, it.score, 1.0).astype(np.float32)
         scores[it.eic] = np.minimum(scores.get(it.eic, np.ones((n if not planned else 1, K), np.float32)), val)
         info.append((it, end))
+        item_ready[it.key] = (~active).mean(axis=0)
     for hz in sw.hazards:
         if planned or hz.rate <= 0:
             continue
@@ -759,7 +762,8 @@ def _items_scores(sw: ShipWorld, T: np.ndarray, n: int, seed: int, planned: bool
         val = np.where(active, hz.score, 1.0).astype(np.float32)
         scores[hz.comp] = np.minimum(scores.get(hz.comp, np.ones((n, K), np.float32)), val)
         info.append((hz, fail))
-    return scores, info
+        item_ready[hz.key] = (~active).mean(axis=0)
+    return scores, info, item_ready
 
 
 def _system_scores(comp_scores: dict, n: int, K: int) -> dict[str, np.ndarray]:
@@ -822,7 +826,7 @@ def _evaluate(world: World, T_by_ship: dict, n: int, seed: int, planned: bool):
     res = {}
     for s, sw in world.ships.items():
         T = T_by_ship[s]
-        comp_scores, info = _items_scores(sw, T, n if not planned else 1, seed, planned)
+        comp_scores, info, item_ready = _items_scores(sw, T, n if not planned else 1, seed, planned)
         nn = 1 if planned else n
         sys_scores = _system_scores(comp_scores, nn, len(T))
         teams = {}
@@ -849,7 +853,7 @@ def _evaluate(world: World, T_by_ship: dict, n: int, seed: int, planned: bool):
                 st = Stage("bern_lognormal", sl["median"], sl["sigma"], 0, sl["p_late"], label="availability slip")
                 avail_done[aid] = a["completion"] + (np.array([st.point()]) if planned else st.sample(rng_for(seed, f"avail:{s}:{aid}"), n))
         res[s] = {"T": T, "sys": sys_scores, "teams": teams, "team_det": team_det, "info": info, "tr": tr_success,
-                  "avail": avail_done}
+                   "avail": avail_done, "item_ready": item_ready}
     return res
 
 
@@ -877,8 +881,6 @@ def _gates(world: World, sw: ShipWorld, m: Mission, r: dict, cols) -> list[dict]
             ok = ok_exp | ok_ref
         else:
             ok = np.broadcast_to(ok_exp, (r["sys"]["SPY1D"].shape[0], len(T)))
-        if np.all(t["expires"] >= T) and t["refresh"] is None:
-            continue  # always valid in horizon; not a gate worth showing
         gates.append({"id": f"training:{t['id']}", "kind": "training", "req": t["id"], "label": f"{t['name']} current", "ok": ok, "t": t})
     if m.avail_id and m.avail_id in r["avail"]:
         ok = r["avail"][m.avail_id][:, None] <= T[None, :]
@@ -928,7 +930,7 @@ def _fix_digest(world: World) -> str:
 
 def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
     H = horizon_days(world)
-    grid = np.arange(0, H + 1, dtype=float) + 0.5
+    grid = world.cursor + np.arange(H, dtype=float) + 0.5
     bands = pval(world.params, "bands")
     T_by_ship = {}
     for s, sw in world.ships.items():
@@ -953,7 +955,7 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
         out = allok.copy()
         for pe in m.prereqs:
             if pe in gate_cache and pe not in seen:
-                out &= ready(pe, seen + (eid,))
+                out &= ready(pe, seen + (eid,)) & (gate_cache[pe][1].end <= m.start)
         return out
     for eid in gate_cache:
         ready_at_start[eid] = ready(eid)
@@ -962,7 +964,8 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
         full = ready_at_start[eid]
         p = float(full.mean())
         gate_rows = []
-        prereq_arrays = [(pe, ready_at_start[pe]) for pe in m.prereqs if pe in ready_at_start]
+        prereq_arrays = [(pe, ready_at_start[pe] & (gate_cache[pe][1].end <= m.start))
+                         for pe in m.prereqs if pe in ready_at_start]
         all_arrays = [(g["id"], g["ok"][:, 0]) for g in gates] + [(f"prereq:{pe}", arr) for pe, arr in prereq_arrays]
         for gid, arr in all_arrays:
             others = np.ones(n, bool)
@@ -992,9 +995,18 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
             ok = np.ones((n, G), bool)
             for g in gates_c:
                 ok &= g["ok"]
-            for pe, arr in prereq_arrays:
-                ok &= arr[:, None]
+            daily_prereqs = {pe: ready_at_start[pe][:, None] & (grid >= gate_cache[pe][1].end)[None, :]
+                             for pe, _ in prereq_arrays}
+            for arr in daily_prereqs.values():
+                ok &= arr
             curve = [round(float(x), 4) for x in ok.mean(axis=0)]
+            daily_gates = {g["id"]: [round(float(x), 4) for x in g["ok"].mean(axis=0)] for g in gates_c}
+            for pe, arr in daily_prereqs.items():
+                daily_gates[f"prereq:{pe}"] = [round(float(x), 4) for x in arr.mean(axis=0)]
+            for row in gate_rows:
+                row["p_ready"] = daily_gates[row["gate_id"]]
+                for item in row.get("items", []):
+                    item.setdefault("p_ready", row["p_ready"])
         missions_out.append({
             "event_id": eid, "label": m.label, "ship_id": s, "name": m.name, "start": iso(dt_of(m.start)),
             "start_dtg": format_dtg(dt_of(m.start)), "start_local": local_label(dt_of(m.start)), "day": round(m.start, 2),
@@ -1027,12 +1039,17 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
                 "systems": {e: [round(float(x), 3) for x in rr["sys"][e][:, :G].mean(axis=0)] for e in SYSTEMS},
                 "system_p_ok": {e: [round(float(x), 4) for x in (rr["sys"][e][:, :G] >= 0.6).mean(axis=0)] for e in SYSTEMS},
             }
-    return {
+    result = {
         "seed": seed, "runs": n, "cursor": iso(world.cursor_dt), "cursor_dtg": format_dtg(world.cursor_dt), "cursor_day": round(world.cursor, 3),
         "day0": iso(SCENARIO_NOW), "horizon_days": H, "grid_days": [float(x) for x in grid],
         "grid_dates": [iso(dt_of(x)) for x in grid], "missions": missions_out, "ships": ships_out,
         "bands": bands, "fixes_applied": [f.get("title") for f in world.fixes],
     }
+    if detail:
+        graphs = {s: domino_graph(result, s) for s in world.ships}
+        result["nodes"] = [dict(node, ship_id=s) for s, graph in graphs.items() for node in graph["nodes"]]
+        result["edges"] = [edge for graph in graphs.values() for edge in graph["edges"]]
+    return result
 
 
 def _gate_detail(world, sw, m, g, r, G, n) -> dict:
@@ -1047,6 +1064,7 @@ def _gate_detail(world, sw, m, g, r, G, n) -> dict:
                 p10, p90 = _p10_p90(arr[arr < INF / 2])
                 items.append({"key": obj.key, "kind": obj.kind, "title": obj.title, "eic": obj.eic, "score_while_active": obj.score,
                               "p_active_at_mission": round(float(np.mean(active)), 4),
+                              "p_ready": [round(float(x), 4) for x in r["item_ready"][obj.key][:G]],
                               "ready_p10": _day_str(p10), "ready_p90": _day_str(p90),
                               "planned_ready": _day_str(obj.planned_end()), "explain": obj.explain,
                               "sources": [s.model_dump() for s in obj.sources]})
@@ -1055,12 +1073,15 @@ def _gate_detail(world, sw, m, g, r, G, n) -> dict:
                 items.append({"key": obj.key, "kind": "hazard", "title": f"Random failure risk: {obj.comp} (NIIN {obj.niin})",
                               "eic": obj.comp, "score_while_active": obj.score,
                               "p_active_at_mission": None, "p_fail_before_mission": round(float(np.mean(arr <= t)), 4),
+                              "p_ready_at_mission": round(float(r["item_ready"][obj.key][col]), 4),
+                              "p_ready": [round(float(x), 4) for x in r["item_ready"][obj.key][:G]],
                               "spare_onboard": obj.spare, "explain": [f"rate {obj.rate:.4f}/day (ledger)", "spare on board" if obj.spare else "no spare on board"],
                               "sources": [s.model_dump() for s in obj.sources]})
     elif g["kind"] == "team":
         for h, aboard in r["team_det"][g["ws"]]:
             items.append({"key": f"member:{h.member_id}", "kind": "person", "title": f"{h.rate} {h.member_id}" + (f" ({h.note})" if h.note else ""),
                           "member_id": h.member_id, "p_aboard_at_mission": round(float(np.mean(aboard[:, col])), 4),
+                          "p_ready": [round(float(x), 4) for x in aboard[:, :G].mean(axis=0)],
                           "off": [{"from": _day_str(a), "until": _day_str(z), "why": why, "source": s.model_dump()} for a, z, why, s in h.off],
                           "sources": [s.model_dump() for s in h.sources]})
             sources += h.sources
@@ -1083,7 +1104,8 @@ def _gate_detail(world, sw, m, g, r, G, n) -> dict:
 # ====================================================================== planned case (R1)
 def planned_case(world: World) -> dict:
     """Deterministic: stated ETAs and point estimates, no randomness. MAKE/MISS margin and the binding chain."""
-    H = horizon_days(world) + 45
+    H = int(math.ceil(max(world.cursor + horizon_days(world),
+                         max(m.start for sw in world.ships.values() for m in sw.missions)))) + 45
     step = 0.25
     fine = np.arange(max(0.0, math.floor(world.cursor * 4) / 4), H, step)
     T_by_ship = {}
@@ -1172,22 +1194,27 @@ def _planned_why(world, sw, g, m, r) -> list[str]:
 def domino_graph(fc: dict, ship_id: str, event_id: str | None = None) -> dict:
     import networkx as nx
     G = nx.DiGraph()
+    selected = {m["event_id"] for m in fc["missions"]
+                if m["ship_id"] == ship_id and (not event_id or m["event_id"] == event_id)}
     for m in fc["missions"]:
         if m["ship_id"] != ship_id or (event_id and m["event_id"] != event_id):
             continue
         mid = f"mission:{m['event_id']}"
-        G.add_node(mid, kind="mission", label=f"{m['label']}: {m['name']}", p=m["p_ready"], band=m["band"])
+        G.add_node(mid, kind="mission", label=f"{m['label']}: {m['name']}", p=m["p_ready"], band=m["band"],
+                   p_ready=m["curve"])
         for g in m["gates"]:
             gid = f"{m['event_id']}|{g['gate_id']}"
-            G.add_node(gid, kind=g["kind"], label=g["label"], p=g["p_ok"], uplift=g["uplift"], next=(g["gate_id"] == m["next_domino"]))
+            G.add_node(gid, kind=g["kind"], label=g["label"], p=g["p_ok"], uplift=g["uplift"],
+                       next=(g["gate_id"] == m["next_domino"]), p_ready=g["p_ready"])
             G.add_edge(gid, mid)
+            if g["kind"] == "prereq" and g["gate_id"][7:] in selected:
+                G.add_edge(f"mission:{g['gate_id'][7:]}", gid)
             for it in g.get("items", []):
                 iid = f"{gid}|{it['key']}"
                 pa = it.get("p_active_at_mission")
-                p_ok = (1 - pa) if pa is not None else it.get("p_aboard_at_mission", 1 - (it.get("p_fail_before_mission") or 0))
-                if it["kind"] == "hazard" and (it.get("p_fail_before_mission") or 0) < 0.01:
-                    continue
-                G.add_node(iid, kind=it["kind"], label=it["title"], p=p_ok)
+                p_ok = (1 - pa) if pa is not None else it.get("p_ready_at_mission", it.get("p_aboard_at_mission", g["p_ok"]))
+                G.add_node(iid, kind=it["kind"], label=it["title"], p=p_ok, p_ready=it["p_ready"])
                 G.add_edge(iid, gid)
     assert nx.is_directed_acyclic_graph(G)
-    return {"nodes": [{"id": n, **d} for n, d in G.nodes(data=True)], "edges": [{"source": a, "target": b} for a, b in G.edges()]}
+    return {"dates": fc["grid_dates"], "nodes": [{"id": n, "ship_id": ship_id, **d} for n, d in G.nodes(data=True)],
+            "edges": [{"source": a, "target": b} for a, b in G.edges()]}

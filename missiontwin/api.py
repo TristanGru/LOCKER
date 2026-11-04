@@ -52,14 +52,38 @@ class AppState:
         if v != self.scenario.version:
             raise HTTPException(status_code=409, detail={"error": "scenario changed, refresh", "version": self.scenario.version})
 
+    def validate_action(self, action: dict):
+        """Resolve model/user-supplied references before changing the scenario."""
+        ship_id = action.get("ship_id")
+        if ship_id is not None:
+            _ship(ship_id)
+        w = self.world()
+        kind = action["type"]
+        if kind == "remove_person":
+            ids = {h.member_id for hs in w.ships[ship_id].holders.values() for h in hs}
+            ids |= {r["member_id"] for r in self.view().rows(ship_id, "roster.csv")}
+            if action["member_id"] not in ids:
+                raise HTTPException(422, "member_id not found on this ship")
+        elif kind == "delay_part":
+            if action["doc_number"] not in {it.doc_number for it in w.ships[ship_id].items if it.doc_number}:
+                raise HTTPException(422, "requisition not found among this ship's open jobs")
+        elif kind == "add_casrep" and action["eic"] not in set(SYSTEMS) | set(COMPONENT_TO_SYSTEM):
+            raise HTTPException(422, "eic not found in the mission tree")
+        elif kind == "shift_mission":
+            if not any(m.event_id == action["event_id"] for sw in w.ships.values() for m in sw.missions):
+                raise HTTPException(422, "event_id not found")
+
 
 def create_app(state: AppState | None = None) -> FastAPI:
     app = FastAPI(title="MissionTwin", version="0.1.0", description=BANNER)
     holder = {"s": state}
+    init_lock = threading.Lock()
 
     def S() -> AppState:
         if holder["s"] is None:
-            holder["s"] = AppState()
+            with init_lock:
+                if holder["s"] is None:
+                    holder["s"] = AppState()
         return holder["s"]
 
     app.state.get = S
@@ -98,6 +122,12 @@ def create_app(state: AppState | None = None) -> FastAPI:
         s = S()
         with s.lock:
             return s.fc()
+
+    @app.get("/results")
+    def results():
+        s = S()
+        with s.lock:
+            return {**s.fc(), "version": s.scenario.version}
 
     @app.get("/api/graph/{ship_id}")
     def graph(ship_id: str, event_id: str | None = None):
@@ -222,6 +252,7 @@ def create_app(state: AppState | None = None) -> FastAPI:
                 if body.action is None:
                     raise HTTPException(422, "action required")
                 a = body.action.model_dump(mode="json")
+                s.validate_action(a)
                 if a["type"] == "apply_fix":
                     return _decide(s, a["fix_id"], "approve", 0.0, "via plain-English action")
                 c = s.scenario.apply("action", a)
@@ -237,10 +268,25 @@ def create_app(state: AppState | None = None) -> FastAPI:
                     raise HTTPException(422, f"value out of range [{lo}, {hi}]")
                 c = s.scenario.apply("set_assumption", {"key": body.key, "value": val})
             elif body.kind == "confirm_fact":
+                fact = next((f for f in s.view().facts() if f.fact_id == body.fact_id), None)
+                if fact is None:
+                    raise HTTPException(422, "fact_id not found at the scenario time")
+                if body.include and fact.status == "NEEDS_REVIEW":
+                    raise HTTPException(422, "invalid evidence must be corrected before confirmation")
                 c = s.scenario.apply("confirm_fact", {"fact_id": body.fact_id, "include": bool(body.include)})
             elif body.kind == "play_event":
-                c = s.scenario.apply("play_event", {})
+                try:
+                    c = s.scenario.apply("play_event", {"event_id": body.event_id} if body.event_id else {})
+                except ValueError as e:
+                    raise HTTPException(400, str(e))
             return {"change": c, "version": s.scenario.version}
+
+    @app.post("/scenario")
+    def scenario(body: ChangeBody):
+        s = S()
+        with s.lock:
+            applied = change(body)
+            return {**applied, "results": {**s.fc(), "version": s.scenario.version}}
 
     def _decide(s: AppState, fix_id: str, decision: str, delay: float, note: str):
         fix = None

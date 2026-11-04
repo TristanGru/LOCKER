@@ -41,7 +41,9 @@ export default function App() {
       <h2>MissionTwin (placeholder UI)</h2>
       <p>
         Scenario now {state.cursor_dtg} ({state.cursor_local}) | seed {state.seed} | {state.runs} runs | LLM:{" "}
-        {state.llm.configured ? state.llm.model : "offline (rules extractor, template brief)"}
+        {state.llm.demo_mode
+          ? `offline cache (${state.llm.model}); rules/template on cache miss`
+          : state.llm.configured ? state.llm.model : "offline (rules extractor, template brief)"}
       </p>
       <p>
         <button onClick={() => run(() => api.play(v))} disabled={!state.next_event}>

@@ -275,7 +275,7 @@ def mission_tree_json() -> dict:
 # Every engine number that is not computed from data. tag: sourced | assumed
 DEFAULT_PARAMS: dict = {
     "seed": {"value": 20261104, "tag": "assumed", "source": "fixed seed; shown in UI"},
-    "runs": {"value": 10000, "tag": "assumed", "source": "design doc performance budget"},
+    "runs": {"value": 500, "tag": "assumed", "source": "DEV 2 demo simulation budget"},
     "ranking_runs": {"value": 2000, "tag": "assumed", "source": "design doc performance budget"},
     "bands": {"value": {"green": 0.80, "amber": 0.60}, "tag": "sourced", "source": "MFOM patent US20120215734A1 (80/60 bands)"},
     "status_score_map": {"value": dict(STATUS_SCORE), "tag": "sourced", "source": "MFOM patent US20120215734A1"},

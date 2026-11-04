@@ -13,7 +13,7 @@ python -m venv .venv
 .venv/Scripts/python -m uvicorn missiontwin.api:app --port 8000 --workers 1
 # second terminal
 cd web && npm install && npm run dev                  # http://localhost:5173 (proxies /api to :8000)
-.venv/Scripts/python -m pytest -q tests               # 35 tests
+.venv/Scripts/python -m pytest -q tests               # full test suite
 ```
 
 **Windows on ARM with Smart App Control on:** use **x64** Python 3.12. The ARM64 build of `pydantic-core` is blocked by the app-control policy; the x64 build runs under emulation. `npm run build` puts the UI in `web/dist`, which the API serves at `/`.
@@ -35,17 +35,26 @@ The data contract is `data_sources/00_README.md` plus specs 01-20. `tests/test_d
 
 ### LLM (optional)
 
-Without an endpoint, everything still works: daily reports go through a deterministic rules extractor (labeled `rules`), the brief uses the template, and plain-English requests fall back to the action picker. To use a model:
+Provider setup, the DEV 2 API contract, evaluation, and offline replay are documented in [docs/DEV2.md](docs/DEV2.md).
+Copy `.env.example` to `.env`, then fill in `LLM_BASE_URL`, `LLM_MODEL`, and `LLM_API_KEY` if required.
+The app and commands load `.env` automatically; process environment variables take precedence.
+Without an endpoint, CASREPs and daily reports use clearly labeled deterministic extraction and briefs use the template.
 
-```
-LLM_BASE_URL=http://host:port/v1  LLM_MODEL=<model>  [LLM_API_KEY=...]
-python -m missiontwin.llm warm        # pre-fills cache/llm/ for an offline demo
-MISSIONTWIN_DEMO_MODE=1               # cache only (default in the container)
+```powershell
+.\.venv\Scripts\python.exe -m missiontwin.llm warm --report logs/llm-live-eval.json
+.\.venv\Scripts\python.exe -m missiontwin.evaluate --offline --require-cache --report logs/llm-offline-eval.json
 ```
 
-Only de-identified text is sent: names become `[M-0007]` tokens before any prompt is built, and a guard refuses to send if a roster surname survives.
+Warming covers both extraction paths and fails on rules fallback or an expected-fact mismatch. After offline evaluation passes,
+set `MISSIONTWIN_DEMO_MODE=1` and restart the app. Keep the same model identifier and package `cache/llm/` with the demo.
+No live model or populated cache is implied by installation. Names become `[M-0007]` tokens before extraction prompts are built,
+and a guard rejects surviving known roster surnames.
 
 ## API (frontend contract: `web/src/api.ts`)
+
+DEV 2: `GET /results` returns the versioned forecast and graph nodes with 30 daily `p_ready` values each.
+`POST /scenario` accepts a versioned change and returns `{change, version, results}` after recomputing.
+The default forecast uses 500 runs and seed 20261104. The existing `/api/*` routes remain available.
 
 `GET /api/state` · `/api/scenario/version` (poll 2s) · `/api/forecast` · `/api/graph/{ship}?event_id=` · `/api/facts` · `/api/issues` · `/api/source?file=&loc=&span=` · `/api/assumptions` · `/api/fixes/{ship}` (ranking, about 3-5s) · `/api/actions/schema` · `/api/log`
 `POST /api/events/play` · `/api/changes` (action, set_assumption, confirm_fact) · `/api/fixes/decide` · `/api/undo` · `/api/reset` · `/api/actions/parse` · `/api/brief`
@@ -78,10 +87,10 @@ Not yet verified on this machine (no Docker here). Confirm packaging expectation
 
 ## Status and next steps
 
-Done: generator, ingest, engine, fixes, brief, LLM wrapper with fallbacks, API, 35 passing tests (golden demo, spec conformance, X1-X10, PII, R1-R13 units, perf: 10k-run forecast ~0.6s, 41-fix ranking ~3.6s).
+Implemented: generator, ingest, 30-day Monte Carlo forecasts, fix ranking, brief, CASREP/daily-report extraction with evidence validation and disk caching, versioned results/scenario API, and extraction evaluation. Tests cover the golden demo, data contracts, X1-X10, PII, invalid model output, cache replay, and performance budgets.
 
 Open:
 - **Frontend:** `web/` is a placeholder page that exercises the API. The Captain view, Commodore view, domino graph and source panel are the frontend dev's. The R12 frontend smoke test (open Captain view, click a warning, see the source) goes with that UI.
-- **LLM:** pick the model and endpoint, run `python -m missiontwin.llm warm`, check extraction against `squadron/daily_status_expected_facts.json`.
+- **LLM deployment:** supply provider settings in `.env`, pass live extraction evaluation, then pass cache-only evaluation for all 26 documents. See [DEV 2 setup](docs/DEV2.md).
 - **Packaging:** build the image and `zarf package create` on a machine with Docker.
 - Items to verify before the demo: `data_sources/00_README.md` section 9.
