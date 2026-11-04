@@ -30,6 +30,7 @@ Grain: one row per ship per mission area per training requirement.
 | `last_completed` | date | `2026-09-15` | | PROP |
 | `periodicity_days` | int | `90` | | PROP |
 | `expires` | date | `2026-12-14` | last_completed + periodicity | PROP |
+| `scheduled_refresh` | date | `2026-11-21` | planned re-run of the trainer; empty if none (added in build; success probability is ledger key `training_refresh_success`) | PROP |
 | `tfom_value` | float | `0.86` | 0-1 | S concept / PROP scale |
 | `as_of` | datetime | | | |
 | `provenance` | str | | | |
@@ -41,7 +42,7 @@ Grain: one row per ship per mission area per training requirement.
 
 ## 5. Demo scenario rows
 
-- Kessler AW team trainer expires `2026-11-20` (after Mission A, before Mission B), a secondary domino for Mission B.
+- Kessler AW team trainer expires `2026-11-20` (after Mission A, before Mission B), a secondary domino for Mission B. `scheduled_refresh 2026-11-21` (in port), so Mission B depends on that refresh happening.
 
 ## 6. Sources
 

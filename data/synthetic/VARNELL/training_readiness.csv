@@ -1,0 +1,7 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+ship_id,mission_area,requirement_id,requirement_name,team,last_completed,periodicity_days,expires,scheduled_refresh,tfom_value,as_of,provenance
+VARNELL,AW,TRQ-AW-07 (SYNTH),Air Warfare team trainer 1,AW TEAM 1,2026-09-24,180,2027-03-23,,0.54,2026-11-04T06:00:00Z,proposed
+VARNELL,ASW,TRQ-ASW-07 (SYNTH),Anti-Submarine Warfare team trainer 1,ASW TEAM 1,2026-10-07,120,2027-02-04,,0.58,2026-11-04T06:00:00Z,proposed
+VARNELL,SUW,TRQ-SUW-07 (SYNTH),Surface Warfare team trainer 1,SUW TEAM 1,2026-10-11,120,2027-02-08,,0.69,2026-11-04T06:00:00Z,proposed
+VARNELL,MOB,TRQ-MOB-07 (SYNTH),Mobility team trainer 1,MOB TEAM 1,2026-09-15,90,2026-12-14,,0.51,2026-11-04T06:00:00Z,proposed
+VARNELL,CCC,TRQ-CCC-07 (SYNTH),"Command, Control and Communications team trainer 1",CCC TEAM 1,2026-09-26,120,2027-01-24,,0.53,2026-11-04T06:00:00Z,proposed

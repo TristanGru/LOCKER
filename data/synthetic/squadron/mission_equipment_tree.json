@@ -1,0 +1,541 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "ship_class": "DDG (notional Flight IIA)",
+  "scoring": {
+    "status_score_map": {
+      "0": 1.0,
+      "1": 0.8,
+      "3": 0.6,
+      "2": 0.0
+    },
+    "bands": {
+      "green": 0.8,
+      "amber": 0.6
+    },
+    "rollup": "weighted_average_with_critical_child",
+    "critical_child_cap": 0.59,
+    "provenance": "sourced (MFOM patent ~2012); cap value proposed"
+  },
+  "missions": [
+    {
+      "mission_area": "AW",
+      "mission_area_name": "Air Warfare",
+      "tasks": [
+        {
+          "nta_id": "NTA-AW-01 (SYNTH)",
+          "name": "Conduct air warfare",
+          "functional_areas": [
+            {
+              "name": "Air Warfare systems",
+              "systems": [
+                {
+                  "eic": "SPY1D",
+                  "name": "AN/SPY-1D(V) radar",
+                  "critical": true,
+                  "work_center": "CF01",
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4310",
+                      "k": 2
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "SPY1D-CW",
+                      "name": "Radar cooling water system",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990001",
+                          "name": "PUMP, CENTRIFUGAL, COOLING WATER",
+                          "installed_qty": 2,
+                          "min_working": 2
+                        }
+                      ]
+                    },
+                    {
+                      "eic": "SPY1D-ARR",
+                      "name": "Array faces",
+                      "critical": true,
+                      "parts": []
+                    }
+                  ],
+                  "weight": 0.5
+                },
+                {
+                  "eic": "CIWS",
+                  "name": "Close-in weapon system",
+                  "critical": false,
+                  "work_center": "CF02",
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4320",
+                      "k": 1
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "CIWS-MT",
+                      "name": "CIWS mount",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990077",
+                          "name": "AMPLIFIER, SERVO, CIWS MOUNT",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ],
+                  "weight": 0.2
+                },
+                {
+                  "eic": "VLS",
+                  "name": "Vertical launching system",
+                  "critical": true,
+                  "work_center": "CF02",
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4330",
+                      "k": 1
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "VLS-LSEQ",
+                      "name": "Launch sequencers",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990088",
+                          "name": "CIRCUIT CARD, LAUNCH SEQUENCER",
+                          "installed_qty": 2,
+                          "min_working": 1
+                        }
+                      ]
+                    },
+                    {
+                      "eic": "VLS-LCH",
+                      "name": "Launcher modules",
+                      "critical": true,
+                      "parts": []
+                    }
+                  ],
+                  "weight": 0.3
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mission_area": "ASW",
+      "mission_area_name": "Anti-Submarine Warfare",
+      "tasks": [
+        {
+          "nta_id": "NTA-ASW-01 (SYNTH)",
+          "name": "Conduct anti-submarine warfare",
+          "functional_areas": [
+            {
+              "name": "Anti-Submarine Warfare systems",
+              "systems": [
+                {
+                  "eic": "SQQ89",
+                  "name": "AN/SQQ-89 ASW combat system",
+                  "critical": true,
+                  "work_center": "CE01",
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4410",
+                      "k": 2
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "SQQ89-PROC",
+                      "name": "Sonar signal processing",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990044",
+                          "name": "SWITCH, ETHERNET, RUGGEDIZED",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    },
+                    {
+                      "eic": "SQQ89-ARR",
+                      "name": "Hull array",
+                      "critical": true,
+                      "parts": []
+                    }
+                  ],
+                  "weight": 0.6
+                },
+                {
+                  "eic": "HELO",
+                  "name": "Helicopter flight deck",
+                  "critical": false,
+                  "work_center": "EA01",
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4420",
+                      "k": 1
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "HELO-LTS",
+                      "name": "Flight deck lighting",
+                      "critical": false,
+                      "parts": [
+                        {
+                          "niin": "019990701",
+                          "name": "CONTROLLER, FLIGHT DECK LIGHTING",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ],
+                  "weight": 0.4
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mission_area": "SUW",
+      "mission_area_name": "Surface Warfare",
+      "tasks": [
+        {
+          "nta_id": "NTA-SUW-01 (SYNTH)",
+          "name": "Conduct surface warfare",
+          "functional_areas": [
+            {
+              "name": "Surface Warfare systems",
+              "systems": [
+                {
+                  "eic": "GUN5",
+                  "name": "5-inch gun mount",
+                  "critical": true,
+                  "work_center": "CF02",
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4510",
+                      "k": 1
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "GUN5-HYD",
+                      "name": "Gun mount hydraulics",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990101",
+                          "name": "PUMP, HYDRAULIC, GUN MOUNT",
+                          "installed_qty": 1,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ],
+                  "weight": 0.6
+                },
+                {
+                  "eic": "SSM",
+                  "name": "Surface-to-surface missile system (notional)",
+                  "critical": false,
+                  "work_center": "CF02",
+                  "required_quals": [],
+                  "components": [
+                    {
+                      "eic": "SSM-LCH",
+                      "name": "SSM launchers",
+                      "critical": false,
+                      "parts": []
+                    }
+                  ],
+                  "weight": 0.4
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mission_area": "MOB",
+      "mission_area_name": "Mobility",
+      "tasks": [
+        {
+          "nta_id": "NTA-MOB-01 (SYNTH)",
+          "name": "Conduct mobility",
+          "functional_areas": [
+            {
+              "name": "Mobility systems",
+              "systems": [
+                {
+                  "eic": "GTM",
+                  "name": "Main propulsion gas turbines",
+                  "critical": true,
+                  "work_center": "ER01",
+                  "required_quals": [
+                    {
+                      "watchstation_code": "3110",
+                      "k": 1
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "GTM-FUEL",
+                      "name": "GTM fuel system",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990201",
+                          "name": "PUMP, FUEL, GAS TURBINE",
+                          "installed_qty": 4,
+                          "min_working": 3
+                        }
+                      ]
+                    }
+                  ],
+                  "weight": 0.35
+                },
+                {
+                  "eic": "SSDG",
+                  "name": "Ship service diesel generators",
+                  "critical": true,
+                  "work_center": "EE01",
+                  "required_quals": [],
+                  "components": [
+                    {
+                      "eic": "SSDG-GOV",
+                      "name": "SSDG governors",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990211",
+                          "name": "GOVERNOR, SSDG",
+                          "installed_qty": 3,
+                          "min_working": 2
+                        }
+                      ]
+                    }
+                  ],
+                  "weight": 0.25
+                },
+                {
+                  "eic": "STEER",
+                  "name": "Steering",
+                  "critical": true,
+                  "work_center": "EA01",
+                  "required_quals": [
+                    {
+                      "watchstation_code": "2300",
+                      "k": 1
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "STEER-HYD",
+                      "name": "Steering hydraulics",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990301",
+                          "name": "PUMP, HYDRAULIC, STEERING",
+                          "installed_qty": 2,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ],
+                  "weight": 0.2
+                },
+                {
+                  "eic": "NAVRAD",
+                  "name": "Navigation radars",
+                  "critical": false,
+                  "work_center": "OD01",
+                  "required_quals": [
+                    {
+                      "watchstation_code": "2400",
+                      "k": 1
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "NAVRAD-TX",
+                      "name": "Nav radar transmitters",
+                      "critical": false,
+                      "parts": [
+                        {
+                          "niin": "019990401",
+                          "name": "MAGNETRON, NAV RADAR",
+                          "installed_qty": 2,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ],
+                  "weight": 0.1
+                },
+                {
+                  "eic": "HM",
+                  "name": "Ship support (HVAC, chilled water)",
+                  "critical": false,
+                  "work_center": "EA01",
+                  "required_quals": [],
+                  "components": [
+                    {
+                      "eic": "HM-CHW",
+                      "name": "Chilled water plant",
+                      "critical": false,
+                      "parts": [
+                        {
+                          "niin": "019990601",
+                          "name": "COMPRESSOR, CHILLED WATER",
+                          "installed_qty": 3,
+                          "min_working": 2
+                        }
+                      ]
+                    }
+                  ],
+                  "weight": 0.1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mission_area": "CCC",
+      "mission_area_name": "Command, Control and Communications",
+      "tasks": [
+        {
+          "nta_id": "NTA-CCC-01 (SYNTH)",
+          "name": "Conduct command, control and communications",
+          "functional_areas": [
+            {
+              "name": "Command, Control and Communications systems",
+              "systems": [
+                {
+                  "eic": "LAN",
+                  "name": "Combat-system LAN",
+                  "critical": true,
+                  "work_center": "CE01",
+                  "required_quals": [],
+                  "components": [
+                    {
+                      "eic": "LAN-CORE",
+                      "name": "LAN core switches",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990044",
+                          "name": "SWITCH, ETHERNET, RUGGEDIZED",
+                          "installed_qty": 2,
+                          "min_working": 2
+                        }
+                      ]
+                    }
+                  ],
+                  "weight": 0.6
+                },
+                {
+                  "eic": "COMMS",
+                  "name": "Exterior communications",
+                  "critical": true,
+                  "work_center": "CE01",
+                  "required_quals": [],
+                  "components": [
+                    {
+                      "eic": "COMMS-HF",
+                      "name": "HF communications",
+                      "critical": false,
+                      "parts": [
+                        {
+                          "niin": "019990501",
+                          "name": "TRANSCEIVER, HF",
+                          "installed_qty": 2,
+                          "min_working": 1
+                        }
+                      ]
+                    }
+                  ],
+                  "weight": 0.4
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "mission_area": "STW",
+      "mission_area_name": "Strike Warfare",
+      "tasks": [
+        {
+          "nta_id": "NTA-STW-01 (SYNTH)",
+          "name": "Conduct strike warfare",
+          "functional_areas": [
+            {
+              "name": "Strike Warfare systems",
+              "systems": [
+                {
+                  "eic": "VLS",
+                  "name": "Vertical launching system",
+                  "critical": true,
+                  "work_center": "CF02",
+                  "required_quals": [
+                    {
+                      "watchstation_code": "4330",
+                      "k": 1
+                    }
+                  ],
+                  "components": [
+                    {
+                      "eic": "VLS-LSEQ",
+                      "name": "Launch sequencers",
+                      "critical": true,
+                      "parts": [
+                        {
+                          "niin": "019990088",
+                          "name": "CIRCUIT CARD, LAUNCH SEQUENCER",
+                          "installed_qty": 2,
+                          "min_working": 1
+                        }
+                      ]
+                    },
+                    {
+                      "eic": "VLS-LCH",
+                      "name": "Launcher modules",
+                      "critical": true,
+                      "parts": []
+                    }
+                  ],
+                  "weight": 1.0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "ship_overrides": {
+    "KESSLER": {},
+    "VARNELL": {},
+    "ASHBY": {}
+  },
+  "provenance": "proposed (structure from MFOM patent; contents placeholder)"
+}

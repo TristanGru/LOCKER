@@ -1,0 +1,7 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+ship_id,cert_id,cert_name,mission_area,status,certified_date,expires,planned_start,depends_on_avail_id,as_of,provenance
+ASHBY,CERT-ASHBY-AW,Basic Phase AW mission-area certification,AW,CERTIFIED,2025-12-21,2026-12-21,,,2026-11-04T06:00:00Z,proposed
+ASHBY,CERT-ASHBY-ASW,Basic Phase ASW mission-area certification,ASW,CERTIFIED,2025-12-07,2026-12-07,,,2026-11-04T06:00:00Z,proposed
+ASHBY,CERT-ASHBY-SUW,Basic Phase SUW mission-area certification,SUW,CERTIFIED,2025-11-29,2026-11-29,,,2026-11-04T06:00:00Z,proposed
+ASHBY,CERT-ASHBY-MOB,Basic Phase MOB mission-area certification,MOB,CERTIFIED,2025-11-15,2026-11-15,,,2026-11-04T06:00:00Z,proposed
+ASHBY,CERT-ASHBY-CCC,Basic Phase CCC mission-area certification,CCC,CERTIFIED,2025-12-13,2026-12-13,,,2026-11-04T06:00:00Z,proposed

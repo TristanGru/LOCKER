@@ -1,0 +1,55 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "scenario_now": "2026-11-04T08:00:00Z",
+  "events": [
+    {
+      "event_id": "E1",
+      "known_at": "2026-11-04T12:00:00Z",
+      "title": "CASREP DDG991-26-017 INITIAL: SPY-1D cooling pump, CAT 3",
+      "kind": "casrep",
+      "ship_id": "KESSLER",
+      "refs": [
+        "KESSLER/casrep_messages/DDG991-26-017_01_INITIAL.txt",
+        "KESSLER/csmp.csv#99101CF010042",
+        "KESSLER/requisition_status.csv#R991016308A001"
+      ]
+    },
+    {
+      "event_id": "E2",
+      "known_at": "2026-11-05T10:00:00Z",
+      "title": "Part delay: supply status BB to BC, ETR slips to 22 NOV",
+      "kind": "supply",
+      "ship_id": "KESSLER",
+      "refs": [
+        "KESSLER/casrep_messages/DDG991-26-017_02_UPDATE.txt",
+        "KESSLER/requisition_status.csv#R991016308A001",
+        "KESSLER/daily_reports/daily_status_KESSLER_20261104.pdf"
+      ]
+    },
+    {
+      "event_id": "E3",
+      "known_at": "2026-11-06T01:00:00Z",
+      "title": "Sailors detach: 2 of 3 SPY-qualified FCs leave 10 NOV",
+      "kind": "personnel",
+      "ship_id": "KESSLER",
+      "refs": [
+        "KESSLER/daily_reports/daily_status_KESSLER_20261105.pdf",
+        "KESSLER/nec_billets.csv#B-CF-014"
+      ]
+    },
+    {
+      "event_id": "E4",
+      "known_at": "2026-11-07T15:00:00Z",
+      "title": "Schedule shift 071500Z: Group Sail moves earlier to 13 NOV",
+      "kind": "schedule",
+      "ship_id": "KESSLER",
+      "refs": [
+        "KESSLER/schedule_30day.csv#SCH-KESSLER-07",
+        "KESSLER/logreq/KESSLER_071500Z_NOV_26.txt",
+        "KESSLER/daily_reports/daily_status_KESSLER_20261106.pdf"
+      ]
+    }
+  ],
+  "release_rule": "a record with known_at after scenario now is released by the first event whose known_at >= the record's known_at",
+  "provenance": "proposed"
+}

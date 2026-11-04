@@ -1,0 +1,7 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+ship_id,cert_id,cert_name,mission_area,status,certified_date,expires,planned_start,depends_on_avail_id,as_of,provenance
+KESSLER,CERT-KESSLER-AW,Basic Phase AW mission-area certification,AW,CERTIFIED,2026-05-20,2027-05-20,,,2026-11-04T06:00:00Z,proposed
+KESSLER,CERT-KESSLER-ASW,Basic Phase ASW mission-area certification,ASW,CERTIFIED,2026-05-06,2027-05-06,,,2026-11-04T06:00:00Z,proposed
+KESSLER,CERT-KESSLER-SUW,Basic Phase SUW mission-area certification,SUW,CERTIFIED,2026-04-28,2027-04-28,,,2026-11-04T06:00:00Z,proposed
+KESSLER,CERT-KESSLER-MOB,Basic Phase MOB mission-area certification,MOB,CERTIFIED,2026-04-14,2027-04-14,,,2026-11-04T06:00:00Z,proposed
+KESSLER,CERT-KESSLER-CCC,Basic Phase CCC mission-area certification,CCC,CERTIFIED,2026-05-12,2027-05-12,,,2026-11-04T06:00:00Z,proposed

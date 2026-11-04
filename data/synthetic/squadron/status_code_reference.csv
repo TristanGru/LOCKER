@@ -1,0 +1,13 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+code,series,meaning,delay_regime,source,provenance
+BA,B,Being processed for shipment; ESD when known,NEAR,DLM 4000.25 Vol 2 AP7.16 via secondary mirror (snippet),sourced
+BB,B,Backordered against a due-in,DUE_IN,DLM 4000.25 Vol 2 AP7.16 via secondary mirror (snippet),sourced
+BC,B,"Backordered, long delay expected",LONG,DLM 4000.25 Vol 2 AP7.16 via secondary mirror (snippet),sourced
+BV,B,On contract for direct vendor delivery,PROCUREMENT,DLM 4000.25 Vol 2 AP7.16 via secondary mirror (snippet),sourced
+BZ,B,Direct-delivery procurement in process,PROCUREMENT,DLM 4000.25 Vol 2 AP7.16 via secondary mirror (snippet),sourced
+B3,B,RDD unrealistic,LONG,DLM 4000.25 Vol 2 AP7.16 via secondary mirror (snippet),sourced
+B5,B,"Follow-up received, working to improve ESD",CARRIES_PRIOR,DLM 4000.25 Vol 2 AP7.16 via secondary mirror (snippet),sourced
+CB,C,Rejected,REJECTED,DLM 4000.25 Vol 2 AP7.16 via secondary mirror (snippet),sourced
+CG,C,Rejected,REJECTED,DLM 4000.25 Vol 2 AP7.16 via secondary mirror (snippet),sourced
+CJ,C,Rejected,REJECTED,DLM 4000.25 Vol 2 AP7.16 via secondary mirror (snippet),sourced
+CU,C,Rejected,REJECTED,DLM 4000.25 Vol 2 AP7.16 via secondary mirror (snippet),sourced

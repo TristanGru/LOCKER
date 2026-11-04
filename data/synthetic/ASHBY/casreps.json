@@ -1,0 +1,39 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "casreps": [
+    {
+      "casrep_id": "DDG993-26-004",
+      "ship_id": "ASHBY",
+      "uic": "99103",
+      "serial": "004",
+      "initial_dtg": "010700Z NOV 26",
+      "initial_time": "2026-11-01T07:00:00Z",
+      "category": 2,
+      "eic": "COMMS-HF",
+      "equipment": "TRANSCEIVER, HF NO. 1",
+      "jcn": "",
+      "mission_areas_affected": [
+        "CCC"
+      ],
+      "assist": {
+        "required": true,
+        "type": "FTS",
+        "org": "NIWC TECH REP"
+      },
+      "parts": [],
+      "etr_history": [
+        {
+          "dtg": "010700Z NOV 26",
+          "etr": "2026-11-08T12:00:00Z",
+          "report_type": "INITIAL"
+        }
+      ],
+      "state": "OPEN",
+      "closed": null,
+      "messages": [
+        "casrep_messages/DDG993-26-004_01_INITIAL.txt"
+      ],
+      "provenance": "proposed"
+    }
+  ]
+}

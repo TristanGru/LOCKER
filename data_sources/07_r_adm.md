@@ -97,8 +97,9 @@ Rule (sourced policy **[S-SNIP]**): every `member_id` assigned must have `qual_s
 ## 6. Demo scenario rows and seeded inconsistencies
 
 - **Kessler SPY watchstation `4310`:** 3 qualified (`M-0007` FC1, `M-0011` FC2, `M-0019` FC2), k = 2.
-  - `M-0007`: `prd 2026-11-10`, `onboard_status TRANSFERRING` from day 6.
-  - `M-0011`: `onboard_status TAD` from day 6 to day 20 (school).
+  - `M-0007`: `prd 2026-11-10`. Detaches day 6.
+  - `M-0011`: TAD day 6 to day 20 (school).
+  - **Build change:** the stale roster (X10, `as_of 2026-10-14`) still shows both `ONBOARD`. The departures arrive through the 05 NOV daily report (spec 16), which is newer and overrides the stale roster. That makes staleness matter: the roster is wrong, and only the daily report says so.
   - Result: from day 6, only 1 of the required 2 is aboard.
 - **Ashby:** 4 qualified on `4310`; one (`M-0412` FC2) is the cross-deck candidate (fix 3).
 - **X8:** Kessler `M-0019` holds the SPY NEC in `roster.csv` but `nec_billets.csv` / FLTMPS shows no holder for it (ship-vs-shore drift).

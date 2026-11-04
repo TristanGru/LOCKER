@@ -25,7 +25,7 @@ Tags: see `00_README.md` section 1. Not a mock file; this is the design constrai
 ## 4. LLM use
 
 - **GenAI.mil** is the DON's mandated CUI/IL5 generative-AI platform (transition by 30 Apr 2026); allows CUI, **prohibits PII and PHI**; unclassified only **[S]** (Military Times, Aug 2026). Models include Gemini for Government, ChatGPT Mil (from 31 Aug 2026), Grok for Government **[S]**.
-- Implication for every spec: R-ADM data carries names and identifiers, so **only de-identified context goes to the LLM**. Mock data already uses synthetic `member_id`s; the brief generator must never send `display_name`. Recommend a `pii_redaction_test.csv` fixture that proves names are stripped from prompts **[PROP]**.
+- Implication for every spec: R-ADM data carries names and identifiers, so **only de-identified context goes to the LLM**. Mock data already uses synthetic `member_id`s; the brief generator must never send `display_name`. Recommend a `pii_redaction_test.csv` fixture that proves names are stripped from prompts **[PROP]**. Built: `squadron/pii_redaction_test.csv` with columns `case_id`, `ship_id`, `input_text`, `expected_redacted`, `names_that_must_not_appear`. Redaction replaces `<rate> <Surname>` with `<rate> [M-xxxx]` before any prompt is built, and a guard refuses to send any prompt in which a roster surname survives.
 - Open-weight on-ship models remain an option for DDIL (design doc R5 note); the AI engineer owns the choice.
 
 ## 5. Classification by compilation

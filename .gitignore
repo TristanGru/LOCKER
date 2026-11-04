@@ -11,6 +11,9 @@ __pycache__/
 node_modules/
 dist/
 
+# App runtime output (activity log is the app's own, never a source record)
+logs/
+
 # Secrets and local config
 .env
 .env.*

@@ -1,0 +1,91 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "casreps": [
+    {
+      "casrep_id": "DDG992-26-008",
+      "ship_id": "VARNELL",
+      "uic": "99102",
+      "serial": "008",
+      "initial_dtg": "301500Z OCT 26",
+      "initial_time": "2026-10-30T15:00:00Z",
+      "category": 2,
+      "eic": "SQQ89-PROC",
+      "equipment": "SWITCH, ETHERNET, SQQ-89 PROCESSING",
+      "jcn": "99102CE010057",
+      "mission_areas_affected": [
+        "ASW"
+      ],
+      "assist": {
+        "required": true,
+        "type": "FTS",
+        "org": "NSWC ISEA"
+      },
+      "parts": [
+        {
+          "nsn": "5895-01-999-0044",
+          "niin": "019990044",
+          "qty": 1,
+          "doc_number": "R991026303A011",
+          "pd": "03",
+          "rdd": "999"
+        }
+      ],
+      "etr_history": [
+        {
+          "dtg": "301500Z OCT 26",
+          "etr": "2026-11-08T12:00:00Z",
+          "report_type": "INITIAL"
+        }
+      ],
+      "state": "OPEN",
+      "closed": null,
+      "messages": [
+        "casrep_messages/DDG992-26-008_01_INITIAL.txt"
+      ],
+      "provenance": "proposed"
+    },
+    {
+      "casrep_id": "DDG992-26-009",
+      "ship_id": "VARNELL",
+      "uic": "99102",
+      "serial": "009",
+      "initial_dtg": "310900Z OCT 26",
+      "initial_time": "2026-10-31T09:00:00Z",
+      "category": 2,
+      "eic": "LAN-CORE",
+      "equipment": "SWITCH, ETHERNET, COMBAT-SYSTEM LAN SEGMENT",
+      "jcn": "99102CE010058",
+      "mission_areas_affected": [
+        "CCC"
+      ],
+      "assist": {
+        "required": true,
+        "type": "FTS",
+        "org": "NSWC ISEA"
+      },
+      "parts": [
+        {
+          "nsn": "5895-01-999-0044",
+          "niin": "019990044",
+          "qty": 1,
+          "doc_number": "R991026304A014",
+          "pd": "03",
+          "rdd": "999"
+        }
+      ],
+      "etr_history": [
+        {
+          "dtg": "310900Z OCT 26",
+          "etr": "2026-11-09T12:00:00Z",
+          "report_type": "INITIAL"
+        }
+      ],
+      "state": "OPEN",
+      "closed": null,
+      "messages": [
+        "casrep_messages/DDG992-26-009_01_INITIAL.txt"
+      ],
+      "provenance": "proposed"
+    }
+  ]
+}

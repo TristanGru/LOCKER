@@ -1,0 +1,147 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "casreps": [
+    {
+      "casrep_id": "DDG991-26-015",
+      "ship_id": "KESSLER",
+      "uic": "99101",
+      "serial": "015",
+      "initial_dtg": "200900Z OCT 26",
+      "initial_time": "2026-10-20T09:00:00Z",
+      "category": 2,
+      "eic": "NAVRAD-TX",
+      "equipment": "MAGNETRON, NAV RADAR NO. 1",
+      "jcn": "99101OD010031",
+      "mission_areas_affected": [
+        "MOB"
+      ],
+      "assist": {
+        "required": false,
+        "type": "",
+        "org": ""
+      },
+      "parts": [
+        {
+          "nsn": "5960-01-999-0401",
+          "niin": "019990401",
+          "qty": 1,
+          "doc_number": "R991016293A002",
+          "pd": "03",
+          "rdd": "999"
+        }
+      ],
+      "etr_history": [
+        {
+          "dtg": "200900Z OCT 26",
+          "etr": "2026-10-30T12:00:00Z",
+          "report_type": "INITIAL"
+        }
+      ],
+      "state": "CLOSED",
+      "closed": {
+        "type": "CORRECT",
+        "dtg": "011400Z NOV 26",
+        "parts_received": "311400Z OCT 26",
+        "supply_delay_hrs": 98,
+        "man_hours": 22
+      },
+      "messages": [
+        "casrep_messages/DDG991-26-015_01_INITIAL.txt",
+        "casrep_messages/DDG991-26-015_02_CORRECT.txt"
+      ],
+      "provenance": "proposed"
+    },
+    {
+      "casrep_id": "DDG991-26-016",
+      "ship_id": "KESSLER",
+      "uic": "99101",
+      "serial": "016",
+      "initial_dtg": "281300Z OCT 26",
+      "initial_time": "2026-10-28T13:00:00Z",
+      "category": 2,
+      "eic": "HM-CHW",
+      "equipment": "COMPRESSOR, CHILLED WATER NO. 3",
+      "jcn": "99101EA010077",
+      "mission_areas_affected": [
+        "MOB"
+      ],
+      "assist": {
+        "required": false,
+        "type": "",
+        "org": ""
+      },
+      "parts": [
+        {
+          "nsn": "4130-01-999-0601",
+          "niin": "019990601",
+          "qty": 1,
+          "doc_number": "R991016301A003",
+          "pd": "03",
+          "rdd": "999"
+        }
+      ],
+      "etr_history": [
+        {
+          "dtg": "281300Z OCT 26",
+          "etr": "2026-11-08T12:00:00Z",
+          "report_type": "INITIAL"
+        }
+      ],
+      "state": "OPEN",
+      "closed": null,
+      "messages": [
+        "casrep_messages/DDG991-26-016_01_INITIAL.txt"
+      ],
+      "provenance": "proposed"
+    },
+    {
+      "casrep_id": "DDG991-26-017",
+      "ship_id": "KESSLER",
+      "uic": "99101",
+      "serial": "017",
+      "initial_dtg": "041200Z NOV 26",
+      "initial_time": "2026-11-04T12:00:00Z",
+      "category": 3,
+      "eic": "SPY1D-CW",
+      "equipment": "PUMP, COOLING WATER, SPY-1D",
+      "jcn": "99101CF010042",
+      "mission_areas_affected": [
+        "AW"
+      ],
+      "assist": {
+        "required": true,
+        "type": "FTS",
+        "org": "NSWC TECH REP"
+      },
+      "parts": [
+        {
+          "nsn": "4320-01-999-0001",
+          "niin": "019990001",
+          "qty": 1,
+          "doc_number": "R991016308A001",
+          "pd": "02",
+          "rdd": "999"
+        }
+      ],
+      "etr_history": [
+        {
+          "dtg": "041200Z NOV 26",
+          "etr": "2026-11-12T12:00:00Z",
+          "report_type": "INITIAL"
+        },
+        {
+          "dtg": "051000Z NOV 26",
+          "etr": "2026-11-22T12:00:00Z",
+          "report_type": "UPDATE"
+        }
+      ],
+      "state": "OPEN",
+      "closed": null,
+      "messages": [
+        "casrep_messages/DDG991-26-017_01_INITIAL.txt",
+        "casrep_messages/DDG991-26-017_02_UPDATE.txt"
+      ],
+      "provenance": "proposed"
+    }
+  ]
+}

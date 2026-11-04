@@ -1,0 +1,7 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+case_id,ship_id,input_text,expected_redacted,names_that_must_not_appear
+P1,KESSLER,FC1 Ramos believes the NSWC tech rep visit may slip to 12 NOV due to travel.,FC1 [M-0007] believes the NSWC tech rep visit may slip to 12 NOV due to travel.,RAMOS
+P2,KESSLER,"FC2 Lin departs TAD to school 10 NOV, returns 24 NOV.","FC2 [M-0011] departs TAD to school 10 NOV, returns 24 NOV.",LIN
+P3,KESSLER,COMBAT SYSTEMS (LT Brandt),COMBAT SYSTEMS (LT [M-0101]),BRANDT
+P4,KESSLER,ENGINEERING (LCDR Osei),ENGINEERING (LCDR [M-0102]),OSEI
+P5,KESSLER,FC1 Ramos detaches 10 NOV on PRD orders.,FC1 [M-0007] detaches 10 NOV on PRD orders.,RAMOS

@@ -1,0 +1,19 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+ship_id,inspection_date,inspection_type,eic,finding_severity,finding_summary,corrected,as_of,provenance
+VARNELL,2023-10-01,MI,LAN-CORE,MINOR,LAN-CORE material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+VARNELL,2023-10-01,MI,LAN-CORE,MAJOR,LAN-CORE material deficiency (synthetic),false,2026-11-04T06:00:00Z,placeholder
+VARNELL,2023-10-01,MI,VLS-LCH,MAJOR,VLS-LCH material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+VARNELL,2023-10-01,FTA,HELO-LTS,MINOR,HELO-LTS material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+VARNELL,2023-10-01,MI,CIWS-MT,MINOR,CIWS-MT material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+VARNELL,2023-10-01,MI,VLS-LSEQ,MAJOR,VLS-LSEQ material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+VARNELL,2023-10-01,FTA,GTM-FUEL,MINOR,GTM-FUEL material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+VARNELL,2023-10-01,MI,NAVRAD-TX,MINOR,NAVRAD-TX material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+VARNELL,2023-10-01,MI,SSDG-GOV,MAJOR,SSDG-GOV material deficiency (synthetic),false,2026-11-04T06:00:00Z,placeholder
+VARNELL,2023-10-01,FTA,GUN5-HYD,MINOR,GUN5-HYD material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+VARNELL,2023-10-01,MI,VLS-LSEQ,MINOR,VLS-LSEQ material deficiency (synthetic),false,2026-11-04T06:00:00Z,placeholder
+VARNELL,2023-10-01,FTA,SSDG-GOV,MINOR,SSDG-GOV material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+VARNELL,2023-10-01,MI,SPY1D-CW,MAJOR,SPY1D-CW material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+VARNELL,2023-10-01,MI,SSDG-GOV,MINOR,SSDG-GOV material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+VARNELL,2023-10-01,MI,SQQ89-ARR,MINOR,SQQ89-ARR material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+VARNELL,2023-10-01,MI,GUN5-HYD,MINOR,GUN5-HYD material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+VARNELL,2023-10-01,FTA,SPY1D-ARR,MAJOR,SPY1D-ARR material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder

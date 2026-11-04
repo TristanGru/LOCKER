@@ -77,6 +77,16 @@ availability_slip:                                   # informed by GAO overrun r
 cannibalization_note: "Any cannibalization rate is a lower bound (GAO-02-86: data understated up to 50%)"
 ```
 
+### 2.3 Build change: machine-readable tags
+
+YAML comments are lost when the file is parsed, so the generated ledger stores every key as
+`{value: ..., tag: sourced|assumed, source: "..."}` (for example `transit_days_conus_default: {value: 5, tag: sourced, source: "DLA ADC 1114 (snippet)"}`).
+The single source of defaults is `DEFAULT_PARAMS` in `missiontwin/domain.py`. Keys added during the build, all `assumed` unless noted:
+`ranking_runs` (2000), `engineering_validation_days` (1-3), `cannibalize_extra_days` (1-2, informed by GAO double-work finding),
+`background_failure_rate_per_unit_day` (0.001), `lost_pms_hazard_multiplier` (2.0), `training_refresh_success` (0.9),
+`etr_slip` now `{p_slip, median, sigma}`, `availability_slip` now `{p_late, median, sigma}`.
+Edits made in the UI are scenario changes (event-sourced), never writes to this file.
+
 ## 3. Rules
 
 - The engine reads only this file for assumptions. No magic numbers in code.

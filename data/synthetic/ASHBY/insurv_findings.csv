@@ -1,0 +1,10 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+ship_id,inspection_date,inspection_type,eic,finding_severity,finding_summary,corrected,as_of,provenance
+ASHBY,2024-07-27,MI,STEER-HYD,MAJOR,STEER-HYD material deficiency (synthetic),false,2026-11-04T06:00:00Z,placeholder
+ASHBY,2024-07-27,FTA,SSM-LCH,MINOR,SSM-LCH material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+ASHBY,2024-07-27,FTA,NAVRAD-TX,MAJOR,NAVRAD-TX material deficiency (synthetic),false,2026-11-04T06:00:00Z,placeholder
+ASHBY,2024-07-27,FTA,GTM-FUEL,MINOR,GTM-FUEL material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+ASHBY,2024-07-27,MI,VLS-LSEQ,MAJOR,VLS-LSEQ material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+ASHBY,2024-07-27,MI,CIWS-MT,MAJOR,CIWS-MT material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+ASHBY,2024-07-27,MI,HM-CHW,MINOR,HM-CHW material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+ASHBY,2024-07-27,FTA,VLS-LCH,MINOR,VLS-LCH material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder

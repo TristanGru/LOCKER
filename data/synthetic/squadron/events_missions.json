@@ -1,0 +1,205 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "events": [
+    {
+      "event_id": "EVT-KESSLER-01",
+      "label": "Mission A",
+      "ship_id": "KESSLER",
+      "name": "Group Sail / SWATT air defense serial",
+      "ofrp_phase": "INTEGRATED",
+      "start": "2026-11-13T12:00:00Z",
+      "end": "2026-11-19T20:00:00Z",
+      "mission_areas": [
+        "AW",
+        "MOB",
+        "CCC"
+      ],
+      "required_systems": [
+        {
+          "eic": "SPY1D",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "CIWS",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "VLS",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "GTM",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "LAN",
+          "min_status_score": 0.6
+        }
+      ],
+      "required_watch_teams": [
+        {
+          "watchstation_code": "4310",
+          "k": 2
+        }
+      ],
+      "prerequisite_events": [],
+      "prerequisite_certs": [
+        "CERT-KESSLER-AW"
+      ],
+      "prerequisite_avail": "",
+      "consequence_if_missed": "Ship cannot complete SWATT AW serial; COMPTUEX entry at risk",
+      "schedule_block_id": "SCH-KESSLER-07",
+      "provenance": "proposed (prerequisites inferred from event name)"
+    },
+    {
+      "event_id": "EVT-KESSLER-02",
+      "label": "Mission B",
+      "ship_id": "KESSLER",
+      "name": "COMPTUEX",
+      "ofrp_phase": "INTEGRATED",
+      "start": "2026-11-25T12:00:00Z",
+      "end": "2026-12-05T20:00:00Z",
+      "mission_areas": [
+        "AW",
+        "ASW",
+        "SUW",
+        "MOB",
+        "CCC"
+      ],
+      "required_systems": [
+        {
+          "eic": "SPY1D",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "SQQ89",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "GUN5",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "GTM",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "LAN",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "COMMS",
+          "min_status_score": 0.6
+        }
+      ],
+      "required_watch_teams": [
+        {
+          "watchstation_code": "4310",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4410",
+          "k": 2
+        }
+      ],
+      "prerequisite_events": [
+        "EVT-KESSLER-01"
+      ],
+      "prerequisite_certs": [
+        "CERT-KESSLER-AW",
+        "CERT-KESSLER-ASW",
+        "CERT-KESSLER-SUW"
+      ],
+      "prerequisite_avail": "",
+      "consequence_if_missed": "Deployment certification delayed",
+      "schedule_block_id": "SCH-KESSLER-08",
+      "provenance": "proposed"
+    },
+    {
+      "event_id": "EVT-VARNELL-01",
+      "label": "Mission C",
+      "ship_id": "VARNELL",
+      "name": "Basic Phase ASW certification event",
+      "ofrp_phase": "BASIC",
+      "start": "2026-11-18T12:00:00Z",
+      "end": "2026-11-21T20:00:00Z",
+      "mission_areas": [
+        "ASW",
+        "CCC"
+      ],
+      "required_systems": [
+        {
+          "eic": "SQQ89",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "LAN",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "HELO",
+          "min_status_score": 0.6
+        }
+      ],
+      "required_watch_teams": [
+        {
+          "watchstation_code": "4410",
+          "k": 2
+        }
+      ],
+      "prerequisite_events": [],
+      "prerequisite_certs": [],
+      "prerequisite_avail": "AV-VARNELL-26-02",
+      "consequence_if_missed": "ASW certification slips; Basic Phase extends",
+      "schedule_block_id": "SCH-VARNELL-05",
+      "provenance": "proposed (prerequisites inferred from event name)"
+    },
+    {
+      "event_id": "EVT-ASHBY-01",
+      "label": "Mission D",
+      "ship_id": "ASHBY",
+      "name": "Sustainment exercise",
+      "ofrp_phase": "SUSTAINMENT",
+      "start": "2026-11-22T12:00:00Z",
+      "end": "2026-11-28T20:00:00Z",
+      "mission_areas": [
+        "AW",
+        "SUW",
+        "MOB"
+      ],
+      "required_systems": [
+        {
+          "eic": "SPY1D",
+          "min_status_score": 0.8
+        },
+        {
+          "eic": "GUN5",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "GTM",
+          "min_status_score": 0.6
+        }
+      ],
+      "required_watch_teams": [
+        {
+          "watchstation_code": "4310",
+          "k": 2
+        },
+        {
+          "watchstation_code": "4510",
+          "k": 1
+        }
+      ],
+      "prerequisite_events": [],
+      "prerequisite_certs": [
+        "CERT-ASHBY-AW",
+        "CERT-ASHBY-SUW"
+      ],
+      "prerequisite_avail": "",
+      "consequence_if_missed": "Sustainment proficiency lapses",
+      "schedule_block_id": "SCH-ASHBY-04",
+      "provenance": "proposed"
+    }
+  ]
+}

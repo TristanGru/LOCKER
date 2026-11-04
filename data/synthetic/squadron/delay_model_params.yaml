@@ -1,0 +1,143 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+# Assumptions ledger (spec 19). Every engine number not computed from data.
+_banner: SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+scenario_now: '2026-11-04T08:00:00Z'
+seed:
+  value: 20261104
+  tag: assumed
+  source: fixed seed; shown in UI
+runs:
+  value: 10000
+  tag: assumed
+  source: design doc performance budget
+ranking_runs:
+  value: 2000
+  tag: assumed
+  source: design doc performance budget
+bands:
+  value:
+    green: 0.8
+    amber: 0.6
+  tag: sourced
+  source: MFOM patent US20120215734A1 (80/60 bands)
+status_score_map:
+  value:
+    '0': 1.0
+    '1': 0.8
+    '3': 0.6
+    '2': 0.0
+  tag: sourced
+  source: MFOM patent US20120215734A1
+casualty_threshold_hours:
+  value: 48
+  tag: sourced
+  source: NETCINST 3040.1A (snippet)
+casrep_rating_cap:
+  value:
+    cat4: N
+    cat3: Q
+  tag: sourced
+  source: 2023 carrier DRRS-S brief (snippet)
+staleness_threshold_days:
+  value: 5
+  tag: assumed
+  source: design doc default
+part_arrival_days_by_regime:
+  value:
+    NEAR:
+      dist: lognormal
+      median_conus: 5
+      median_oconus: 15
+      sigma: 0.4
+    DUE_IN:
+      dist: lognormal
+      median: 45
+      sigma: 0.5
+    LONG:
+      dist: lognormal
+      median: 90
+      sigma: 0.6
+    PROCUREMENT:
+      dist: lognormal
+      median: 135
+      sigma: 0.7
+    REJECTED:
+      re_requisition_add_days: 3
+      then: DUE_IN
+  tag: assumed
+  source: placeholder medians from research notes; not statistics
+transit_days_conus_default:
+  value: 5
+  tag: sourced
+  source: DLA ADC 1114 (snippet)
+program_office_release_days:
+  value:
+    min: 2
+    max: 5
+  tag: assumed
+  source: no public source
+engineering_validation_days:
+  value:
+    min: 1
+    max: 3
+  tag: assumed
+  source: Gridley case implies ISEA validation step; duration assumed
+expedite_effect:
+  value: one regime faster if wholesale on hand > 0, else none
+  tag: assumed
+  source: no public source
+cross_deck_days:
+  value:
+    same_port: 1
+    in_company:
+      min: 1
+      max: 3
+    different_ports_conus:
+      min: 2
+      max: 5
+  tag: assumed
+  source: no public source
+cannibalize_extra_days:
+  value:
+    min: 1
+    max: 2
+  tag: assumed
+  source: 'GAO: cannibalization doubles work (remove + reinstall)'
+repair_after_part_days:
+  value:
+    dist: triangular
+    min: 1
+    mode: 2
+    max: 4
+  tag: assumed
+  source: no public source
+etr_slip:
+  value:
+    p_slip: 0.4
+    median: 4
+    sigma: 0.6
+  tag: assumed
+  source: no public data on ETR slip
+availability_slip:
+  value:
+    p_late: 0.7
+    median: 3
+    sigma: 0.5
+  tag: sourced
+  source: GAO-20-86 (~70% of availabilities late, 2014-18); extension size assumed
+background_failure_rate_per_unit_day:
+  value: 0.001
+  tag: assumed
+  source: no public failure-rate data
+lost_pms_hazard_multiplier:
+  value: 2.0
+  tag: assumed
+  source: lost PMS treated as a correlation, not a feed (spec 01)
+training_refresh_success:
+  value: 0.9
+  tag: assumed
+  source: no public source
+cannibalization_note:
+  value: 'Any cannibalization rate is a lower bound (GAO-02-86: data understated up to 50%)'
+  tag: sourced
+  source: GAO-02-86

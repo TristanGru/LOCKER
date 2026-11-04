@@ -69,7 +69,7 @@ Grain: one row per requisition document number (latest status), plus `status_his
 | `status_date` | date | `2026-11-05` | | |
 | `esd` | date | `2026-11-15` | estimated ship date; may be empty | S-SNIP |
 | `delay_regime` | enum | `LONG` | derived from status_code | PROP |
-| `status_history` | str | `2026-11-04:BB;2026-11-05:BC` | | PROP |
+| `status_history` | str | `2026-11-04T12:00:00Z BB 2026-11-05;2026-11-05T10:00:00Z BC 2026-11-15` | `;`-joined entries of `<Zulu time> <code> <ESD or ->` (build change: times and per-entry ESD let the scenario player replay what was known when) | PROP |
 | `source_of_supply` | str | `NAVSUP WSS` | `NAVSUP WSS`, `DLA`, `VENDOR`, `PROGRAM OFFICE` | PROP |
 | `tcn` | str | | transportation control number once shipped | S (concept) / PH |
 | `expedite_flag` | bool | `true` | OTS/GDSC CASREP escalation | PROP |
@@ -110,7 +110,7 @@ Grain: one row per NIIN per ship (storeroom items, plus installed-equipment part
 
 ## 6. Demo scenario rows
 
-- **Kessler `R991016308A001`**: NIIN `019990001` cooling pump, PD `02`, RDD `999`, day 0 `BB`, day 1 `BC`, ESD `2026-11-15`, `expedite_flag true`.
+- **Kessler `R991016308A001`**: NIIN `019990001` cooling pump, PD `02`, RDD `999`, day 0 `BB` (ESD `2026-11-05`, which matches the INITIAL ETR of 12 NOV), day 1 `BC`, ESD `2026-11-15`, `expedite_flag true`.
 - **Kessler COSAL:** NIIN `019990001` storeroom allowance 0, on hand 0 (cannot self-fix).
 - **Varnell COSAL:** NIIN `019990001` storeroom allowance 1, on hand 1, `cross_deck_eligible true`. Cross-decking drops it below allowance (**X5**).
 - **Varnell X2:** two requisitions on ethernet switch NIIN `019990044`, one per CASREP; only one is actually needed.

@@ -1,0 +1,14 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+ship_id,inspection_date,inspection_type,eic,finding_severity,finding_summary,corrected,as_of,provenance
+KESSLER,2025-07-30,MI,SSDG-GOV,MAJOR,SSDG-GOV material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+KESSLER,2025-07-30,MI,SSM-LCH,MINOR,SSM-LCH material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+KESSLER,2025-07-30,FTA,STEER-HYD,MINOR,STEER-HYD material deficiency (synthetic),false,2026-11-04T06:00:00Z,placeholder
+KESSLER,2025-07-30,MI,SSM-LCH,MINOR,SSM-LCH material deficiency (synthetic),false,2026-11-04T06:00:00Z,placeholder
+KESSLER,2025-07-30,MI,NAVRAD-TX,MINOR,NAVRAD-TX material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+KESSLER,2025-07-30,FTA,SSM-LCH,MINOR,SSM-LCH material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+KESSLER,2025-07-30,MI,COMMS-HF,MAJOR,COMMS-HF material deficiency (synthetic),false,2026-11-04T06:00:00Z,placeholder
+KESSLER,2025-07-30,FTA,SSM-LCH,MAJOR,SSM-LCH material deficiency (synthetic),false,2026-11-04T06:00:00Z,placeholder
+KESSLER,2025-07-30,FTA,SSDG-GOV,MINOR,SSDG-GOV material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+KESSLER,2025-07-30,FTA,HELO-LTS,MINOR,HELO-LTS material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder
+KESSLER,2025-07-30,MI,VLS-LCH,MINOR,VLS-LCH material deficiency (synthetic),false,2026-11-04T06:00:00Z,placeholder
+KESSLER,2025-07-30,MI,VLS-LCH,MINOR,VLS-LCH material deficiency (synthetic),true,2026-11-04T06:00:00Z,placeholder

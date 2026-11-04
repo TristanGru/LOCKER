@@ -1,0 +1,145 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "documents": {
+    "KESSLER/daily_reports/daily_status_KESSLER_20261101.pdf": {
+      "ship_id": "KESSLER",
+      "known_at": "2026-11-02T01:00:00Z",
+      "facts": []
+    },
+    "KESSLER/daily_reports/daily_status_KESSLER_20261102.pdf": {
+      "ship_id": "KESSLER",
+      "known_at": "2026-11-03T01:00:00Z",
+      "facts": []
+    },
+    "KESSLER/daily_reports/daily_status_KESSLER_20261103.pdf": {
+      "ship_id": "KESSLER",
+      "known_at": "2026-11-04T01:00:00Z",
+      "facts": []
+    },
+    "KESSLER/daily_reports/daily_status_KESSLER_20261104.pdf": {
+      "ship_id": "KESSLER",
+      "known_at": "2026-11-05T01:00:00Z",
+      "facts": [
+        {
+          "type": "casrep_reported",
+          "casrep_serial": "017",
+          "category": 3,
+          "span": "SPY-1D: single array face ops since 1200Z on the 4th. CASREP 017 (CAT 3) submitted.",
+          "hedged": false
+        },
+        {
+          "type": "pms_lost",
+          "system": "CIWS",
+          "span": "CIWS: PMS check last week not completed (lost). Will reschedule.",
+          "hedged": false
+        }
+      ]
+    },
+    "KESSLER/daily_reports/daily_status_KESSLER_20261105.pdf": {
+      "ship_id": "KESSLER",
+      "known_at": "2026-11-06T01:00:00Z",
+      "facts": [
+        {
+          "type": "assist_eta",
+          "date": "12 NOV",
+          "span": "FC1 Ramos believes the NSWC tech rep visit may slip to 12 NOV due to travel.",
+          "hedged": true
+        },
+        {
+          "type": "expedite_requested",
+          "casrep_serial": "017",
+          "span": "Expedite requested on CASREP 017 pump via OTS.",
+          "hedged": false
+        },
+        {
+          "type": "personnel_transfer",
+          "rate": "FC1",
+          "name_token": "Ramos",
+          "date": "10 NOV",
+          "span": "FC1 Ramos detaches 10 NOV on PRD orders.",
+          "hedged": false
+        },
+        {
+          "type": "personnel_tad",
+          "rate": "FC2",
+          "name_token": "Lin",
+          "date": "10 NOV",
+          "until": "24 NOV",
+          "span": "FC2 Lin departs TAD to school 10 NOV, returns 24 NOV.",
+          "hedged": false
+        },
+        {
+          "type": "training_scheduled",
+          "date": "21 NOV",
+          "span": "CIC air defense team trainer due before COMPTUEX; scheduled 21 NOV.",
+          "hedged": false
+        }
+      ]
+    },
+    "KESSLER/daily_reports/daily_status_KESSLER_20261106.pdf": {
+      "ship_id": "KESSLER",
+      "known_at": "2026-11-07T01:00:00Z",
+      "facts": []
+    },
+    "VARNELL/daily_reports/daily_status_VARNELL_20261101.pdf": {
+      "ship_id": "VARNELL",
+      "known_at": "2026-11-02T01:00:00Z",
+      "facts": []
+    },
+    "VARNELL/daily_reports/daily_status_VARNELL_20261102.pdf": {
+      "ship_id": "VARNELL",
+      "known_at": "2026-11-03T01:00:00Z",
+      "facts": []
+    },
+    "VARNELL/daily_reports/daily_status_VARNELL_20261103.pdf": {
+      "ship_id": "VARNELL",
+      "known_at": "2026-11-04T01:00:00Z",
+      "facts": []
+    },
+    "VARNELL/daily_reports/daily_status_VARNELL_20261104.pdf": {
+      "ship_id": "VARNELL",
+      "known_at": "2026-11-05T01:00:00Z",
+      "facts": []
+    },
+    "VARNELL/daily_reports/daily_status_VARNELL_20261105.pdf": {
+      "ship_id": "VARNELL",
+      "known_at": "2026-11-06T01:00:00Z",
+      "facts": []
+    },
+    "VARNELL/daily_reports/daily_status_VARNELL_20261106.pdf": {
+      "ship_id": "VARNELL",
+      "known_at": "2026-11-07T01:00:00Z",
+      "facts": []
+    },
+    "ASHBY/daily_reports/daily_status_ASHBY_20261101.pdf": {
+      "ship_id": "ASHBY",
+      "known_at": "2026-11-02T01:00:00Z",
+      "facts": []
+    },
+    "ASHBY/daily_reports/daily_status_ASHBY_20261102.pdf": {
+      "ship_id": "ASHBY",
+      "known_at": "2026-11-03T01:00:00Z",
+      "facts": []
+    },
+    "ASHBY/daily_reports/daily_status_ASHBY_20261103.pdf": {
+      "ship_id": "ASHBY",
+      "known_at": "2026-11-04T01:00:00Z",
+      "facts": []
+    },
+    "ASHBY/daily_reports/daily_status_ASHBY_20261104.pdf": {
+      "ship_id": "ASHBY",
+      "known_at": "2026-11-05T01:00:00Z",
+      "facts": []
+    },
+    "ASHBY/daily_reports/daily_status_ASHBY_20261105.pdf": {
+      "ship_id": "ASHBY",
+      "known_at": "2026-11-06T01:00:00Z",
+      "facts": []
+    },
+    "ASHBY/daily_reports/daily_status_ASHBY_20261106.pdf": {
+      "ship_id": "ASHBY",
+      "known_at": "2026-11-07T01:00:00Z",
+      "facts": []
+    }
+  }
+}

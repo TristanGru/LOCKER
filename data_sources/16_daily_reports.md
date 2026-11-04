@@ -69,8 +69,10 @@ For each PDF, the facts the extractor should return, with their exact span text,
 
 - **X4:** Kessler 05 NOV: "the NSWC tech rep visit may slip to 12 NOV". No structured file reflects this. The extractor should create a fact (assist ETA 12 NOV, low confidence), and the UI should flag it as new information.
 - **Contradiction:** the CIWS lost-PMS line matches spec 01, but there is no 2-Kilo (X7).
-- **Confirmation:** "FC2 Lin departs TAD 10 NOV" matches `roster.csv` `M-0011` TAD from day 6.
+- **Contradiction (build change):** "FC1 Ramos detaches 10 NOV on PRD orders." and "FC2 Lin departs TAD to school 10 NOV, returns 24 NOV." appear in the 05 NOV report, while the stale `roster.csv` still shows both `ONBOARD`. The newer verified fact overrides the stale roster in the engine; the UI shows the disagreement.
 - Roster staleness (X10) is visible because the PDF is newer than `roster.csv` `as_of`.
+- **Timing (build change):** each report carries `As of: <DTG>` in its header, set to the next day at 0100Z (2000 local). That DTG is when MissionTwin could have known the content, which is how the scenario player releases reports.
+- Hedged facts ("may slip") are `UNCONFIRMED`: shown and flagged, but they feed the forecast only after the captain confirms them.
 
 ## 7. Sources
 

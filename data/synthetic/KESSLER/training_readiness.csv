@@ -1,0 +1,12 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+ship_id,mission_area,requirement_id,requirement_name,team,last_completed,periodicity_days,expires,scheduled_refresh,tfom_value,as_of,provenance
+KESSLER,AW,TRQ-AW-07 (SYNTH),CIC air defense team trainer,CIC AIR DEFENSE TEAM 1,2026-08-22,90,2026-11-20,2026-11-21,0.91,2026-11-04T06:00:00Z,proposed
+KESSLER,AW,TRQ-AW-08 (SYNTH),Air Warfare team trainer 2,AW TEAM 2,2026-09-26,90,2026-12-25,,0.85,2026-11-04T06:00:00Z,proposed
+KESSLER,ASW,TRQ-ASW-07 (SYNTH),Anti-Submarine Warfare team trainer 1,ASW TEAM 1,2026-10-13,90,2027-01-11,,0.81,2026-11-04T06:00:00Z,proposed
+KESSLER,ASW,TRQ-ASW-08 (SYNTH),Anti-Submarine Warfare team trainer 2,ASW TEAM 2,2026-09-22,120,2027-01-20,,0.86,2026-11-04T06:00:00Z,proposed
+KESSLER,SUW,TRQ-SUW-07 (SYNTH),Surface Warfare team trainer 1,SUW TEAM 1,2026-09-27,180,2027-03-26,,0.93,2026-11-04T06:00:00Z,proposed
+KESSLER,SUW,TRQ-SUW-08 (SYNTH),Surface Warfare team trainer 2,SUW TEAM 2,2026-09-23,120,2027-01-21,,0.78,2026-11-04T06:00:00Z,proposed
+KESSLER,MOB,TRQ-MOB-07 (SYNTH),Mobility team trainer 1,MOB TEAM 1,2026-09-04,180,2027-03-03,,0.85,2026-11-04T06:00:00Z,proposed
+KESSLER,MOB,TRQ-MOB-08 (SYNTH),Mobility team trainer 2,MOB TEAM 2,2026-09-28,180,2027-03-27,,0.85,2026-11-04T06:00:00Z,proposed
+KESSLER,CCC,TRQ-CCC-07 (SYNTH),"Command, Control and Communications team trainer 1",CCC TEAM 1,2026-10-22,180,2027-04-20,,0.78,2026-11-04T06:00:00Z,proposed
+KESSLER,CCC,TRQ-CCC-08 (SYNTH),"Command, Control and Communications team trainer 2",CCC TEAM 2,2026-10-24,90,2027-01-22,,0.77,2026-11-04T06:00:00Z,proposed

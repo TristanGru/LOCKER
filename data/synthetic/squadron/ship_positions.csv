@@ -1,0 +1,77 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+ship_id,date,status,port,pier,lat,lon,in_company_with,next_port,next_eta,source,provenance
+KESSLER,2026-11-04,INPORT,NORFOLK VA,PIER 12,36.95,-76.33,VARNELL,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-05,INPORT,NORFOLK VA,PIER 12,36.95,-76.33,VARNELL,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-06,INPORT,NORFOLK VA,PIER 12,36.95,-76.33,VARNELL,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-07,INPORT,NORFOLK VA,PIER 12,36.95,-76.33,VARNELL,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-08,INPORT,NORFOLK VA,PIER 12,36.95,-76.33,VARNELL,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-09,INPORT,NORFOLK VA,PIER 12,36.95,-76.33,VARNELL,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-10,INPORT,NORFOLK VA,PIER 12,36.95,-76.33,VARNELL;ASHBY,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-11,INPORT,NORFOLK VA,PIER 12,36.95,-76.33,VARNELL;ASHBY,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-12,INPORT,NORFOLK VA,PIER 12,36.95,-76.33,VARNELL;ASHBY,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-13,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-14,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-15,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-16,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-17,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-18,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-19,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-20,INPORT,NORFOLK VA,PIER 12,36.95,-76.33,ASHBY,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-21,INPORT,NORFOLK VA,PIER 12,36.95,-76.33,ASHBY,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-22,INPORT,NORFOLK VA,PIER 12,36.95,-76.33,VARNELL,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-23,INPORT,NORFOLK VA,PIER 12,36.95,-76.33,VARNELL,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-24,INPORT,NORFOLK VA,PIER 12,36.95,-76.33,VARNELL,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-25,UNDERWAY,,,30.4,-80.2,,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-26,UNDERWAY,,,30.4,-80.2,,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-27,UNDERWAY,,,30.4,-80.2,,,,schedule_30day;movrep,proposed
+KESSLER,2026-11-28,UNDERWAY,,,30.4,-80.2,,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-04,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,KESSLER,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-05,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,KESSLER,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-06,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,KESSLER,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-07,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,KESSLER,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-08,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,KESSLER,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-09,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,KESSLER,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-10,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,KESSLER;ASHBY,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-11,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,KESSLER;ASHBY,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-12,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,KESSLER;ASHBY,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-13,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,ASHBY,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-14,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,ASHBY,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-15,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,ASHBY,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-16,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,ASHBY,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-17,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,ASHBY,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-18,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-19,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-20,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-21,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-22,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,KESSLER,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-23,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,KESSLER,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-24,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,KESSLER,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-25,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-26,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-27,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,,,,schedule_30day;movrep,proposed
+VARNELL,2026-11-28,INPORT,NORFOLK VA,PIER 10,36.95,-76.33,,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-04,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-05,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-06,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-07,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-08,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-09,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-10,INPORT,NORFOLK VA,PIER 11,36.95,-76.33,KESSLER;VARNELL,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-11,INPORT,NORFOLK VA,PIER 11,36.95,-76.33,KESSLER;VARNELL,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-12,INPORT,NORFOLK VA,PIER 11,36.95,-76.33,KESSLER;VARNELL,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-13,INPORT,NORFOLK VA,PIER 11,36.95,-76.33,VARNELL,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-14,INPORT,NORFOLK VA,PIER 11,36.95,-76.33,VARNELL,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-15,INPORT,NORFOLK VA,PIER 11,36.95,-76.33,VARNELL,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-16,INPORT,NORFOLK VA,PIER 11,36.95,-76.33,VARNELL,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-17,INPORT,NORFOLK VA,PIER 11,36.95,-76.33,VARNELL,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-18,INPORT,NORFOLK VA,PIER 11,36.95,-76.33,,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-19,INPORT,NORFOLK VA,PIER 11,36.95,-76.33,,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-20,INPORT,NORFOLK VA,PIER 11,36.95,-76.33,KESSLER,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-21,INPORT,NORFOLK VA,PIER 11,36.95,-76.33,KESSLER,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-22,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-23,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-24,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-25,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-26,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-27,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed
+ASHBY,2026-11-28,UNDERWAY,,,36.6,-74.8,,,,schedule_30day;movrep,proposed

@@ -1,0 +1,17 @@
+# Zarf package for air-gapped install via UDS (R6). Build: docker build -t missiontwin:0.1.0 . && zarf package create .
+# Deploy: zarf package deploy zarf-package-missiontwin-*.tar.zst   (needs a cluster, e.g. k3d / UDS Core)
+kind: ZarfPackageConfig
+metadata:
+  name: missiontwin
+  description: "MissionTwin readiness domino map (SYNTHETIC demo data only)"
+  version: 0.1.0
+components:
+  - name: missiontwin
+    required: true
+    manifests:
+      - name: missiontwin
+        namespace: missiontwin
+        files:
+          - deploy/k8s.yaml
+    images:
+      - missiontwin:0.1.0

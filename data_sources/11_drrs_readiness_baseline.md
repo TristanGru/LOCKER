@@ -44,9 +44,11 @@ Rules:
 
 ## 4. Demo scenario rows
 
-- Kessler AW: `Q` (Cat 3 CASREP caps at Q), `mfom_index 58`, `RED`, limiting factor the pump CASREP.
-- Kessler ASW, SUW, MOB, CCC: `Y`, 82-95.
-- Varnell ASW: `Q` (X2 CASREPs, Cat 2) ~74 AMBER; others `Y`.
+**Build change:** the baseline is the last DRRS report **before** the day-0 casualty (`as_of 2026-11-04T06:00:00Z`), because the CASREP arrives at 041200Z as the first scenario event. Values are computed by the generator with the same MFOM rollup the engine uses (test oracle). Rating rule: `N` if Cat 4 or index < 60; `Q` if Cat 3, an open CASREP on a critical system in the area, or index < 80; else `Y`.
+
+- Kessler AW: `Y`, 100, GREEN. DRRS still says Y after the casualty; MissionTwin is the one that projects the drop (pitch point: DRRS lags).
+- Kessler ASW, SUW, MOB, CCC: `Y`, 82-100 (Cat 2 chilled-water CASREP on a non-critical system dings MOB slightly).
+- Varnell ASW and CCC: `Q` (X2 CASREPs, Cat 2, on SQQ-89 and the LAN), AMBER; others `Y`.
 - Ashby: all `Y` except CCC `Q` (X1 CASREP).
 
 ## 5. Open questions

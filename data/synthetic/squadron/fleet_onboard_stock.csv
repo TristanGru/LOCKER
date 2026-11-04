@@ -1,0 +1,38 @@
+# SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA
+niin,ship_id,uic,storeroom_on_hand,storeroom_allowance,installed_qty,installed_system_eic,cross_deck_eligible,cannibalize_eligible,donor_cost_note,as_of,provenance
+019990001,KESSLER,99101,0,0,2,SPY1D-CW,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
+019990001,VARNELL,99102,1,1,2,SPY1D-CW,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990001,ASHBY,99103,0,0,2,SPY1D-CW,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
+019990077,KESSLER,99101,0,1,1,CIWS-MT,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
+019990077,VARNELL,99102,1,2,1,CIWS-MT,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990077,ASHBY,99103,1,1,1,CIWS-MT,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990088,KESSLER,99101,0,0,2,VLS-LSEQ,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
+019990088,VARNELL,99102,0,1,2,VLS-LSEQ,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
+019990088,ASHBY,99103,1,1,2,VLS-LSEQ,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990044,KESSLER,99101,1,2,3,SQQ89-PROC,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990044,VARNELL,99102,0,1,3,SQQ89-PROC,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
+019990044,ASHBY,99103,0,1,3,SQQ89-PROC,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
+019990701,KESSLER,99101,1,1,1,HELO-LTS,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990701,VARNELL,99102,1,1,1,HELO-LTS,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990701,ASHBY,99103,1,1,1,HELO-LTS,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990101,KESSLER,99101,1,1,1,GUN5-HYD,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990101,VARNELL,99102,1,1,1,GUN5-HYD,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990101,ASHBY,99103,2,2,1,GUN5-HYD,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990201,KESSLER,99101,0,0,4,GTM-FUEL,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
+019990201,VARNELL,99102,0,0,4,GTM-FUEL,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
+019990201,ASHBY,99103,1,1,4,GTM-FUEL,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990211,KESSLER,99101,0,1,3,SSDG-GOV,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
+019990211,VARNELL,99102,0,1,3,SSDG-GOV,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
+019990211,ASHBY,99103,1,2,3,SSDG-GOV,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990301,KESSLER,99101,0,0,2,STEER-HYD,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
+019990301,VARNELL,99102,0,0,2,STEER-HYD,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
+019990301,ASHBY,99103,1,1,2,STEER-HYD,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990401,KESSLER,99101,1,1,2,NAVRAD-TX,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990401,VARNELL,99102,0,0,2,NAVRAD-TX,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
+019990401,ASHBY,99103,1,1,2,NAVRAD-TX,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990601,KESSLER,99101,1,1,3,HM-CHW,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990601,VARNELL,99102,1,2,3,HM-CHW,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990601,ASHBY,99103,1,2,3,HM-CHW,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990501,KESSLER,99101,1,1,2,COMMS-HF,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
+019990501,VARNELL,99102,0,0,2,COMMS-HF,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
+019990501,ASHBY,99103,0,0,2,COMMS-HF,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
