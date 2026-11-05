@@ -98,7 +98,7 @@ function graph(d: any, focus = 'all'): T.GraphPayload {
   const missions = missionRows(d); const chosen = missions.some(m=>m.id===focus) ? missions.filter(m=>m.id===focus) : missions;
   const nodes:T.GraphNode[] = [], edges:T.GraphEdge[] = [];
   const add = (id:string,kind:T.NodeKind,label:string,p:number|null,refs:any[],ms:string[],reason='') => {
-    nodes.push({id,kind,label,subtitle:kind,p:probability(p),status:oddsStatus(probability(p)),reason,metric:pct(probability(p)),missions:ms,recordIds:sources(refs),dataAgeHours:sourceAge(d,refs),stale:refs.some(s=>Object.keys(d.issues.stale).some(f=>s.file.startsWith(f))),contradictionCount:0,nextDominoFor:chosen.filter(m=>m.nextDominoId===id).map(m=>m.id)});
+    nodes.push({id,kind,label,subtitle:kind,p:probability(p),status:oddsStatus(probability(p)),reason,metric:pct(probability(p)),missions:ms,recordIds:sources(refs),dataAgeHours:sourceAge(d,refs),stale:refs.some(s=>Object.keys(d.issues.stale).some(f=>s.file.startsWith(f))),contradictionCount:0,nextDominoFor:chosen.filter(m=>m.nextDominoId===id && m.status!=='ready').map(m=>m.id)}); // a Ready event has no domino to flag
   };
   for (const m of chosen) {
     const raw=d.forecast.missions.find((x:any)=>x.event_id===m.id);
@@ -110,7 +110,12 @@ function graph(d: any, focus = 'all'): T.GraphPayload {
       const addItems=(gate:any,parentId:string,mission:any)=>{
         for (const i of gate.items || []) {
           const id=parentId+'|'+i.key;
-          add(id,i.kind==='person'?'person':'part',i.title,mission.p_assessed==null?null:(i.p_available_interval ?? (i.p_active_at_mission!=null?1-i.p_active_at_mission:gate.p_ok)),i.sources || [],[m.id],(i.explain || []).join('; '));
+          // An open defect that leaves the system at or above the requirement does not limit it: show it as a watch
+          // item, not as a 0% chance of readiness under a requirement that is met.
+          const tolerated=i.score_while_active!=null && gate.min_score!=null && i.score_while_active>=gate.min_score && (i.p_active_at_mission ?? 0)>0;
+          add(id,i.kind==='person'?'person':'part',i.title,mission.p_assessed==null?null:tolerated?1:(i.p_available_interval ?? (i.p_active_at_mission!=null?1-i.p_active_at_mission:gate.p_ok)),i.sources || [],[m.id],
+            [...(tolerated?[`Open, but not limiting: while open the system scores ${i.score_while_active}, and this requirement needs ${gate.min_score}.`]:[]),...(i.explain || [])].join('; '));
+          if(tolerated){const n=nodes[nodes.length-1];n.status='watch';n.metric='Not limiting';}
           edges.push({id:parentId+'>'+id,source:parentId,target:id,critical:false});
         }
       };

@@ -87,11 +87,11 @@ export const NodeCard = memo(function NodeCard({ data }: NodeProps<CardNode>) {
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute -top-4 left-4 z-10 flex items-center gap-1.5 rounded-sm border border-risk bg-risk/15 px-2.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-[0.14em] text-risk"
+          className="absolute -top-4 left-4 z-10 flex max-w-[calc(100%-2rem)] items-center gap-1.5 whitespace-nowrap rounded-sm border border-risk bg-abyss-900 px-2.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-[0.14em] text-risk"
         >
-          <Crosshair className="h-3.5 w-3.5" strokeWidth={2.6} aria-hidden />
-          Next domino
-          <span className="font-mono font-semibold normal-case tracking-normal text-risk/80">
+          <Crosshair className="h-3.5 w-3.5 shrink-0" strokeWidth={2.6} aria-hidden />
+          <span className="shrink-0">Next domino</span>
+          <span className="min-w-0 truncate font-mono font-semibold normal-case tracking-normal text-risk/80">
             · {node.nextDominoFor.map((m) => missionCodes[m] ?? m).join(', ')}
           </span>
         </motion.div>
@@ -165,7 +165,7 @@ function MissionBody({ node, status, daysOut }: { node: GraphNode; status: Statu
       </div>
       <div className="mt-1 flex items-end justify-between gap-2">
         <div className="min-w-0">
-          <div className="truncate text-[1.35rem] font-extrabold tracking-wide text-ink">{node.label}</div>
+          <div className="line-clamp-2 break-words text-[1.05rem] font-extrabold leading-tight tracking-wide text-ink" title={node.label}>{node.label}</div>
           <div className="truncate text-sm text-ink-muted">{node.subtitle}</div>
         </div>
         <OddsNumber value={node.p} className={clsx('text-[2.6rem] font-bold leading-none', meta.text)} />
