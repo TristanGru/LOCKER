@@ -57,7 +57,8 @@ test('the fleet account signs in by email and sees every unit', async ({ page })
   await page.getByLabel('Username').fill('Fleet.Commander@us.navy.mil');
   await page.keyboard.press('Enter');
   await expect(page.getByLabel('Signed in account')).toContainText('fleet.commander@us.navy.mil');
-  await expect(page.getByLabel('Selected ship').locator('option')).toHaveText(['USS KESSLER', 'USS VARNELL', 'USS ASHBY']);
+  // One picker lists every unit the fleet account covers, ships then installations.
+  await expect(page.getByLabel('Selected ship').locator('option')).toHaveText(['USS KESSLER', 'USS VARNELL', 'USS ASHBY', 'NAVAL STATION NORFOLK (MOCK)', 'NSA HAMPTON ROADS (MOCK)']);
   await expect(page.getByRole('link', { name: 'Shore Overview', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Mission Overview', exact: true }).click();
   for (const name of ['TIDEWATCH', 'IRON HORIZON', 'PIER SUPPORT: TIDEWATCH', 'Standby E'])
