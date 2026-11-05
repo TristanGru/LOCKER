@@ -11,6 +11,7 @@ import clsx from '../lib/clsx';
 import { useStore } from '../state/store';
 import { useApi } from '../state/useApi';
 import { STATUS } from '../theme/status';
+import { OverviewAssistantPanel } from '../components/overview-assistant/OverviewAssistantPanel';
 
 // three.js is large: load the 3D view as its own chunk (bundled locally, works offline).
 const ShipModel3D = lazy(() => import('../components/ship3d/ShipModel3D').then((m) => ({ default: m.ShipModel3D })));
@@ -23,12 +24,14 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: 'risk', label: 'At risk' },
   { id: 'watch', label: 'Watch' },
   { id: 'ready', label: 'Ready' },
+  { id: 'unknown', label: 'Unknown' },
 ];
 
 const COUNT_CARDS: { status: Status; title: string; desc: string }[] = [
   { status: 'ready', title: 'Ready', desc: 'Meets the displayed model criterion' },
   { status: 'watch', title: 'On watch', desc: 'Degraded, or the records disagree' },
   { status: 'risk', title: 'At risk', desc: 'Below the assessed readiness threshold' },
+  { status: 'unknown', title: 'Unknown', desc: 'Insufficient evidence for the displayed criterion' },
 ];
 
 type Domain = ShipPayload['kind'];
@@ -83,6 +86,7 @@ export function ShipOverview({ domain }: { domain: Domain }) {
           This unit has not reported any systems yet.
         </EmptyState>
       )}
+      {data && <OverviewAssistantPanel filter={filter} domain={domain} />}
       {data && data.systems.length > 0 && <Body ship={data} filter={filter} setFilter={setFilter} onOpen={openNode} />}
     </div>
   );
@@ -91,7 +95,7 @@ export function ShipOverview({ domain }: { domain: Domain }) {
 function Body({ ship, filter, setFilter, onOpen }: { ship: ShipPayload; filter: Filter; setFilter: (f: Filter) => void; onOpen: (id: string) => void }) {
   const shown = useMemo(() => (filter === 'all' ? ship.systems : ship.systems.filter((s) => s.status === filter)), [ship.systems, filter]);
   const depts = ship.departments.filter((d) => shown.some((s) => s.department === d.id));
-  const overallStatus: Status = ship.counts.risk ? 'risk' : ship.counts.watch ? 'watch' : 'ready';
+  const overallStatus: Status = ship.counts.unknown ? 'unknown' : ship.counts.risk ? 'risk' : ship.counts.watch ? 'watch' : 'ready';
   const ashore = ship.kind === 'installation';
   const grouping = ashore ? 'capability area' : 'department';
 
@@ -113,7 +117,7 @@ function Body({ ship, filter, setFilter, onOpen }: { ship: ShipPayload; filter: 
             </span>
           </div>
           <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-ink/[0.08]">
-            {(['ready', 'watch', 'risk'] as const).map((s) =>
+            {(['ready', 'watch', 'risk', 'unknown'] as const).map((s) =>
               ship.counts[s] ? <motion.div key={s} initial={false} animate={{ width: `${(ship.counts[s] / ship.overall.total) * 100}%` }} transition={{ duration: 0.6 }} style={{ background: STATUS[s].hex }} /> : null,
             )}
           </div>

@@ -20,6 +20,10 @@ data/demo-refresh/
 data/demo-json/
 .artifacts/
 
+# Locally bundled overview embedding model/runtime (rebuild with scripts/bundle_overview_embeddings.py)
+web/public/models/
+web/public/wasm/
+
 # Secrets and local config
 .env
 .env.*

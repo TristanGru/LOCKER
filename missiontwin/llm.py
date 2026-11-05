@@ -34,7 +34,7 @@ from .domain import CACHE_DIR, ROOT, MONTHS, UTC, parse_dtg, SYSTEMS, COMPONENT_
 from .models import ActionAdapter, ExtractedFact, LLMFactsOut, action_schema
 
 PROMPT_VERSION = "2026-11-05.1"
-TIMEOUTS = {"extract": 30.0, "extract_casrep": 30.0, "nl_action": 15.0, "brief": 15.0}
+TIMEOUTS = {"extract": 30.0, "extract_casrep": 30.0, "nl_action": 15.0, "brief": 15.0, "overview": 10.0}
 FALLBACK_BADGE = "LLM unavailable, using fallback"
 OFFLINE_BADGE = "Offline: no LLM endpoint configured"
 

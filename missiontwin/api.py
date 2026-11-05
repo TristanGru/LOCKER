@@ -10,7 +10,7 @@ import json
 import threading
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -26,6 +26,7 @@ from .models import ACTION_TYPES, ActionAdapter, BriefBody, ChangeBody, FixDecis
 from .visualization import registry
 from .normalize import NORMALIZED_ROOT, REFERENCE_ROOT, normalize
 from .sources import load_snapshot, source_health, utc_now
+from .overview import OverviewRequest, packet as overview_packet, answer as overview_answer, projection as overview_projection
 
 
 class AppState:
@@ -174,6 +175,71 @@ def create_app(state: AppState | None = None) -> FastAPI:
 
     app.state.get = S
 
+    from urllib.parse import urlsplit
+    overview_slots = threading.BoundedSemaphore(2)
+
+    @app.get('/api/overview-assistant/status')
+    def overview_status():
+        s = S()
+        return {'mode': 'live-capable' if s.client.configured else 'offline',
+                'model': s.client.model, 'generation': 'verified_fact_selection_only',
+                'embedding_model': 'Xenova/all-MiniLM-L6-v2', 'embedding_runtime': 'Transformers.js 3.8.1 / CPU WASM',
+                'local_assets_bundled': (ROOT / 'web/dist/models/overview-manifest.json').is_file(),
+                'vector_storage': 'browser_memory', 'fallback': 'structured_and_lexical'}
+
+    @app.get('/api/overview-assistant/evidence/{evidence_id}')
+    def overview_evidence(evidence_id: str, unit_id: str, base_version: int,
+                          source_revision: str, packet_id: str, focus: str | None = None,
+                          status_filter: str = 'all'):
+        s = S()
+        body = OverviewRequest(unit_id=unit_id, base_version=base_version, source_revision=source_revision,
+                               packet_id=packet_id, focus=focus, status_filter=status_filter)
+        with s.lock:
+            _ship(unit_id)
+            s.check_version(base_version)
+            if source_revision != s.baseline.source_revision:
+                raise HTTPException(409, 'Source revision changed')
+            data = overview_packet(s, body, s.fc(), registry(s.baseline.profile))
+            if packet_id != data['packet_id']:
+                raise HTTPException(409, 'Evidence context changed; regenerate')
+            source = next((e for e in data['evidence'] if e['id'] == evidence_id), None)
+            if source is None:
+                raise HTTPException(404, 'Evidence is not in this eligible packet')
+            return {'identity': data['identity'], 'evidence': source}
+
+    @app.post('/api/overview-assistant/brief')
+    def overview_brief(body: OverviewRequest, request: Request):
+        if urlsplit('http://' + request.headers.get('host', '')).hostname not in {'127.0.0.1', 'localhost', '::1', 'testserver'}:
+            raise HTTPException(403, 'Overview assistant is local-only')
+        origin = request.headers.get('origin')
+        if origin and urlsplit(origin).netloc != request.headers.get('host'):
+            raise HTTPException(403, 'Same-origin requests only')
+        s = S()
+        with s.lock:
+            _ship(body.unit_id)
+            s.check_version(body.base_version)
+            if body.source_revision != s.baseline.source_revision:
+                raise HTTPException(409, 'Source revision changed')
+            data = overview_packet(s, body, s.fc(), registry(s.baseline.profile))
+            if body.packet_id and body.packet_id != data['packet_id']:
+                raise HTTPException(409, 'Overview context changed; regenerate')
+            client = copy.copy(s.client)
+            client.sent_prompts = []  # Do not retain overview prompts on the shared client.
+            from .llm import redact
+            body = body.model_copy(update={'question': redact(body.question, body.unit_id, s.baseline.name_index)[0]})
+        if overview_slots.acquire(blocking=False):
+            try:
+                explanation = overview_answer(client, data, body)
+            finally:
+                overview_slots.release()
+        else:
+            explanation = overview_answer(client, data, body.model_copy(update={'explain': False}))
+            explanation['note'] = 'Model capacity busy; showing verified template facts.'
+        with s.lock:
+            if data['identity']['digest'] != s.scenario.digest() or data['identity']['version'] != s.scenario.version or data['identity']['source_revision'] != s.baseline.source_revision:
+                raise HTTPException(409, 'Overview changed during generation; regenerate')
+        return {**data, 'answer': explanation}
+
     def _ship(ship_id):
         if ship_id not in S().baseline.profile.ships:
             raise HTTPException(422, 'Unknown ship identity')
@@ -249,7 +315,10 @@ def create_app(state: AppState | None = None) -> FastAPI:
                 raise HTTPException(422, {"configuration_errors": state.baseline.configuration_errors})
             if state.initial_forecast is None:
                 state.initial_forecast = forecast(build_world(Scenario(state.baseline, persist=False)))
-            return {"state": state_(), "forecast": get_forecast(),
+            fc = get_forecast()
+            visual = registry(state.baseline.profile)
+            return {"overview": {unit: overview_projection(fc, visual, unit) for unit in state.baseline.profile.ships},
+                    "state": state_(), "forecast": fc,
                     "baseline": state.initial_forecast, "issues": issues(),
                     "assumptions": assumptions(), "log": log(), "visualization": registry(state.baseline.profile), 'sources': state.sources()}
 
