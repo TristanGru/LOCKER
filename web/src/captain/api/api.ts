@@ -7,6 +7,8 @@ export { ApiError };
 let selectedShip = '';
 let paused = false;
 let displayedVersion: number | undefined;
+/** Bundled public-domain aerial photos (web/public/shore, written by scripts/build_shore_imagery.py). */
+const SHORE_PHOTOS: Record<string, string> = { NSNORFOLK: 'norfolk_naip.json', NSAHR: 'nsahr_naip.json' };
 const shownFixes = new Map<string, {fix:T.Fix; version:number}>();
 export const currentShip = () => selectedShip;
 export function selectShip(id: string) { selectedShip = id; }
@@ -194,7 +196,7 @@ async function getShip():Promise<T.ShipPayload> {
   const tally=(xs:T.ShipSystem[])=>({ready:xs.filter(s=>s.status==='ready').length,watch:xs.filter(s=>s.status==='watch').length,risk:xs.filter(s=>s.status==='risk').length,unknown:xs.filter(s=>s.status==='unknown').length});
   const counts=tally(systems);
   const mountPoints=Object.fromEntries(systems.flatMap(s=>s.mount && d.visualization.mounts[s.mount]?[[s.mount,d.visualization.mounts[s.mount]]]:[]));
-  return {name:unit.name,hull:unit.hull,kind:ashore?'installation':'ship',mountPoints,layout:ashore?d.visualization.layouts?.[ship] ?? null:undefined,berths:ashore?d.state.berths:undefined,hullType:ashore?'Installation':'DDG',className:ashore?'Mock installation for demonstration':'Illustrative DDG',systems,counts,overall:{ready:counts.ready,total:systems.length,readyShare:counts.ready/systems.length},departments:[...new Set(systems.map(s=>s.department))].map(id=>{const xs=systems.filter(s=>s.department===id), c=tally(xs);return {id,name:id,counts:c,ready:c.ready,total:xs.length,worst:c.unknown?'unknown':c.risk?'risk':c.watch?'watch':'ready'};}),missionAtRisk:focus?.status!=='ready'?focus:null,nextDomino:focus?.nextDominoId?{nodeId:focus.nextDominoId,label:focus.nextDominoLabel || '',reason:focus.nextDominoReason || '',systemId:systems.find(s=>s.isNextDomino)?.id || null,missionId:focus.id,missionCode:focus.code,gain:0,sourceIds:[]}:null,generatedAt:d.state.cursor};
+  return {name:unit.name,hull:unit.hull,kind:ashore?'installation':'ship',mountPoints,layout:ashore?d.visualization.layouts?.[ship] ?? null:undefined,photo:ashore?SHORE_PHOTOS[ship] ?? null:undefined,berths:ashore?d.state.berths:undefined,hullType:ashore?'Installation':'DDG',className:ashore?'Mock installation for demonstration':'Illustrative DDG',systems,counts,overall:{ready:counts.ready,total:systems.length,readyShare:counts.ready/systems.length},departments:[...new Set(systems.map(s=>s.department))].map(id=>{const xs=systems.filter(s=>s.department===id), c=tally(xs);return {id,name:id,counts:c,ready:c.ready,total:xs.length,worst:c.unknown?'unknown':c.risk?'risk':c.watch?'watch':'ready'};}),missionAtRisk:focus?.status!=='ready'?focus:null,nextDomino:focus?.nextDominoId?{nodeId:focus.nextDominoId,label:focus.nextDominoLabel || '',reason:focus.nextDominoReason || '',systemId:systems.find(s=>s.isNextDomino)?.id || null,missionId:focus.id,missionCode:focus.code,gain:0,sourceIds:[]}:null,generatedAt:d.state.cursor};
 }
 function deltas(before:any,after:any):T.MissionDelta[] { return after.missions.map((m:any)=>{const b=before.missions.find((x:any)=>x.event_id===m.event_id); return {missionId:m.event_id,code:code(m),before:probability(b.p_assessed),after:probability(m.p_assessed),statusBefore:oddsStatus(probability(b.p_assessed)),statusAfter:oddsStatus(probability(m.p_assessed))};}); }
 async function mutate(path:string,body:any={}) {

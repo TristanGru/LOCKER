@@ -314,6 +314,8 @@ export interface BaseLayout {
   shoreline: [number, number][];
   runways: { ref: string; points: [number, number][]; width: number }[];
   aprons: [number, number][][];
+  /** Site boundary for a compound without a traced waterfront (NSA Hampton Roads annex). */
+  boundary?: [number, number][];
 }
 
 export interface ShipBerth {
@@ -331,6 +333,8 @@ export interface ShipPayload {
   /** Illustrative scene coordinates for an installation's facilities. */
   mountPoints?: Record<string, [number, number, number]>;
   layout?: BaseLayout | null;
+  /** Aerial photo metadata file under /shore/ for this installation's layout, if one is bundled. */
+  photo?: string | null;
   berths?: ShipBerth[];
   className: string;
   overall: { readyShare: number; ready: number; total: number };

@@ -17,6 +17,7 @@ from .domain import COLUMNS, ROOT, parse_ts
 
 SNAPSHOT = ROOT / 'data_sources' / 'shore_public' / 'public_hazard_snapshot.json'
 OUTLINE = ROOT / 'data_sources' / 'shore_public' / 'norfolk_outline.json'
+NSAHR_OUTLINE = ROOT / 'data_sources' / 'shore_public' / 'nsahr_outline.json'  # Lafayette River Annex, own local frame
 AS_OF = '2026-11-04T06:00:00Z'
 OUTAGE_AT = '2026-11-08T12:00:00Z'
 OUTAGE_JCN = '99201SP120007'
@@ -84,6 +85,7 @@ def pier_mounts(outline: dict) -> dict:
 
 def shore_profile() -> dict:
     outline = json.loads(OUTLINE.read_text(encoding='utf-8'))
+    nsahr = json.loads(NSAHR_OUTLINE.read_text(encoding='utf-8'))
     return {
         '_banner': BANNER, 'schema_version': 1, 'installations': INSTALLATIONS, 'watchstations': WATCHSTATIONS,
         'missions': [
@@ -111,9 +113,10 @@ def shore_profile() -> dict:
         ],
         # Scene coordinates: x along the waterfront, y up, z toward the water. y is the top of the feature a pin marks.
         # Pier pins sit on public OSM footprints. Every other position is invented and is not a site plan.
+        # msub and lgate are in the NSA Hampton Roads annex's own frame (nsahr_outline.json), inside its OSM boundary.
         'mounts': {**pier_mounts(outline), 'crane': [-72, 9, -24], 'fuel': [-40, 4, -18], 'gate': [-88, 4, -64], 'water': [-112, 11, -44],
-                   'msub': [-8, 8, -8], 'lgate': [10, 6, -30]},
-        'layouts': {'NSNORFOLK': outline},
+                   'msub': [7, 2, -8.5], 'lgate': [13, 2, 7.5]},
+        'layouts': {'NSNORFOLK': outline, 'NSAHR': nsahr},
         'system_mounts': {'SP10': ['pier_10'], 'SP11': ['pier_11'], 'SP12': ['pier_12'], 'CRANE': ['crane'], 'FUEL': ['fuel'],
                           'GATE': ['gate'], 'WATER': ['water'], 'MSUB': ['msub'], 'LGATE': ['lgate']},
         'provenance': 'proposed (base names are real; all capabilities, records and failures are invented for demonstration)',
