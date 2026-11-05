@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { HullInfo, Zone } from '../types';
-import { Bx, Cy, led, ledMat, makeMats, pipes, rail, roomLights, shell, sign, Sph, texGrate, Tor, tray, type IMats, type InteriorRoom } from './kit';
+import { Bx, Cy, led, ledMat, makeMats, pipes, rail, rnd, roomLights, shell, sign, Sph, texGrate, Tor, tray, type IMats, type InteriorRoom } from './kit';
 
 export type Family =
   | 'turb'
@@ -95,8 +95,10 @@ function famEngine(p: IMats, v: 'turb' | 'gen' | 'chill' | 'jet' | 'shaft', labe
     Cy(G, 1.3, 1.3, 0.5, p.steel, -2.9, 2.1, 0, 'x');
     Cy(G, 1.3, 1.3, 0.5, p.steel, 2.9, 2.1, 0, 'x');
     Bx(G, 3, 2.6, 2.4, p.steel, 5, 1.8, 0);
-    Bx(G, 2.2, 2.4, 1, p.rack, -5.6, 1.4, -2.6);
-    for (let i = 0; i < 4; i++) Bx(G, 0.1, 0.1, 0.02, [p.ledG, p.ledA, p.ledG, p.ledR][i], -6.2 + i * 0.35, 2.2, -2.1);
+    // Control panel on the far side of the set, facing the walkway you start on.
+    Bx(G, 2.2, 2.4, 1, p.rack, -5.6, 1.4, 2.6);
+    for (let i = 0; i < 4; i++) Bx(G, 0.1, 0.1, 0.02, [p.ledG, p.ledA, p.ledG, p.ledR][i], -6.2 + i * 0.35, 2.2, 2.09);
+    Bx(G, 1.2, 0.6, 0.03, p.scrT, -5.6, 1.5, 2.09);
   } else if (v === 'chill') {
     for (const z of [-1.5, 1.6]) {
       Cy(G, 1.0, 1.0, 8, p.steel, 0, 2.1, z, 'x');
@@ -155,7 +157,8 @@ function famEngine(p: IMats, v: 'turb' | 'gen' | 'chill' | 'jet' | 'shaft', labe
     Tor(G, 0.2, 0.03, p.red, x, 1.2, -4.68, 'z');
   }
   sign(G, label, '#c4443a', '#ffffff', -W / 2 + 0.05, 3.6, 0, Math.PI / 2, 2.2);
-  return { group: G, blockers: bl, eye: [-9.5, -0.8], look: [1, 0.1], bounds: [-W / 2 + 0.7, W / 2 - 0.7, -L / 2 + 0.6, L / 2 - 0.6] };
+  // Start on the side walkway, angled across the machinery; end-on, a turbine or generator reads as a ball.
+  return { group: G, blockers: bl, eye: [-9.5, -3.6], look: [1, 0.3], bounds: [-W / 2 + 0.7, W / 2 - 0.7, -L / 2 + 0.6, L / 2 - 0.6] };
 }
 
 function famRack(p: IMats, which: 'radar' | 'comms' | 'equip' = 'equip'): InteriorRoom {
@@ -176,9 +179,18 @@ function famRack(p: IMats, which: 'radar' | 'comms' | 'equip' = 'equip'): Interi
       const big = i === 6;
       Bx(G, 1, big ? 2.35 : 2.2, 0.8, p.rack, x, big ? 1.18 : 1.1, z);
       Bx(G, 0.9, 1.7, 0.04, p.dark, x, 1.15, z + (z < 0 ? 0.42 : -0.42));
-      if (big) Bx(G, 0.7, 1, 0.03, p.scrB, x, 1.4, z + (z < 0 ? 0.45 : -0.45));
-      else for (let k = 0; k < 6; k++) Bx(G, 0.05, 0.05, 0.02, ledMat(p), x - 0.3 + k * 0.12, 1.85 - Math.floor(Math.random() * 5) * 0.2, z + (z < 0 ? 0.45 : -0.45));
-      for (let k = 0; k < 4; k++) Bx(G, 0.7, 0.03, 0.02, p.sil, x, 0.5 + k * 0.35, z + (z < 0 ? 0.44 : -0.44));
+      const f = z < 0 ? 1 : -1;
+      if (big) Bx(G, 0.7, 1, 0.03, p.scrB, x, 1.4, z + f * 0.45);
+      else {
+        Bx(G, 0.36, 0.22, 0.02, [p.scrT, p.scrA, p.scrB][i % 3], x - 0.18, 1.62, z + f * 0.45);
+        for (let r = 0; r < 4; r++) for (let k = 0; k < 5; k++) if (rnd() < 0.7) Bx(G, 0.025, 0.025, 0.02, ledMat(p), x + 0.12 + k * 0.06, 1.72 - r * 0.07, z + f * 0.45);
+      }
+      for (let k = 0; k < 4; k++) Bx(G, 0.7, 0.03, 0.02, p.sil, x, 0.5 + k * 0.35, z + f * 0.44);
+      const grille = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.22, 0.02), new THREE.MeshStandardMaterial({ map: texGrate(5, 1.4), roughness: 0.7 }));
+      grille.position.set(x, 2.0, z + f * 0.43);
+      G.add(grille);
+      for (const dx of [-0.42, 0.42]) Bx(G, 0.03, 0.5, 0.05, p.sil, x + dx, 1.15, z + f * 0.47);
+      Bx(G, 0.4, 0.06, 0.02, p.white, x, 0.32, z + f * 0.45);
     }
     bl.push({ x0: -7.9, x1: 7.9, z0: z - 0.5, z1: z + 0.5 });
   }
@@ -193,12 +205,8 @@ function famRack(p: IMats, which: 'radar' | 'comms' | 'equip' = 'equip'): Interi
   Cy(G, 0.25, 0.25, 0.08, p.rubber, 8.2, 0.5, 0.6);
   Cy(G, 0.04, 0.04, 0.45, p.dark, 8.2, 0.28, 0.6);
   if (which === 'radar') {
-    Bx(G, 0.35, 1.6, 0.35, p.dark, -6.4, 2.4, 0);
-    Bx(G, 1.4, 0.12, 0.35, p.sil, -6.4, 3.15, 0);
     sign(G, 'RADAR EQUIPMENT', '#1f6f82', '#ffffff', -W / 2 + 0.05, 2.7, L * 0.2, Math.PI / 2, 1.8);
   } else if (which === 'comms') {
-    Cy(G, 0.7, 0.15, 0.7, p.sil, -6.2, 2.5, 0);
-    Cy(G, 0.08, 0.08, 1.1, p.dark, -6.2, 1.9, 0);
     sign(G, 'COMMUNICATIONS', '#1f6f82', '#ffffff', -W / 2 + 0.05, 2.7, L * 0.2, Math.PI / 2, 1.8);
   } else sign(G, 'EQUIPMENT ROOM', '#1f6f82', '#ffffff', -W / 2 + 0.05, 2.7, L * 0.2, Math.PI / 2, 1.8);
   return { group: G, blockers: bl, eye: [-8, 0], look: [1, 0], bounds: [-W / 2 + 0.6, W / 2 - 0.6, -L / 2 + 0.5, L / 2 - 0.5] };
@@ -211,7 +219,7 @@ function famCic(p: IMats): InteriorRoom {
   const G = shell(p, W, L, H, '#56646d', 0.3);
   for (let i = 0; i < 4; i++)
     for (const z of [-3, 3])
-      Bx(G, 1.2, 0.05, 0.16, new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xff6a4a, emissiveIntensity: 0.6 }), -5 + i * 3.4, H - 0.04, z);
+      Bx(G, 1.2, 0.05, 0.16, new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xff6a4a, emissiveIntensity: 0.6 }), -5 + i * 3.4, H - 0.2, z);
   for (const [c, x, z, i] of [
     [0x4aa8ff, 6, -3, 28],
     [0x4aa8ff, 6, 3, 28],
@@ -355,6 +363,33 @@ function famHangar(p: IMats, bay: boolean): InteriorRoom {
     Bx(G, 0.8, 1.1, 0.6, p.dark, 9, 0.55, 5);
     for (const z of [-1.2, 1.2]) Cy(G, 0.35, 0.35, 0.2, p.rubber, 9, 0.35, 5 + z, 'z');
     bl.push({ x0: -9.6, x1: -6.2, z0: -6.8, z1: -5.2 }, { x0: 7.4, x1: 10.2, z0: 4.2, z1: 6.6 });
+    // Spare rotor blades on a wall rack.
+    for (const x of [-3, 2.4]) Bx(G, 0.12, 2.2, 0.5, p.dark, x, 1.1, -8.4);
+    for (let k = 0; k < 3; k++) {
+      Bx(G, 6.2, 0.05, 0.42, p.heli, -0.3, 0.8 + k * 0.55, -8.35);
+      Bx(G, 0.5, 0.06, 0.44, p.yel, 2.9, 0.8 + k * 0.55, -8.35);
+    }
+    bl.push({ x0: -3.5, x1: 3, z0: -9, z1: -7.9 });
+    // Rolling maintenance stand.
+    const st = new THREE.Group();
+    for (const [dx, dz] of [[-0.8, -0.6], [0.8, -0.6], [-0.8, 0.6], [0.8, 0.6]] as const) {
+      Bx(st, 0.07, 2.4, 0.07, p.yel, dx, 1.2, dz);
+      Cy(st, 0.08, 0.08, 0.06, p.rubber, dx, 0.08, dz, 'z', 12);
+    }
+    Bx(st, 1.8, 0.06, 1.4, p.dark, 0, 2.4, 0);
+    rail(st, p, -0.85, 0.85, 1.0, -0.7);
+    for (let k = 0; k < 6; k++) Bx(st, 1.6, 0.04, 0.12, p.steel, 0, 0.35 + k * 0.35, 0.68);
+    st.position.set(-1, 0, 3.4);
+    G.add(st);
+    bl.push({ x0: -2.1, x1: 0.1, z0: 2.5, z1: 4.3 });
+    // Portable floodlight cart.
+    Bx(G, 0.8, 0.5, 0.6, p.orange, 5.5, 0.4, 0);
+    Cy(G, 0.04, 0.04, 2.2, p.dark, 5.5, 1.75, 0);
+    for (const dz of [-0.3, 0.3]) {
+      Bx(G, 0.3, 0.22, 0.12, p.dark, 5.5, 2.85, dz);
+      Bx(G, 0.26, 0.18, 0.02, p.lamp, 5.5, 2.85, dz + (dz < 0 ? -0.07 : 0.07));
+    }
+    bl.push({ x0: 5, x1: 6, z0: -0.5, z1: 0.5 });
   } else {
     const cs = [0x5d7a5b, 0x7a6a4a, 0x4a6f8a, 0x8a5a4a];
     for (let i = 0; i < 5; i++)
@@ -872,17 +907,24 @@ function roomFor(kind: Kind, p: IMats): InteriorRoom {
   }
 }
 
-/** Stand somewhere that belongs to this cut, not in the same corner of every room. */
+/**
+ * Stand in the room's own aisle, a little along it depending on the cut, and look into the room.
+ * Each room's designed eye is the aisle; starting against a side bulkhead put equipment in your face.
+ */
 function place(room: InteriorRoom, seed: number, side: number) {
   const [x0, x1, z0, z1] = room.bounds;
   const t = ((Math.sin(seed * 12.9898) * 43758.5453) % 1 + 1) % 1;
-  const x = x0 + (x1 - x0) * (0.18 + 0.64 * t);
-  let z = side >= 0 ? z0 + 0.55 : z1 - 0.55;
-  const hit = (px: number, pz: number) => room.blockers.some((b) => px > b.x0 - 0.25 && px < b.x1 + 0.25 && pz > b.z0 - 0.25 && pz < b.z1 + 0.25);
-  for (let i = 0; i < 12 && hit(x, z); i++) z += side >= 0 ? 0.35 : -0.35;
-  room.eye = [Math.min(x1 - 0.45, Math.max(x0 + 0.45, x)), Math.min(z1 - 0.4, Math.max(z0 + 0.4, z))];
-  if (hit(room.eye[0], room.eye[1])) room.eye = [(x0 + x1) / 2, (z0 + z1) / 2];
-  room.look = [room.eye[0] > 0 ? -1 : 1, 0];
+  const hit = (px: number, pz: number) => room.blockers.some((b) => px > b.x0 - 0.4 && px < b.x1 + 0.4 && pz > b.z0 - 0.4 && pz < b.z1 + 0.4);
+  const [ex, ez] = room.eye;
+  const x = Math.min(x1 - 0.5, Math.max(x0 + 0.5, ex + (t - 0.5) * 2.4));
+  const z = Math.min(z1 - 0.5, Math.max(z0 + 0.5, ez + side * 0.3));
+  if (!hit(x, z)) room.eye = [x, z];
+  const [px, pz] = room.eye;
+  // Look toward the far end, keeping the room's designed angle and turning a little toward the middle.
+  const dx = px < (x0 + x1) / 2 ? 1 : -1;
+  const dz = Math.abs(room.look[1]) * Math.sign((z0 + z1) / 2 - pz || 1) + ((z0 + z1) / 2 - pz) * 0.08;
+  const n = Math.hypot(dx, dz) || 1;
+  room.look = [dx / n, dz / n];
 }
 
 export interface Landing {

@@ -16,7 +16,7 @@ function Source({ support }: { support: Support }) {
     <p className="font-semibold">{support.file ? `${support.file} · ${support.loc}` : support.title}</p>
     <p>{support.kind} {support.basis && `· ${support.basis}`} {support.stale && '· STALE'}</p>
     <p className="text-xs">Source {support.identity.source_revision} · Exercise {support.identity.cursor}</p>
-    {support.lineage === 'partial' && <p className="text-amber-400">Partial lineage: a modeled assessment, not a complete raw-record causal proof.</p>}
+    {support.lineage === 'partial' && <p className="text-watch">Partial lineage: a modeled assessment, not a complete raw-record causal proof.</p>}
     <dl className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-2">{Object.entries(support.values).map(([k,v])=><div className="contents" key={k}><dt className="font-semibold">{k}</dt><dd>{v == null ? 'Unknown' : String(v)}</dd></div>)}</dl>
     {support.calculation && <details><summary>Calculation and filters</summary><pre className="whitespace-pre-wrap text-xs">{JSON.stringify(support.calculation,null,2)}</pre></details>}
     {!!support.model_inputs?.length && <details><summary>Model inputs and assumptions</summary><pre className="whitespace-pre-wrap text-xs">{JSON.stringify(support.model_inputs,null,2)}</pre></details>}
@@ -130,7 +130,7 @@ export function OverviewChat({filter,domain}:{filter:string;domain:string}) {
         {!session?.messages.length && <p>Ask for a concise summary, the reason behind a status, or the loaded evidence supporting it.</p>}
         {session?.messages.map(message=><article key={message.id} aria-label={message.role==='user'?'Your message':'Assistant message'} className={`space-y-2 rounded-xl border p-3 ${message.role==='user'?'ml-6 bg-ink/5':'mr-1'}`}>
           <p className="text-xs font-bold">{message.role==='user'?'You':`Davy · ${message.method==='template'?'Deterministic fallback':message.method==='cache'?'Cached LLM':'Live LLM'}${message.answer_status ? ' · '+message.answer_status.replaceAll('_',' ') : ''}`}</p>
-          {message.role==='user'?<p className="whitespace-pre-wrap">{message.text}</p>:message.sections?.map((section,i)=><div key={i}><h3 className="mb-1 text-sm font-semibold">{section.heading}</h3><p className="text-sm leading-relaxed">{section.sentences.map((sentence,j)=><span key={j}>{sentence.text}{' '}{sentence.citations.map(n=><button id={`citation-${message.id}-${n}`} key={n} aria-label={`Citation ${n}`}  className="mx-0.5 font-semibold text-sky-400 underline" onClick={e=>{sourceButton.current=e.currentTarget.id;setCitation(message.citations!.find(c=>c.number===n)!);}}>[{n}]</button>)}{' '}</span>)}</p></div>)}
+          {message.role==='user'?<p className="whitespace-pre-wrap">{message.text}</p>:message.sections?.map((section,i)=><div key={i}><h3 className="mb-1 text-sm font-semibold">{section.heading}</h3><p className="text-sm leading-relaxed">{section.sentences.map((sentence,j)=><span key={j}>{sentence.text}{' '}{sentence.citations.map(n=><button id={`citation-${message.id}-${n}`} key={n} aria-label={`Citation ${n}`}  className="mx-0.5 font-semibold text-accent underline" onClick={e=>{sourceButton.current=e.currentTarget.id;setCitation(message.citations!.find(c=>c.number===n)!);}}>[{n}]</button>)}{' '}</span>)}</p></div>)}
           {message.fallback_reason && <p className="text-xs text-ink-muted">Fallback reason: {message.fallback_reason.replaceAll('_',' ')}. These are verified template facts, not generated prose.</p>}
         </article>)}
       </div>

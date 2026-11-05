@@ -310,7 +310,10 @@ def test_canonical_trainer_refresh_is_in_port_and_missions_are_assessable(worksp
     _, _, client = workspace
     missions = {m['event_id']: m for m in client.get('/api/forecast').json()['missions']}
     for event_id in ('EVT-KESSLER-01', 'EVT-KESSLER-02'):
-        assert missions[event_id]['p_assessed'] > .5, event_id
+        # The trainer itself must not sink the event; SEASHIELD is at risk for its own starting casualty, not the trainer.
+        trainer = next(g for g in missions[event_id]['gates'] if g['gate_id'] == 'training:TRQ-AW-07 (SYNTH)')
+        assert trainer['p_ok'] > .5, event_id
+        assert missions[event_id]['p_assessed'] is not None, event_id
         assert missions[event_id]['planned']['result'] == 'MAKE', event_id
 
 

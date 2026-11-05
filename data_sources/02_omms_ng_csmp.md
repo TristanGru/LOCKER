@@ -104,6 +104,11 @@ All values below are invented and must be marked `placeholder` in the file.
 - Varnell: two jobs for the same ethernet switch NIIN, each with its own CASREP DTG (seeded **X2**).
 - **X1:** Ashby has a CASREP (`DDG993-26-004`) whose DTG matches **no** JCN.
 - **X7:** Kessler CIWS lost PMS (spec 01) has **no** 2-Kilo.
+- **Starting conditions** (open before the feed starts, so each ship opens with a mix of ready, watch and at-risk systems; values are fixed, not drawn):
+  - Kessler `99101CE010901`: HF transceiver No. 2, `status_code 2`, awaiting NIIN 019990501 (status `BB`, ESD 14 NOV). SEASHIELD needs exterior comms.
+  - Kessler `99101CF020902`: SSM launcher rail, `status_code 2`, `DEFERRED` to the next CMAV. No scheduled event needs it.
+  - Varnell `CIWS-MT` job: mount disassembled for the CMAV, `status_code 2`, `IN_WORK`. No scheduled event needs it.
+  - Ashby `GUN5-HYD` job: gun mount hydraulic pump, `status_code 2`, awaiting NIIN 019990101 (status `BB`, ESD 12 NOV). IRON HORIZON needs the gun.
 
 ## 7. Open questions
 

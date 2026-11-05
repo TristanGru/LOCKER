@@ -89,6 +89,9 @@ One row per hazard and asset. Rows sharing a `hazard_id` share random draws, so 
 
 ## Seeded scenario and inconsistencies
 
+- **Starting conditions** (open before the feed starts; values are fixed, not drawn):
+  - Naval Station Norfolk (mock) `99201SP110004`: Pier 11 transformer bank protective relay failed its trip test. Replacement NIIN 019998006 is `BB`, ESD 09 NOV. Ashby's IRON HORIZON support window is 20-22 NOV.
+  - NSA Hampton Roads (mock) `99202MS010002`: the mobile substation trailer's brake controller failed road inspection, so the trailer cannot be towed to a site. Replacement NIIN 019998007 is `BB`, ESD 07 NOV. Standby E starts 16 NOV. The transformer itself still works, so it can still be cannibalized for a pier.
 - **E5, 08 NOV:** Pier 12 transformer fails at Naval Station Norfolk (mock). Replacement status `BC`, ESD 15 DEC. Kessler's support window is 11-13 NOV.
 - **X5:** Borrowing the transformer drops NSA Hampton Roads (mock) below its allowance.
 - **X7:** A crane hoist PM was lost and no work order exists.

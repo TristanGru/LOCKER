@@ -15,11 +15,13 @@ import type { Cascade } from '../../state/store';
 import { STATUS } from '../../theme/status';
 import { NodeCard, type CardNode } from './NodeCard';
 import { SummaryCard, type SummaryNode } from './SummaryCard';
+import { filterView, type FilterKey } from './filters';
 import { chainOf, condense, layoutGraph, type LayoutItem } from './layout';
 
 const nodeTypes: NodeTypes = { card: NodeCard, summary: SummaryCard };
 const CASCADE_STEP = 0.55; // seconds between domino "rows"
 const CASCADE_WINDOW_MS = 6000;
+const NO_FILTERS: Set<FilterKey> = new Set();
 
 export function DominoGraph({
   graph,
@@ -29,9 +31,12 @@ export function DominoGraph({
   onClear,
   onExpand,
   cascade,
+  filters = NO_FILTERS,
 }: {
   graph: GraphPayload;
   showAll: boolean;
+  /** Active legend filters; empty = no filter. Filtering always works from the full graph (Ready items unfold). */
+  filters?: Set<FilterKey>;
   selectedId: string | null;
   onSelect: (id: string) => void;
   onClear: () => void;
@@ -40,10 +45,11 @@ export function DominoGraph({
 }) {
   const rf = useReactFlow();
 
-  const view = useMemo(
-    () => (showAll ? { nodes: graph.nodes, edges: graph.edges, summaries: [] } : condense(graph.nodes, graph.edges)),
-    [graph.nodes, graph.edges, showAll],
-  );
+  const view = useMemo(() => {
+    if (filters.size) return filterView(graph.nodes, graph.edges, filters);
+    const v = showAll ? { nodes: graph.nodes, edges: graph.edges, summaries: [] } : condense(graph.nodes, graph.edges);
+    return { ...v, context: new Set<string>() };
+  }, [graph.nodes, graph.edges, showAll, filters]);
 
   const layoutEdges = useMemo(
     () => [
@@ -87,6 +93,7 @@ export function DominoGraph({
         node: n,
         selected: n.id === selectedId,
         dimmed: Boolean(chain && !chain.has(n.id)),
+        context: view.context.has(n.id),
         delay: delays.get(n.id) ?? 0,
         missionCodes,
         daysOut: n.kind === 'mission' ? daysOut[n.id] : undefined,
@@ -108,7 +115,7 @@ export function DominoGraph({
     const real: Edge[] = view.edges.map((e) => {
       const target = statusOf.get(e.target) ?? 'ready';
       const inChain = chain ? chain.has(e.source) && chain.has(e.target) : false;
-      const color = inChain ? '#22d3ee' : e.critical ? STATUS[target].hex : 'rgba(140,180,220,0.3)';
+      const color = inChain ? 'rgb(var(--accent))' : e.critical ? STATUS[target].hex : 'rgba(140,180,220,0.3)';
       return {
         id: e.id,
         source: e.source,
@@ -151,7 +158,7 @@ export function DominoGraph({
   }, [selectedId, rf]);
 
   // Re-fit when the focus, view mode or set of nodes changes (not on every status change).
-  const idsKey = `${graph.focus}|${showAll}|${nodes.map((n) => n.id).join(',')}`;
+  const idsKey = `${graph.focus}|${showAll}|${[...filters].join('+')}|${nodes.map((n) => n.id).join(',')}`;
   const lastKey = useRef('');
   useEffect(() => {
     if (lastKey.current === idsKey) return;
