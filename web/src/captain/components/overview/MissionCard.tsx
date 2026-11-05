@@ -1,11 +1,10 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import type { Mission, OddsPoint, Status } from '../../api/types';
+import type { Mission, Status } from '../../api/types';
 import clsx from '../../lib/clsx';
 import { useStore } from '../../state/store';
 import { STATUS, pct, getBands } from '../../theme/status';
-import { OddsSparkline } from '../charts/OddsSparkline';
 import { OddsNumber } from '../ui/OddsNumber';
 import { RecordId } from '../ui/RecordId';
 import { StatusBadge } from '../ui/StatusBadge';
@@ -18,13 +17,12 @@ const ACTION: Record<Status, { label: string; to: string; solid: boolean }> = {
 };
 
 /** One mission as a ranked row: status, odds on a 50/82 bar, trend, next domino, one action. */
-export function MissionRow({ mission: m, history, index }: { mission: Mission; history: OddsPoint[]; index: number }) {
+export function MissionRow({ mission: m, index }: { mission: Mission; index: number }) {
   const meta = STATUS[m.status];
   const navigate = useNavigate();
   const { setFocus, openNode } = useStore();
   const date = new Date(m.date);
-  const first = history[0]?.odds ?? m.odds;
-  const delta = Math.round((m.odds - first) * 100);
+  const delta = m.baselineDelta;
   const action = ACTION[m.status];
   const emphasized = m.status === 'risk';
   const when = date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
@@ -64,15 +62,21 @@ export function MissionRow({ mission: m, history, index }: { mission: Mission; h
       <div className="min-w-0">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <OddsNumber value={m.odds} className={clsx('font-bold leading-none', emphasized ? 'text-[3.4rem]' : 'text-[2.6rem]')} style={{ color: meta.hex }} />
-          <span className={clsx('num text-sm font-bold', delta < 0 ? 'text-risk' : delta > 0 ? 'text-ready' : 'text-ink-muted')}>
-            {delta > 0 ? '+' : ''}
-            {delta} pts since baseline
-          </span>
+          <span className="text-sm text-ink-muted">across the interval</span>
         </div>
         <ThresholdBar odds={m.odds} color={meta.hex} />
-        <div className="mt-1">
-          <OddsSparkline points={history} status={m.status} id={m.id} bare />
-        </div>
+        <p className="mt-2 text-sm text-ink-muted">
+          At start <span className="num font-semibold text-ink">{pct(m.oddsAtStart)}</span>
+          {delta != null && (
+            <>
+              <span className="mx-1.5 text-ink-dim">·</span>
+              <span className={clsx('num font-bold', delta < 0 ? 'text-risk' : delta > 0 ? 'text-ready' : 'text-ink-muted')}>
+                {delta > 0 ? '+' : ''}
+                {delta} pts vs baseline
+              </span>
+            </>
+          )}
+        </p>
       </div>
 
       <div className="min-w-0">

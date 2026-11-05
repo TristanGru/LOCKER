@@ -56,7 +56,12 @@ export interface Mission {
   description: string;
   date: string; // ISO
   daysOut: number;
+  /** Sampled event-interval readiness. This is the decision number. */
   odds: number; // 0..1
+  /** Modeled probability at event start. Separate from the interval score. */
+  oddsAtStart: number;
+  /** Interval points versus the no-decision baseline. Null when either side is unknown. */
+  baselineDelta: number | null;
   status: Status;
   nextDominoId: string | null;
   nextDominoLabel: string | null;

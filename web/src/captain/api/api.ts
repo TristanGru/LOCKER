@@ -29,13 +29,30 @@ function sourceAge(d:any, refs:any[]):number {
 const code = (m: any) => ({'EVT-KESSLER-01':'TIDEWATCH','EVT-KESSLER-02':'SEASHIELD','EVT-VARNELL-01':'DEEP LANTERN','EVT-ASHBY-01':'IRON HORIZON'}[m.event_id] || m.label);
 const sourceId = (s: any) => 'src:' + encodeURIComponent(JSON.stringify(s));
 const sources = (rows: any[] = []) => rows.map(sourceId);
-const missionRows = (d: any, ship = selectedShip): T.Mission[] => d.forecast.missions.filter((m: any) => m.ship_id === ship).map((m: any) => ({
-  id:m.event_id, code:code(m), name:m.name, type:m.areas.join(' / '), description:`${m.name}. Interval assessment through ${m.end}. Start: ${pct(probability(m.p_ready))}. ${m.coverage_issues.join('; ')}`,
-  date:m.start, daysOut:Math.ceil((Date.parse(m.start)-Date.parse(d.state.cursor))/86400000), odds:probability(m.p_assessed), status:oddsStatus(probability(m.p_assessed)),
-  nextDominoId:m.next_domino ? `${m.event_id}|${m.next_domino}` : null,
-  nextDominoLabel:m.gates.find((g:any)=>g.gate_id===m.next_domino)?.label || null, nextDominoReason:'Limiting requirement across sampled event interval',
-  requires:m.gates.map((g:any)=>`${m.event_id}|${g.gate_id}`), flaggedCount:m.gates.filter((g:any)=>g.p_ok==null || g.p_ok<d.forecast.bands.green).length, recordId:sourceId(m.sources[0]),
-}));
+/** Calendar days from the exercise date to the event date. Clock time was rounding a 12-day gap up to 13. */
+function daysUntil(start: string, cursor: string) {
+  const eventDay = Date.parse(String(start).slice(0, 10));
+  const cursorDay = Date.parse(String(cursor).slice(0, 10));
+  if (!Number.isFinite(eventDay) || !Number.isFinite(cursorDay)) return 0;
+  return Math.round((eventDay - cursorDay) / 86400000);
+}
+const missionRows = (d: any, ship = selectedShip): T.Mission[] => d.forecast.missions.filter((m: any) => m.ship_id === ship).map((m: any) => {
+  const base = d.baseline?.missions?.find((x: any) => x.event_id === m.event_id);
+  const odds = probability(m.p_assessed);
+  const oddsAtStart = probability(m.p_ready);
+  const baseline = base ? probability(base.p_assessed) : NaN;
+  const gate = m.gates.find((g: any) => g.gate_id === m.next_domino);
+  return {
+    id:m.event_id, code:code(m), name:m.name, type:m.areas.join(' / '), description:`${m.name}. Interval assessment through ${m.end}. Start: ${pct(oddsAtStart)}. ${m.coverage_issues.join('; ')}`,
+    date:m.start, daysOut:daysUntil(m.start, d.state.cursor), odds, oddsAtStart,
+    baselineDelta: Number.isFinite(odds) && Number.isFinite(baseline) ? Math.round((odds - baseline) * 100) : null,
+    status:oddsStatus(odds),
+    nextDominoId:m.next_domino ? `${m.event_id}|${m.next_domino}` : null,
+    nextDominoLabel:gate?.label || null,
+    nextDominoReason:gate ? (gate.p_ok == null ? 'Insufficient evidence for this requirement' : `${pct(gate.p_ok)} meets this requirement across the event interval`) : null,
+    requires:m.gates.map((g:any)=>`${m.event_id}|${g.gate_id}`), flaggedCount:m.gates.filter((g:any)=>g.p_ok==null || g.p_ok<d.forecast.bands.green).length, recordId:sourceId(m.sources[0]),
+  };
+});
 function graph(d: any, focus = 'all'): T.GraphPayload {
   const missions = missionRows(d); const chosen = missions.some(m=>m.id===focus) ? missions.filter(m=>m.id===focus) : missions;
   const nodes:T.GraphNode[] = [], edges:T.GraphEdge[] = [];

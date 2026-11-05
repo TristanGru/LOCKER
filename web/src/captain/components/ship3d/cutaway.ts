@@ -55,7 +55,7 @@ export const KD: Record<string, [string, string]> = {
   vls_fwd: ['Forward VLS magazine', 'Vertical launch cells'],
   vls_aft: ['Aft VLS magazine', 'Vertical launch cells'],
   vls: ['Missile tubes', 'Vertical launch tubes'],
-  flight: ['Hangar', 'Aircraft and maintenance bay'],
+  flight: ['Hangar bay', 'Maintenance bay. The aircraft is on the flight deck.'],
   engine_p: ['Main engine room (port)', 'Gas turbine, gearbox and exhaust uptake'],
   engine_s: ['Main engine room (starboard)', 'Gas turbine, gearbox and exhaust uptake'],
   genset_1: ['Generator room', 'Turbine generator set'],
