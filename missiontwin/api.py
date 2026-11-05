@@ -249,7 +249,8 @@ def create_app(state: AppState | None = None) -> FastAPI:
         audit({'op': 'login', 'actor': name})
         response = JSONResponse(auth.public(account))
         response.set_cookie(auth.COOKIE, sessions.issue(name), max_age=auth.SESSION_SECONDS, httponly=True,
-                            samesite='strict', secure=request.url.scheme == 'https', path='/')
+                            samesite='strict', path='/',
+                            secure='https' in (request.url.scheme, request.headers.get('x-forwarded-proto', '').split(',')[0].strip()))
         return response
 
     @app.post('/api/logout')

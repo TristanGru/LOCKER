@@ -47,10 +47,18 @@ def accounts(profile) -> dict[str, dict]:
 
 
 class Sessions:
-    """Signed, expiring session tokens. The key is per process unless MISSIONTWIN_SESSION_SECRET is set."""
+    """Signed, expiring session tokens.
+
+    The key comes from MISSIONTWIN_SESSION_SECRET. Without it, a serverless deployment (several short-lived copies of
+    the app) derives one key per deployment so every copy accepts the same session; while sign-in is username-only
+    this is no weaker than the sign-in itself. Anywhere else the key is random per process. Set the secret before
+    passwords or real data are added."""
 
     def __init__(self, secret: str | None = None):
         key = secret or os.environ.get("MISSIONTWIN_SESSION_SECRET", "")
+        deployment = os.environ.get("VERCEL_DEPLOYMENT_ID") or os.environ.get("VERCEL_URL", "")
+        if not key and deployment:
+            key = "locker-session:" + deployment
         self.key = key.encode() if key else secrets.token_bytes(32)
         self.revoked: dict[str, float] = {}  # signature -> expiry; a signed-out token stops working at once
 
