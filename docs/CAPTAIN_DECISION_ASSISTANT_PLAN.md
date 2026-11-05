@@ -4,7 +4,11 @@
 
 **Starting point:** `main` at `0ffea93` (inspected during planning).
 
-**First deliverable:** A single-mission, evidence-grounded decision brief with bounded follow-up questions.
+**First deliverable:** Source-backed assistant panels on Ship Overview and Shore Overview, with drill-down into a mission-specific decision brief and bounded follow-up questions.
+
+**Updated scope:** Use the same loaded data and state identity as the overviews. Query structured CSV values deterministically; use narrative RAG for explanations, not as a calculator.
+
+**Standalone overview scope:** See [Ship and Shore Overview assistant implementation plan](SHIP_SHORE_OVERVIEW_ASSISTANT_PLAN.md) for the overview-only delivery plan, excluding mission decisions, fixes and simulations.
 
 **Model assumption:** An existing OpenAI-compatible LLM service; LOCKER is the client, not a model host.
 
@@ -24,8 +28,9 @@ This remains **synthetic, read-only decision support**, not an operational autho
 
 ### First-slice scope
 
-- One selected unit and mission; exercise supports DDGs and shore installations, but initial acceptance uses KESSLER and one of its checked-in missions.
-- Structured current-state packet from the forecast, dependency chain, source health, and existing fix ranking.
+- Both Ship Overview and Shore Overview: selected-unit summaries backed directly by loaded records, with optional mission/system/capability focus.
+- Initial acceptance covers KESSLER and NSNORFOLK, including a ship-to-shore dependency and a source replacement/refresh.
+- Structured current-state packet from the same loaded records, overview metrics, forecast, dependency chain, source health, and existing fix ranking. Reuse existing ranking results on demand rather than calculating all fixes during overview load.
 - Deterministic brief that works without an LLM.
 - Optional live-model explanation through the existing endpoint configuration.
 - Source-linked evidence, with exact identifiers and lexical retrieval over eligible evidence.
@@ -51,7 +56,9 @@ This remains **synthetic, read-only decision support**, not an operational autho
 | `missiontwin/brief.py` | Deterministic cited brief | Add a structured mission-specific decision model; preserve existing brief endpoint |
 | `missiontwin/llm.py` | OpenAI-compatible client, validation, caching, redaction, timeout/fallback pattern | New task and bounded response schema; stronger claim support than numeric-token preservation alone |
 | `missiontwin/sources.py` | Immutable adapter snapshots and source revision | Retrieval indexes must follow accepted snapshot lifecycle, not the editable input directory |
-| `missiontwin/ingest.py:View` | Exercise-time visibility and extracted facts | Build retrieval from eligible records; prevent future-event and superseded-record leakage |
+| `missiontwin/ingest.py:Baseline` / `View` | Parsed records with `_src` provenance and exercise-time visibility | Shared read-only query service over the loaded corpus; prevent future-event and superseded-record leakage |
+| `web/src/captain/screens/ShipOverview.tsx` | Shared Ship/Installation Overview implementation selected by `domain` | Add one shared assistant panel with unit-kind-specific prompts, source-linked metrics and optional focused system/capability |
+| `/api/dashboard`, `/api/state` and captain API overview mapping | Existing overview inputs | Capture a common state identity and reconcile metrics; do not let frontend and assistant classify the same system differently |
 | `/api/source` | Current source viewer and provenance | Add revision-aware evidence resolution; current endpoint resolves against the current snapshot |
 | `/api/preview`, `/api/captain/preview` | Disposable what-if calculations | Reuse behind a bounded service in a later milestone, never assistant mutation endpoints |
 | `web/src/captain/screens/Brief.tsx` | Captain-facing brief screen | Add concise decision cards, evidence drawer, follow-up panel, stale-state behavior |
@@ -184,11 +191,101 @@ Port Keystone's browser model as a later optimization while keeping lexical mode
 
 Store derived indexes under `%LOCALAPPDATA%/LOCKER/index` on Windows or the platform's local cache directory, outside OneDrive by default. Provide a proposed `LOCKER_INDEX_DIR` override, single-writer coordination, bounded retries and safe rebuilds. Cache deletion must never delete source records. Retain only necessary revision partitions; rejected refresh candidates must never become searchable.
 
+### 4.5 Loaded-data authority: what “directly from the database” means
+
+**The assistant must use the same accepted loaded dataset as the overviews.** Current LOCKER is not backed by an operational SQL database: CSV/JSON/document adapters populate `Baseline` records and an exercise-time `View` in memory. The engine applies scenario overlays to that baseline. Do not add a separate uploaded corpus, manually maintained RAG knowledge base, or independently refreshed database as a competing source of truth.
+
+Proposed flow:
+
+```text
+Accepted source adapter snapshot
+        |
+Baseline records + time-filtered View + validated scenario overlays
+        |
+Shared loaded-data query / overview projection service
+        +-- Ship / Shore Overview metrics and details
+        +-- Typed assistant facts, aggregates and dependencies
+        +-- Evidence resolver -> exact original row / document span
+        +-- Derived lexical / optional semantic index (disposable cache)
+```
+
+The server owns the query service. If SQLite or another database is later introduced, it is initially a read-only derived projection keyed to the accepted source revision, not a reason to reimport different source bytes. A future real database adapter must capture a consistent snapshot/transaction watermark and stable record/version identifiers before activation. Secrets, connection strings and database credentials never go to the model or browser.
+
+For every assistant claim, provide an expandable **Loaded source** card:
+
+- Source system/steward, unit, adapter, source revision and exercise “as of” time.
+- Stable record key and file/row/column or document page/span locator; include raw-export linkage when the JSON adapter provides it.
+- Only the relevant permitted fields and exact source excerpt; clearly distinguish raw recorded values from normalized values.
+- Freshness, extraction certainty, contradictions and whether the record actually feeds the model or is context/review-only.
+- For derived claims, the calculation/query ID, input record references, filters, units and method; distinguish scenario-overlay inputs from recorded facts.
+
+The initial collapsed response is concise, but **each material factual/numerical claim has a direct source or calculation link**. A generic file-name bibliography is insufficient. Aggregate evidence can be paginated; show all contributing record IDs/counts and a reproducible query, not a misleading citation to one example row. Enforce authorization/redaction when opening raw records too.
+
+Source refresh activates records and derived query projections together. Until activation succeeds, the old accepted dataset remains authoritative. Semantic indexing may lag, but the exact query service and source links must immediately match the accepted revision; mark semantic coverage partial and fall back to structured/lexical paths. A scenario overlay can change a modeled value without changing its original source row: display both and cite the overlay separately. Never pass the full raw baseline or unfiltered scenario history to the model.
+
+### 4.6 CSV and numerical RAG: structured retrieval first
+
+**Do not embed a CSV file as undifferentiated prose and ask the LLM to calculate from nearest-neighbor matches.** Similarity retrieval is useful for finding concepts, but cannot reliably count, join, compare dates, sum quantities or prove completeness.
+
+Use three complementary paths:
+
+| Question type | Authoritative execution | LLM role |
+| --- | --- | --- |
+| Exact lookup: requisition status, recorded ETA, qualification expiration | Typed lookup against visible loaded records | Explain the returned fields and cite the exact record |
+| Count/sum/filter/date comparison: overdue work, eligible stock, expiring qualifications | Allowlisted server-side query over the full eligible record set | Summarize the result; no arithmetic over retrieved text |
+| Readiness, uplift, donor effects, ship/shore propagation | Existing engine/ranking/preview service on captured state | Explain the modeled result and its assumptions |
+| Narrative reason: casualty notes, daily report explanation | Exact/lexical + optional semantic passage retrieval | Summarize supported narrative with span citations |
+| Mixed question: why a number changed or why a capability is at risk | Structured result + engine dependencies + supporting passages | Connect verified claims without inventing causal relationships |
+
+#### Table and field contracts
+
+- Register each supported table with its logical name, owner/unit kind, stable keys, join keys, field types, units, null policy, knowledge/effective timestamps and source locator rules. Reuse ingest normalization; do not introduce a second parser with different meanings.
+- Treat NIINs, requisition/document numbers, hull IDs and equipment codes as strings, preserving leading zeroes. Missing does not mean zero; an empty set, unknown value and unreadable source are different states.
+- Use timezone-aware timestamp comparisons; distinguish recorded ETA, actual completion and modeled completion. Resolve supply status histories using exercise-time rules before querying or rendering a row.
+- Validate numeric input, finite values, ranges and units at ingestion/query boundaries. Use exact decimal/integer arithmetic where quantities require it; retain engine probability precision and round only for display. Percentage-point change is not relative percentage change.
+- Join only on explicit validated keys and declared cardinalities. Prevent fan-out double counting across work orders, parts, staff and missions; report unmatched/duplicate keys and incomplete joins.
+- Use engine-supported availability/eligibility logic rather than treating all stock rows as transferable or treating every expired training row as a modeled blocker.
+- For counts and totals return numerator/denominator where meaningful, filters, distinct key, contributing records, excluded/missing rows, completeness status and calculation version. A top-k search result is never a complete population for an aggregate.
+
+#### Semantic representation of CSV rows
+
+When semantic search is added, serialize an eligible row or bounded entity bundle with table name, field names, units, identifiers and source locator, for example `table=requisition_status; unit=<unit>; doc_number=<string>; status=<visible code>; estimated_delivery=<date>`. Derive descriptions from actual schema/records, not model-generated facts. Row text is a search aid; the authoritative answer is hydrated from the typed query service using the returned record ID.
+
+Chunk long narrative cells separately but retain the parent row/entity link. Never split a quantity from its item/unit or attach a date to the wrong requisition. Mixed-time fields must be filtered **before serialization and embedding**. Apply the same visibility rules to browser embedding batches.
+
+#### Proposed bounded query interface
+
+Start with explicit operations such as `get_record`, `list_open_work`, `get_requisition_status`, `list_expiring_qualifications`, `get_capability_dependencies` and `summarize_unit_status`. These are proposed service operations, not existing endpoints. Define exact supported tables and semantics in M0; unsupported queries must ask for clarification or abstain. The backend builds parameterized operations. No arbitrary model-generated SQL, Python, dataframe expressions or client-selected paths.
+
+Return a typed `StructuredQueryResult` containing query ID/version, captured identity, scope, filters, typed values/units, completeness, warnings and evidence IDs. Aggregation scans the complete eligible set before pagination; row limits govern display, not silently truncate calculations. Bind selected entity references server-side and reject cross-unit mismatches. Model text references result IDs; the UI inserts authoritative values from those results.
+
+Examples are acceptance question templates, not assertions about fixture contents:
+
+- Ship: “Which open requisitions support this mission, and what are their currently reported delivery dates?”
+- Ship: “How many displayed systems are at risk, and which records or modeled gates explain each one?”
+- Shore: “Which capability is limiting ship support, and which work order, supply or staffing records support that finding?”
+- Shore: “What changes for dependent ship missions if this capability recovers?” — use the engine/isolated preview, not a CSV sum.
+
 ## 5. First-slice decision experience
 
 ### UI
 
-Extend the existing captain brief screen instead of creating a disconnected chat application:
+### Ship and Shore Overview entry points
+
+Add a shared `OverviewAssistantPanel` to `ShipOverview.tsx`, which already renders both unit domains. Keep the existing system/capability summary and 3D layout; place a concise **Command brief / Ask about this unit** panel beside or below the summary, with a collapsible source drawer. Also reuse the panel's typed results in the existing captain brief screen.
+
+- **Ship context:** selected ship, visible system/department, linked equipment/work/parts/staff records, affected missions and shore prerequisites. Prompts: “What needs attention?”, “Show the records behind this status”, “Which shore dependency affects us?”
+- **Shore context:** selected installation, capability area or facility, work orders, supply/staff/training evidence, support windows and dependent ship missions. Prompts: “Which support capability is limiting?”, “Which ships are affected?”, “What loaded records explain this warning?”
+- Do not infer real facility condition from illustrative 3D geometry or regional public hazard data. Preserve mock-installation labels and distinguish hazard assumptions from observed asset failures.
+- Match the existing overview's actual metric basis. Its ready-system share is a count-based display metric, not mission success probability. Where systems use worst scheduled interval gates versus nearest material-capability samples, expose that basis per system; do not invent a single overall readiness probability.
+- Centralize the status projection currently assembled in the captain API adapter into a shared tested backend projection for overview and assistant use, preserving behavior. Include Unknown counts and distinguish no systems from all systems ready.
+- On first load, show deterministic unit facts and evidence without waiting for a model or expensive fix ranking. Fetch options for an explicitly selected mission on demand; an overview-wide brief must not silently pick a mission for a recommendation.
+- Clicking a system/capability scopes the assistant and highlights its source records; clicking a mission opens the mission decision view. A user can ask a unit-level question without selecting a mission.
+- Unit/domain/system/filter changes invalidate the context as appropriate. If a question follows a displayed status filter, show that filter explicitly; never confuse the filtered list count with the whole-unit total. Include linked external-unit evidence only through validated dependencies and label it.
+
+### Mission decision drill-down
+
+Reuse the same components in the existing captain brief screen instead of creating a disconnected chat application:
 
 1. **Bottom line:** one or two sentences; mission, interval assessment, primary blocker.
 2. **Why:** up to three dependency explanations with expandable evidence.
@@ -225,7 +322,7 @@ Names below are proposed, not existing APIs. Keep existing endpoints compatible.
 
 ### Endpoints
 
-- `POST /api/decision-brief`: selected `ship_id`, `event_id`, expected `base_version`, expected `source_revision`; returns the typed packet and deterministic/validated explanation.
+- `POST /api/decision-brief`: explicit `scope` (`unit_overview` or `mission`), selected `ship_id` (legacy name covering ships and installations), validated `unit_kind`, optional system/capability focus and display filters, expected `base_version` and `source_revision`. Require `event_id` for mission scope; allow null for unit overview. Return typed overview/mission facts, metric basis, evidence and deterministic/validated explanation. Never infer a mission silently.
 - `POST /api/decision-brief/ask`: short question, server-issued packet/session ID, expected identity; context is loaded server-side, not accepted as authoritative browser claims.
 - `GET /api/decision-brief/evidence/{evidence_id}`: resolves only an eligible server-issued reference for a packet; returns `409`/`410` when no longer resolvable, never substitutes current text for an old citation.
 - `GET /api/assistant/status`: mode, model identifier, capability checks, lexical/semantic coverage and fallback state; no keys or sensitive endpoint credentials.
@@ -258,7 +355,9 @@ Illustrative response shape (field names may be refined before implementation):
 }
 ```
 
-Define Pydantic models for `DecisionIdentity`, `DecisionClaim`, `EvidenceRef`, `DecisionOption`, `DecisionPacket`, `DecisionExplanation`, `AskDecisionBody` and typed errors. Claims carry a kind (`reported`, `modeled`, `assumption`, `suggestion`), source/engine references, nullable values and explicit units. Engine claims reference calculation identity and input provenance; not every numerical result is directly stated in a source document.
+Extend packet identity with `scope`, `unit_kind`, optional focused entity and explicit filters; `event_id` is nullable only for unit-overview scope. Include these fields in packet, query and model-cache keys. The example above illustrates mission scope; an overview response sets `scope=unit_overview` and `event_id=null`.
+
+Define Pydantic models for `DecisionIdentity`, `DecisionClaim`, `EvidenceRef`, `StructuredQueryResult`, `OverviewAssessment`, `DecisionOption`, `DecisionPacket`, `DecisionExplanation`, `AskDecisionBody` and typed errors. Claims carry a kind (`reported`, `modeled`, `assumption`, `suggestion`), source/engine references, nullable values and explicit units. Engine claims reference calculation identity and input provenance; not every numerical result is directly stated in a source document.
 
 The LLM output schema may reference only enumerated claim/option/evidence IDs. For the initial brief, constrain it to ordering and connecting verified claims using short explanation slots. Render critical facts from templates. Free-form causal text still requires evaluation: schema validity and numeric preservation alone do not prove support. Reject unsupported causal additions, dangling references, altered qualifiers or advice outside modeled options; fall back to the deterministic brief.
 
@@ -267,13 +366,16 @@ The LLM output schema may reference only enumerated claim/option/evidence IDs. F
 | File | Responsibility |
 | --- | --- |
 | `missiontwin/decision_models.py` | Strict request/response/claim contracts |
-| `missiontwin/decision.py` | State capture, mission packet, objective policy, template brief |
+| `missiontwin/decision.py` | State capture, overview/mission packets, objective policy, template brief |
+| `missiontwin/loaded_queries.py` | Proposed read-only typed record lookups, complete-set aggregates, provenance and explicit join policies |
+| `missiontwin/overview.py` | Proposed shared status/count/basis projection used by both overviews and assistant |
 | `missiontwin/retrieval.py` | Eligible evidence corpus, exact/lexical search, fusion and provenance |
 | `missiontwin/assistant.py` | Bounded intent routing, model explanation, validation and budgets |
 | `missiontwin/semantic_index.py` | Later optional LanceDB lifecycle and browser batch validation |
 | `missiontwin/api.py` | Thin routes and state integration |
 | `missiontwin/llm.py` | New task timeout/cache plumbing and reusable transport |
-| `web/src/captain/components/brief/` | Decision cards, options, citations, follow-up panel |
+| `web/src/captain/components/brief/` | Shared overview assistant panel, mission decision cards, options, citations, source tables and follow-ups |
+| `web/src/captain/screens/ShipOverview.tsx` | Embed the shared assistant in both Ship and Shore Overview domains |
 | `web/src/captain/api/{api,types}.ts` | Typed API integration |
 | `web/src/captain/workers/embed.worker.ts` | Later self-hosted browser embedding worker |
 | `scripts/evaluate_decision_assistant.py` | Offline/mock evaluation and opt-in live endpoint evaluation |
@@ -283,6 +385,14 @@ The LLM output schema may reference only enumerated claim/option/evidence IDs. F
 Use shared services rather than making internal HTTP calls back into LOCKER. No changes to engine probability semantics are needed for this feature.
 
 ## 7. Existing LLM endpoint integration
+
+### Local `.env` secret storage (required)
+
+Store the actual API key only in the repository-root local `.env`, loaded by the Python backend. Copy `.env.example` only if `.env` does not already exist; never overwrite an existing user's configuration. Commit only placeholder names in `.env.example`, not a working credential. Never ask a user to paste a key into chat.
+
+Current `.gitignore` already excludes `.env` and `.env.*` while allowing `.env.example`. Verify with `git check-ignore .env` and confirm `git ls-files -- .env` returns no tracked file before committing; ignore rules do not remove a previously tracked secret. If a key is ever committed, remove tracking and rotate it immediately—deleting the latest file does not remove Git history.
+
+The key must never appear in `VITE_*` variables, browser bundles/storage, API status responses, source/evidence cards, prompts, caches, logs or exported briefs. Browser requests go to LOCKER; only the Python backend sends the key to the configured provider. Restrict local file permissions where feasible and exclude `.env` from backups/sharing packages. This checkout is in OneDrive: Git ignore does not prevent cloud sync; use a non-synced checkout for a strict local-only secret policy or explicitly approve the sync exposure. Backend process environment takes precedence over `.env`; changing the file requires a restart with current loading behavior.
 
 ### Reuse existing configuration
 
@@ -335,7 +445,9 @@ Each milestone ends with runnable acceptance evidence. Implement on a feature br
 
 - [ ] Obtain Keystone source revision and relevant tests, if available: `vector_index.py`, `documents.py`, `assistant.py`, `static/embed-worker.js`, `offline_bundle.py`, dependency metadata and notices. No source access is required to implement the first slice independently.
 - [ ] Verify live endpoint API shape/model capabilities using synthetic inputs; record safe configuration, latency and token limits without credentials.
-- [ ] Trace selected-mission IDs, rankings, knowledge-time filters and citation resolution against current main.
+- [ ] Trace ship/shore overview metric mapping, selected-unit/mission IDs, rankings, knowledge-time filters and citation resolution against current main.
+- [ ] Define table/field contracts, stable record/join keys, units, completeness and provenance rules for the first ship and installation queries.
+- [ ] Verify `.env` exclusion and backend-only credential flow without reading or logging the actual key.
 - [ ] Freeze packet/claim schema, objective wording and first acceptance mission.
 - [ ] Establish baseline brief/ranking latency and test runtime.
 
@@ -344,15 +456,18 @@ Each milestone ends with runnable acceptance evidence. Implement on a feature br
 ### M1 — Deterministic decision-brief vertical slice (first coding milestone)
 
 - [ ] Add typed packet models and immutable capture service with revision/version/epoch checks.
-- [ ] Build a mission-specific claim ledger, dependency explanation, warnings, options and no-change baseline.
+- [ ] Add shared loaded-record queries and overview projection; keep overview and assistant counts/status/metric bases identical.
+- [ ] Build unit-overview claim ledgers for KESSLER and NSNORFOLK, with direct loaded-source cards and optional system/capability focus.
+- [ ] Build mission-specific dependency explanations, warnings, on-demand options and no-change baseline.
 - [ ] Preserve current candidate ranking basis; show mission-specific effects without relabeling the ranking.
-- [ ] Add eligible linked evidence and exact/lexical retrieval; enforce knowledge-time and reference-corpus exclusion.
+- [ ] Add complete-set structured CSV queries plus eligible linked evidence and exact/lexical retrieval; enforce knowledge-time and reference-corpus exclusion.
+- [ ] Return row/field provenance and reproducible aggregate lineage; separate original records, normalized values and scenario overlays.
 - [ ] Add `POST /api/decision-brief` and revision-checked evidence resolution.
-- [ ] Extend captain brief UI with bottom line, options, donor effects, uncertainty and evidence drawer.
+- [ ] Add the shared assistant panel to both Ship and Shore Overview and reuse its cards in the captain brief UI; include bottom line, source tables, uncertainty and mission drill-down for options/donor effects.
 - [ ] Add stale-state/error handling; keep existing `/api/brief` and legacy UI working.
 - [ ] Add backend and isolated browser acceptance tests.
 
-**Exit:** On the chosen synthetic mission, a captain can identify the blocker, compare modeled options and inspect supporting evidence without navigating the raw corpus. All displayed values match the engine, and the complete experience works with no model configured.
+**Exit:** Ship and Shore Overview each explain the selected unit's status using directly linked loaded records; counts and classifications match the displayed overview. A captain can drill into a supported mission, identify its blocker, compare modeled options and inspect evidence without navigating the raw corpus. Refreshing a source updates overview, assistant queries and citations together after activation. Recorded values match typed loaded data; modeled values match the engine. Everything works with no model configured.
 
 ### M2 — Existing live LLM explanation and bounded follow-ups
 
@@ -403,7 +518,12 @@ Create an independent fixture set from checked-in synthetic sources and engine o
 
 | Area | Required cases / gate |
 | --- | --- |
-| Numerical fidelity | Every displayed probability, percentage-point delta, date and donor effect equals the captured typed engine value at the documented display precision; unsupported values rejected |
+| Numerical fidelity | Every recorded value equals its typed loaded source field; every modeled probability, percentage-point delta, date and donor effect equals the captured engine value at documented precision; unsupported values rejected |
+| CSV completeness and joins | Aggregates use the complete eligible set, not top-k matches; tests cover null vs zero, leading-zero identifiers, duplicate/fan-out joins, missing keys, units, timestamp boundaries and mixed-time status histories |
+| Ship/Shore overview parity | Unit counts/status/metric bases match overview projection, including Unknown, zero systems, filtered lists and cross-domain switching; count-based ready share is never called mission probability |
+| Direct source lineage | Record cards show exact permitted row/field/span, provenance and revision; normalized and overlay values are labeled; aggregates expose contributing records and calculation/filter lineage |
+| Refresh consistency | Accepted replacement updates both overviews and assistant facts; rejected replacement preserves prior authority; semantic lag cannot serve previous-revision facts |
+| Secret storage | `.env` is ignored/untracked, `.env.example` contains placeholders only, and keys are absent from browser assets/storage, prompts, responses, logs, caches and export fixtures |
 | Assessment meaning | Interval vs start-time estimates and material scores never conflated; unknown remains unknown |
 | Claim support | Citation IDs resolve, quoted spans match, qualifications survive; test negation, causality, units, conflicting evidence and correct numbers attached to the wrong mission |
 | Exact retrieval | All curated exact equipment/requisition/mission-ID questions retrieve the gold record within top five |
@@ -425,11 +545,11 @@ Live-model release report should list supported/unsupported claims, citations, a
 ## 11. Immediate implementation order
 
 1. Confirm endpoint address, exact model ID and approved synthetic-data use; acquire Keystone source if available.
-2. Implement M1 packet contracts and deterministic backend tests first.
-3. Build the captain brief cards and evidence drill-down against the typed packet.
+2. Implement M1 packet contracts, loaded-data query/overview projection services and deterministic backend tests first.
+3. Build shared Ship/Shore Overview assistant cards, direct source drill-down and mission brief navigation against the typed packet.
 4. Add M2 model explanation and bounded follow-ups through the existing client.
 5. Evaluate the actual model before widening the assistant's scope.
 6. Add M3 browser embeddings only after the lexical/grounding baseline is measurable.
 7. Enable isolated what-if, then review-history comparisons as separate increments.
 
-**Recommended first pull request:** `DecisionPacket` schemas + immutable mission capture + deterministic brief endpoint + exact evidence tests. No new dependencies, no model requirement, no scenario writes. This creates the trustworthy boundary on which both the LLM and Keystone-derived semantic search can safely build.
+**Recommended first pull request:** `DecisionPacket`/`StructuredQueryResult` schemas + immutable unit/mission capture + shared loaded-data/overview projection + deterministic brief endpoint + ship/shore source-lineage and CSV numerical tests. Follow with the shared overview panel before adding live LLM wording. No new dependencies, no model requirement, no scenario writes. This creates the trustworthy boundary on which both the LLM and Keystone-derived semantic search can safely build.

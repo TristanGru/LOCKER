@@ -278,6 +278,11 @@ export class BaseScene {
   private lastFrame = 0;
   private animate = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   private target: THREE.Vector3;
+  /** Selected facility: the camera flies to it, its pin pulses and the other labels fade. */
+  private selected: string | null = null;
+  private tween: { p0: THREE.Vector3; p1: THREE.Vector3; t0: THREE.Vector3; t1: THREE.Vector3; start: number; dur: number } | null = null;
+  private ray = new THREE.Raycaster();
+  private down: { x: number; y: number } | null = null;
 
   constructor(
     private host: HTMLElement,
@@ -304,6 +309,7 @@ export class BaseScene {
     this.ctl.maxDistance = layout ? 620 : 520;
     this.ctl.addEventListener('start', () => {
       this.userMoved = true;
+      this.tween = null; // the user took the camera; stop flying
     });
     this.ctl.addEventListener('change', () => {
       this.dirty = true;
@@ -346,12 +352,31 @@ export class BaseScene {
       this.visible = entries.some((e) => e.isIntersecting);
     });
     this.io.observe(host);
+    r.domElement.addEventListener('pointerdown', this.onDown);
+    r.domElement.addEventListener('pointerup', this.onUp);
     r.setAnimationLoop(this.loop);
   }
 
+  private onDown = (e: PointerEvent) => {
+    this.down = { x: e.clientX, y: e.clientY };
+  };
+
+  /** A click (not a drag) on a pin sphere selects it, same as clicking its label. */
+  private onUp = (e: PointerEvent) => {
+    const d = this.down;
+    this.down = null;
+    if (!d || !this.pinSet || Math.hypot(e.clientX - d.x, e.clientY - d.y) > 5) return;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.ray.setFromCamera(new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1), this.cam);
+    const hit = this.ray.intersectObject(this.pinSet.group, true).find((h) => h.object.name.startsWith('pin_'));
+    if (hit) this.onPick(hit.object.name.slice(4));
+  };
+
   setSystems(systems: ShipSystem[]) {
     if (this.pinSet) disposePins(this.pinSet);
-    this.pinSet = buildPins({ g: this.layoutGroup, mounts: this.mounts, len: this.layout ? 120 : 300, labelAll: true, pinAction: 'Open its details.' }, systems, this.overlay, this.onPick);
+    this.pinSet = buildPins({ g: this.layoutGroup, mounts: this.mounts, len: this.layout ? 120 : 300, labelAll: true, pinAction: 'Zoom in and show its details.' }, systems, this.overlay, this.onPick);
+    if (this.selected && !this.pinSet.pins[this.selected]) this.selected = null;
+    this.markSelected();
     this.dirty = true;
   }
 
@@ -387,30 +412,80 @@ export class BaseScene {
   setView(view: BaseView) {
     this.currentView = view;
     this.userMoved = false;
-    this.frameView();
+    this.selected = null;
+    this.markSelected();
+    const { pos, target } = this.framePose();
+    this.flyTo(pos, target, 700);
   }
 
-  /** Pull back on narrow panels so the waterfront stays in frame. */
-  private frameView() {
+  /** Camera pose for the current named view. Pulls back on narrow panels so the waterfront stays in frame. */
+  private framePose() {
     const fit = Math.max(1, 1.45 / this.cam.aspect);
     const [x, y, z] = OFFSETS[this.layout ? 'outline' : 'stylized'][this.currentView];
     // The overhead view looks further inland so the toolbar doesn't cover facilities behind the waterfront.
     const inland = this.layout && this.currentView === 'overhead' ? -22 : 0;
-    this.cam.position.set(this.target.x + x * fit, this.target.y + y * fit, this.target.z + inland + z * fit);
-    this.ctl.target.copy(this.target);
-    this.ctl.target.z += inland;
+    return {
+      pos: V(this.target.x + x * fit, this.target.y + y * fit, this.target.z + inland + z * fit),
+      target: V(this.target.x, this.target.y, this.target.z + inland),
+    };
+  }
+
+  private frameView() {
+    const { pos, target } = this.framePose();
+    this.tween = null;
+    this.cam.position.copy(pos);
+    this.ctl.target.copy(target);
     this.ctl.update();
     this.dirty = true;
   }
 
+  /** Smooth, eased camera move so the eye can follow where it is going. */
+  private flyTo(pos: THREE.Vector3, target: THREE.Vector3, dur = 1000) {
+    if (!this.animate) {
+      this.tween = null;
+      this.cam.position.copy(pos);
+      this.ctl.target.copy(target);
+      this.ctl.update();
+      this.dirty = true;
+      return;
+    }
+    this.tween = { p0: this.cam.position.clone(), p1: pos, t0: this.ctl.target.clone(), t1: target, start: performance.now(), dur };
+    this.dirty = true;
+  }
+
+  /** Fly in close to one facility, keeping the current compass bearing and looking down at about 40 degrees. */
   focus(id: string) {
     const pin = this.pinSet?.pins[id];
     if (!pin) return;
     this.userMoved = true;
-    this.ctl.target.copy(pin.p);
-    const offset = this.cam.position.clone().sub(this.ctl.target).setLength(this.layout ? 62 : 95);
-    this.cam.position.copy(pin.p).add(offset);
-    this.ctl.update();
+    this.selected = id;
+    this.markSelected();
+    const dist = this.layout ? 40 : 72;
+    const bearing = this.cam.position.clone().sub(this.ctl.target).setY(0);
+    if (bearing.lengthSq() < 1e-6) bearing.set(0, 0, 1);
+    bearing.normalize();
+    const tilt = 0.72;
+    // Aim a little to the right of the pin so it sits in the open space left of the detail card.
+    const right = new THREE.Vector3().crossVectors(bearing.clone().negate(), new THREE.Vector3(0, 1, 0)).normalize();
+    const target = pin.p.clone().add(V(0, -2, 0)).addScaledVector(right, dist * 0.22 * Math.max(1, 1.6 / this.cam.aspect));
+    const pos = target.clone().addScaledVector(bearing, dist * Math.cos(tilt)).add(V(0, dist * Math.sin(tilt), 0));
+    this.flyTo(pos, target, 1100);
+  }
+
+  /** Back to the overview of the current view. */
+  clearFocus() {
+    this.selected = null;
+    this.userMoved = false;
+    this.markSelected();
+    const { pos, target } = this.framePose();
+    this.flyTo(pos, target, 900);
+  }
+
+  private markSelected() {
+    for (const a of this.pinSet?.anchors ?? []) {
+      a.el?.classList.toggle('sel', a.id === this.selected);
+      a.el?.classList.toggle('dim', !!this.selected && a.id !== this.selected);
+    }
     this.dirty = true;
   }
 
@@ -446,6 +521,22 @@ export class BaseScene {
         this.normal.offset.y += step * 0.007;
       }
       for (const ring of this.pinSet?.rings ?? []) ring.rotation.z += step;
+      if (this.tween) {
+        const tw = this.tween;
+        const k = Math.min(1, (now - tw.start) / tw.dur);
+        const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; // ease in-out cubic
+        this.cam.position.lerpVectors(tw.p0, tw.p1, e);
+        this.ctl.target.lerpVectors(tw.t0, tw.t1, e);
+        this.ctl.update();
+        this.dirty = true;
+        if (k >= 1) this.tween = null;
+      }
+      // The selected pin pulses larger so it stands out in a busy layout.
+      for (const o of this.pinSet?.group.children ?? []) {
+        if (!o.name.startsWith('pin_')) continue;
+        o.scale.setScalar(o.name === 'pin_' + this.selected ? 1 + 0.12 * Math.sin(now / 220) : 1);
+      }
+      if (this.selected) this.dirty = true;
       this.renderer.render(this.scene, this.cam);
       if (this.pinSet) layoutLabels(this.pinSet.anchors, this.cam, this.w, this.h, () => false, this.chromeInsets());
     } catch (error) {
@@ -458,6 +549,8 @@ export class BaseScene {
     this.renderer.setAnimationLoop(null);
     this.ro.disconnect();
     this.io.disconnect();
+    this.renderer.domElement.removeEventListener('pointerdown', this.onDown);
+    this.renderer.domElement.removeEventListener('pointerup', this.onUp);
     if (this.pinSet) disposePins(this.pinSet);
     this.overlay.replaceChildren();
     disposeTree(this.layoutGroup);

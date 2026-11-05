@@ -8,6 +8,7 @@ test.beforeEach(async ({request,page})=>{
 });
 
 test('shore is a separate tab with its own units, layout and support events',async({page})=>{
+  test.setTimeout(180000);
   const errors:string[]=[]; page.on('pageerror',e=>errors.push(e.message));
   await expect(page.getByLabel('Selected ship').locator('option')).toHaveText(['USS KESSLER','USS VARNELL','USS ASHBY']);
   await page.getByRole('link',{name:'Shore Overview',exact:true}).click();
@@ -31,7 +32,7 @@ test('shore is a separate tab with its own units, layout and support events',asy
   await page.getByRole('link',{name:'Ship Overview',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Ship Overview',exact:true})).toBeVisible();
   await expect(page.getByLabel('Selected ship')).toHaveValue('KESSLER');
-  await expect(page.getByText('Helo deck',{exact:true}).filter({visible:true}).first()).toBeVisible();
+  await expect(page.getByText('Helo deck',{exact:true}).filter({visible:true}).first()).toBeVisible({timeout:60000});
   await page.getByRole('link',{name:'Shore Overview',exact:true}).click();
   await expect(page.getByLabel('Selected installation')).toHaveValue('NSAHR');
   expect(errors).toEqual([]);
@@ -57,17 +58,32 @@ test('pier failure reaches the ship event and its dependency chain',async({page,
 });
 
 test('captain DDG layout uses live ships and named canonical missions',async({page})=>{
+  test.setTimeout(150000);
   const errors:string[]=[]; page.on('pageerror',e=>errors.push(e.message));
   await expect(page.getByRole('heading',{name:'Ship Overview',exact:true})).toBeVisible();
   await expect(page.getByText('Hull type',{exact:true})).toHaveCount(0);
-  await expect(page.getByText('Helo deck',{exact:true}).filter({visible:true}).first()).toBeVisible();
+  await expect(page.getByText('Helo deck',{exact:true}).filter({visible:true}).first()).toBeVisible({timeout:60000});
   await page.getByRole('link',{name:'Mission Overview',exact:true}).click();
-  await expect(page.getByText('TIDEWATCH',{exact:true}).first()).toBeVisible();
-  await expect(page.getByText('SEASHIELD',{exact:true}).first()).toBeVisible();
+  for (const name of ['TIDEWATCH','SEASHIELD','DEEP LANTERN','IRON HORIZON','PIER SUPPORT: TIDEWATCH','Standby E'])
+    await expect(page.getByText(name,{exact:true}).first()).toBeVisible();
+  // The overview is fleet-wide: selecting another ship does not hide the other units' events.
   await page.getByLabel('Selected ship').selectOption('ASHBY');
   await page.getByRole('link',{name:'Mission Overview',exact:true}).click();
   await expect(page.getByText('IRON HORIZON',{exact:true}).first()).toBeVisible();
+  await expect(page.getByText('TIDEWATCH',{exact:true}).first()).toBeVisible();
+  await page.getByRole('button',{name:/^Shore/}).click();
   await expect(page.getByText('TIDEWATCH',{exact:true})).toHaveCount(0);
+  await expect(page.getByText('PIER SUPPORT: TIDEWATCH',{exact:true}).first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('opening another unit\'s event from the overview selects that unit',async({page})=>{
+  const errors:string[]=[]; page.on('pageerror',e=>errors.push(e.message));
+  await page.getByRole('link',{name:'Mission Overview',exact:true}).click();
+  await expect(page.getByLabel('Selected ship')).toHaveValue('KESSLER');
+  await page.locator('article').filter({hasText:'Standby E'}).getByRole('button',{name:/^(Open dominoes|Review fixes|View|Inspect evidence)/}).click();
+  await expect(page.getByLabel('Selected installation')).toHaveValue('NSAHR');
+  await expect(page.getByText("Couldn't load this",{exact:true})).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

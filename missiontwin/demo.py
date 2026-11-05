@@ -32,6 +32,10 @@ def main():
         parser.error('Source preflight failed: ' + '; '.join(health['configuration_errors'] +
                      [s + ': ' + '; '.join(gaps) for s, gaps in health['coverage'].items() if gaps]))
     state.fc()
+    # Rank every unit's options now, so the first Fixes view in a demo opens without a wait.
+    print('Ranking fix options for every unit...', flush=True)
+    for unit in state.baseline.profile.ship_ids:
+        state.ranking(unit)
     live_davey = os.environ.get('LOCKER_DAVEY_LIVE') == '1'
     mode = 'Ask Davey live after submit' if live_davey else 'offline'
     print(f'LOCKER demo ({mode}): http://0.0.0.0:{args.port} | source {state.baseline.source_revision}', flush=True)

@@ -24,6 +24,8 @@ export interface SourceRecord {
   stale: boolean;
   summary: string;
   fields: Record<string, string>;
+  /** The cited part of the source: one CSV row as column/value pairs, or the cited line(s) of a document. */
+  excerpt?: { kind: 'row'; pairs: [string, string][] } | { kind: 'lines'; lines: { n: number; text: string; hit: boolean }[] };
 }
 
 export interface Contradiction {
@@ -41,6 +43,19 @@ export interface FeedFreshness {
   asOf: string;
   ageHours: number;
   stale: boolean;
+  /** Unit the feed belongs to (ship or installation id), or 'squadron' for squadron-wide files. */
+  unit?: string;
+  unitName?: string;
+  system?: string;
+  file?: string;
+  status?: string;
+  usage?: string;
+  steward?: string;
+  refresh?: string;
+  thresholdDays?: number;
+  records?: number;
+  rejected?: number;
+  explanation?: string;
 }
 
 export interface Freshness {
@@ -53,6 +68,10 @@ export interface Mission {
   id: string;
   code: string;
   name: string;
+  /** The ship or installation that owns this event. */
+  unitId: string;
+  unitName: string;
+  unitKind: 'ship' | 'installation';
   type: string;
   description: string;
   date: string; // ISO
@@ -270,6 +289,12 @@ export interface ShipSystem {
   sourceIds: string[];
   isNextDomino: boolean;
   dominoVia: string | null; // the part or sailor behind it, when the domino is not the system itself
+  /** Worst requirement probability behind the status (NaN when evidence is insufficient). */
+  p?: number;
+  /** Events that require this system, with that event's requirement odds. */
+  missions?: { id: string; code: string; p: number }[];
+  /** The items (parts, casualties, work orders) that drive the requirement, worst first. */
+  evidence?: { title: string; detail: string; p: number }[];
 }
 
 export interface ShipDepartment {
@@ -381,6 +406,8 @@ export interface FixesPayload {
   missionId: string;
   fixes: Fix[];
   decided: Fix[];
+  /** Options shown earlier that an approved fix made unnecessary (no longer raise the odds). */
+  superseded: Fix[];
   /** Backend explanation when every evaluated option was pruned. */
   note?: string;
 }
@@ -470,6 +497,8 @@ export interface BriefSection {
 export interface Brief {
   missionId: string;
   title: string;
+  /** The unit the brief covers, e.g. "USS KESSLER (DDG-991)". */
+  unit: string;
   classification: string;
   generatedAt: string;
   bottomLine: string;
@@ -477,6 +506,44 @@ export interface Brief {
   status: Status;
   sections: BriefSection[];
   citations: SourceRecord[];
+  /** Structured detail for the printed brief (every mission of the unit, its requirements, ranked fixes). */
+  detail?: BriefDetail;
+}
+
+export interface BriefDetail {
+  asOf: string;
+  seed?: number;
+  runs?: number;
+  missions: {
+    id: string;
+    code: string;
+    name: string;
+    startDtg: string;
+    startLocal: string;
+    endDtg: string | null;
+    pInterval: number;
+    pStart: number;
+    status: Status;
+    consequence: string;
+    nextDomino: string | null;
+    requirements: {
+      label: string;
+      kind: string;
+      p: number;
+      /** Points the event's odds would gain if this requirement were made certain. */
+      gain: number;
+      drivers: { title: string; detail: string; source: string | null }[];
+    }[];
+    metCount: number;
+  }[];
+  fixes: {
+    rank: number;
+    title: string;
+    why: string[];
+    steps: string[];
+    effects: { code: string; before: number; after: number }[];
+    others: string;
+  }[];
 }
 
 export type LogType =

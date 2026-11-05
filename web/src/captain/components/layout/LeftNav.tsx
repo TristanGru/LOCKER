@@ -23,18 +23,19 @@ interface NavItem {
   to: string;
   label: string;
   icon: LucideIcon;
+  group: string;
 }
 
 export const NAV: NavItem[] = [
-  { to: '/', label: 'Ship Overview', icon: Ship },
-  { to: '/shore', label: 'Shore Overview', icon: Building2 },
-  { to: '/missions', label: 'Mission Overview', icon: LayoutDashboard },
-  { to: '/dominoes', label: "Davy's Dominoes", icon: Network },
-  { to: '/fixes', label: 'Fixes', icon: Wrench },
-  { to: '/feed', label: 'Change Feed', icon: Radio },
-  { to: '/what-if', label: 'What-If', icon: FlaskConical },
-  { to: '/brief', label: 'Readiness Brief', icon: FileText },
-  { to: '/log', label: 'Activity Log', icon: ScrollText },
+  { to: '/', label: 'Ship Overview', icon: Ship, group: 'Picture' },
+  { to: '/shore', label: 'Shore Overview', icon: Building2, group: 'Picture' },
+  { to: '/missions', label: 'Mission Overview', icon: LayoutDashboard, group: 'Picture' },
+  { to: '/dominoes', label: "Davy's Dominoes", icon: Network, group: 'Analysis' },
+  { to: '/fixes', label: 'Fixes', icon: Wrench, group: 'Analysis' },
+  { to: '/what-if', label: 'What-If', icon: FlaskConical, group: 'Analysis' },
+  { to: '/feed', label: 'Change Feed', icon: Radio, group: 'Record' },
+  { to: '/brief', label: 'Readiness Brief', icon: FileText, group: 'Record' },
+  { to: '/log', label: 'Activity Log', icon: ScrollText, group: 'Record' },
 ];
 
 const NAV_KEY = 'locker-nav-collapsed';
@@ -98,23 +99,29 @@ export function LeftNav() {
           aria-expanded={!collapsed}
           aria-label={collapsed ? 'Expand menu' : 'Collapse menu'}
           title={collapsed ? 'Expand menu' : 'Collapse menu'}
-          className="grid h-9 w-9 place-items-center rounded-lg text-ink-muted transition hover:bg-ink/[0.06] hover:text-ink"
+          className="grid h-8 w-8 place-items-center rounded text-ink-muted transition hover:bg-abyss-800 hover:text-ink"
         >
           {collapsed ? <PanelLeftOpen className="h-5 w-5" aria-hidden /> : <PanelLeftClose className="h-5 w-5" aria-hidden />}
         </button>
       </div>
-      <ul className="flex-1 space-y-1 p-3">
-        {NAV.map((item) => (
+      <ul className="flex-1 pb-3">
+        {NAV.map((item, i) => (
           <li key={item.to}>
+            {item.group !== NAV[i - 1]?.group &&
+              (collapsed ? (
+                <div className="mx-3 my-2 border-t border-line" aria-hidden />
+              ) : (
+                <div className="px-4 pb-1.5 pt-4 text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-ink-dim">{item.group}</div>
+              ))}
             <NavLink
               to={item.to}
               end={item.to === '/'}
               title={item.label}
               className={({ isActive }) =>
                 clsx(
-                  'flex items-center gap-2.5 rounded-lg py-2.5 text-[0.95rem] font-semibold transition-colors',
-                  collapsed ? 'justify-center px-0' : 'px-3',
-                  isActive ? 'bg-ink/[0.08] text-ink' : 'text-ink-muted hover:bg-ink/[0.06] hover:text-ink',
+                  'flex items-center gap-2.5 border-l-[3px] py-2 text-[0.93rem] transition-colors',
+                  collapsed ? 'justify-center px-0' : 'pl-[13px] pr-3',
+                  isActive ? 'border-accent bg-abyss-800 font-semibold text-ink' : 'border-transparent font-medium text-ink-muted hover:bg-abyss-800 hover:text-ink',
                 )
               }
             >

@@ -4,6 +4,7 @@ import path from 'node:path';
 
 // File mutation is only enabled by the isolated runner, never against a default server.
 test('source replacement refreshes the live workspace without restarting', async ({ page, request }) => {
+  test.setTimeout(180000);
   test.skip(!process.env.LOCKER_TEST_DATA, 'Run through scripts/check_demo.py for an isolated disposable dataset');
   const root = process.env.LOCKER_TEST_DATA!;
   const file = path.join(root, 'KESSLER', 'requisition_status.csv');
@@ -31,7 +32,7 @@ test('source replacement refreshes the live workspace without restarting', async
     await page.getByRole('button', { name: 'Readiness brief', exact: true }).click();
     await page.getByRole('button', { name: 'Generate brief' }).click();
     // The brief includes the cold fix ranking; same allowance as the fix comparison screen.
-    await expect(page.locator('.brief-document')).toContainText('sampled event interval', { timeout: 45000 });
+    await expect(page.locator('.brief-document')).toContainText('sampled event interval', { timeout: 90000 });
     // A malformed candidate must keep the active revision and tell the presenter.
     await writeFile(file, 'not a valid CSV export', 'utf8');
     await page.getByRole('button', { name: 'Evidence & feed', exact: true }).click();

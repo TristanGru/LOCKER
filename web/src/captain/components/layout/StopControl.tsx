@@ -75,7 +75,7 @@ function StopDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <AnimatePresence>
       {open && (
-        <motion.div className="fixed inset-0 z-[100] grid place-items-center bg-black/60 p-6 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={onClose}>
+        <motion.div className="fixed inset-0 z-[100] grid place-items-center bg-black/60 p-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={onClose}>
           <motion.div
             role="alertdialog"
             aria-modal="true"
@@ -88,7 +88,7 @@ function StopDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
             className="glass-strong w-full max-w-lg border-risk/50 p-7"
           >
             <div className="flex items-center gap-3">
-              <div className="grid h-12 w-12 place-items-center rounded-xl bg-risk/20">
+              <div className="grid h-12 w-12 place-items-center rounded bg-risk/15">
                 <OctagonX className="h-7 w-7 text-risk" aria-hidden />
               </div>
               <h2 id="stop-title" className="text-2xl font-bold">Stop LOCKER?</h2>
@@ -103,14 +103,14 @@ function StopDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
                 onChange={(e) => setReason(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && confirm()}
                 placeholder="e.g. Data looks wrong, verifying with CSO"
-                className="mt-2 w-full rounded-xl border border-line bg-abyss-950/60 px-4 py-3 text-base text-ink placeholder:text-ink-dim focus:border-accent/60 focus:outline-none"
+                className="mt-2 w-full rounded border border-line-strong bg-abyss-900 px-4 py-2.5 text-base text-ink placeholder:text-ink-dim focus:border-accent focus:outline-none"
               />
             </label>
             <div className="mt-6 flex justify-end gap-3">
               <button className="btn-ghost" onClick={onClose}>
                 Cancel
               </button>
-              <button ref={confirmRef} className="btn border-risk bg-risk px-5 text-white hover:bg-[#ff6371]" disabled={busy} onClick={confirm}>
+              <button ref={confirmRef} className="btn-risk px-5" disabled={busy} onClick={confirm}>
                 <OctagonX className="h-4 w-4" aria-hidden /> Stop everything
               </button>
             </div>
@@ -134,8 +134,7 @@ export function StoppedBanner({ at }: { at?: string }) {
         >
           <div
             role="status"
-            className="flex items-center gap-3 border-b border-risk/50 px-6 py-2.5 text-base font-semibold text-white"
-            style={{ backgroundImage: 'repeating-linear-gradient(-45deg, rgba(251,77,93,0.55) 0 14px, rgba(251,77,93,0.35) 14px 28px)' }}
+            className="flex items-center gap-3 border-b border-black/20 bg-risk px-6 py-2 text-[0.95rem] font-semibold text-white"
           >
             <OctagonX className="h-5 w-5" aria-hidden />
             LOCKER STOPPED{at ? ` at ${at}` : ''}. Actions in this browser are paused until Resume. Other sessions remain active.
