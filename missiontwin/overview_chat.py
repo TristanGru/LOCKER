@@ -17,6 +17,7 @@ from fastapi import HTTPException
 from . import auth
 from .llm import LLMUnavailable, redact
 from .overview import OverviewRequest, answer as select_evidence
+from .davey_models import DaveyWarningDraft, DaveyNodeDraft, DaveyLinkDraft
 
 
 class Strict(BaseModel):
@@ -40,19 +41,35 @@ class Section(Strict):
     sentences: list[Sentence] = Field(min_length=1, max_length=6)
 
 
+class MissionExtensions(Strict):
+    warnings: list[DaveyWarningDraft] = Field(default_factory=list, max_length=3)
+    proposed_nodes: list[DaveyNodeDraft] = Field(default_factory=list, max_length=4)
+    proposed_links: list[DaveyLinkDraft] = Field(default_factory=list, max_length=6)
+
+
+class ConversationRequest(OverviewRequest):
+    view: Literal['overview', 'missions', 'dominoes'] = 'overview'
+    event_id: str | None = Field(default=None, max_length=180)
+    node_id: str | None = Field(default=None, max_length=300)
+
+
 class GeneratedAnswer(Strict):
     answer_status: Literal['supported', 'partial', 'insufficient_evidence', 'out_of_scope']
     sections: list[Section] = Field(min_length=1, max_length=4)
+    mission_extensions: MissionExtensions | None = None
 
 
 class MessageRequest(Strict):
     packet_id: str = Field(max_length=64)
     question: str = Field(min_length=1, max_length=1500)
     semantic_ids: list[str] = Field(default_factory=list, max_length=12)
+    request_id: str | None = Field(default=None, min_length=8, max_length=80)
 
 
 def support_packet(packet):
     """Support IDs resolve to captured data, never model-selected paths."""
+    if 'supports' in packet:
+        return copy.deepcopy(packet['supports'])
     supports = {}
     identity = packet['identity']
     for e in packet['evidence']:
@@ -149,7 +166,13 @@ def generate(client, packet, question, history, semantic_ids):
     request = OverviewRequest(unit_id=packet['identity']['unit_id'], base_version=packet['identity']['version'],
                               source_revision=packet['identity']['source_revision'], question=question,
                               semantic_ids=semantic_ids, explain=False)
-    selection = select_evidence(client, packet, request)
+    selection = ({'evidence_ids': [e['id'] for e in packet['evidence'][:12]]}
+                 if '_domain' in packet else select_evidence(client, packet, request))
+    if '_domain' in packet:
+        from .davey_evidence import retrieve
+        domain = packet['_domain']
+        eligible, _ = retrieve(domain.corpus, question, domain.mission, set(domain.linked_files))
+        selection = {'evidence_ids': [e.id for e in eligible] + [sid for sid in semantic_ids if sid in supports]}
     evidence_ids = set(selection['evidence_ids'])
     # Keep assessment facts and their direct source inputs even if lexical similarity is low.
     for fact in packet['facts'][:12]:
@@ -177,24 +200,46 @@ def generate(client, packet, question, history, semantic_ids):
     if re.search(r'\b(apply|approve|delete|execute|simulate)\b|\bwhat if\b', question, re.I):
         return {'method': 'template', 'answer_status': 'out_of_scope', 'fallback_reason': None,
                 'sections': [{'heading': 'Answer', 'sentences': [{'text': 'This overview chat is read-only. I can explain loaded evidence and existing dependencies, but cannot apply changes or run simulations. Use the existing decision or what-if workflow.', 'citations': []}]}], 'citations': []}
-    if not client.configured:
-        return fallback(packet, supports)
+    # The shared client validates cache hits before checking live enablement.
     text = json.dumps(context, sort_keys=True, default=str)
     for name in client.forbidden_names:
         if len(name) >= 3:
             text = re.sub(r'\b' + re.escape(name) + r'\b', '[REDACTED]', text, flags=re.I)
     if len(text) > 65000:
         return fallback(packet, supports, 'context_budget')
-    messages = [{'role': 'system', 'content': SYSTEM}, {'role': 'user', 'content': text}]
+    system = SYSTEM
+    if '_domain' in packet:
+        from .davey import SYSTEM_PROMPT
+        system += '\nThis is a selected mission/graph context, not a whole-unit overview. Do not infer all-mission totals. '
+        system += 'Optionally include mission_extensions with warnings, proposed_nodes, proposed_links using the following domain rules. '
+        system += SYSTEM_PROMPT.replace('Return only JSON matching the required schema.', 'Use the supplied combined schema.')
+        from .davey_models import DAVEY_SCHEMA
+        context['domain_extension_schema'] = DAVEY_SCHEMA
+        text = json.dumps(context, sort_keys=True, default=str)
+        if len(text) > 65000:
+            return fallback(packet, supports, 'context_budget')
+    messages = [{'role': 'system', 'content': system}, {'role': 'user', 'content': text}]
     last_reason = 'provider_or_timeout'
     for attempt in range(2):
         try:
-            output, method = client.run('overview_chat', messages, text.encode(), lambda d: render_answer(d, chosen),
-                                        extra=packet['packet_id'] + ':chat-v1:' + str(attempt))
+            def validate(data):
+                rendered = render_answer(data, chosen)
+                if '_domain' in packet:
+                    from .assistant_context import mission_extensions
+                    rendered['domain_answer'] = mission_extensions({**packet, 'supports': chosen}, data.get('mission_extensions'), 'llm')
+                return rendered
+            output, method = client.run('overview_chat', messages, text.encode(), validate,
+                                        extra=packet['packet_id'] + ':chat-v2:' + str(attempt),
+                                        response_schema=GeneratedAnswer.model_json_schema())
+            if output.get('domain_answer'):
+                output['domain_answer']['generation'].update(mode=method, label='Cached LLM' if method == 'cache' else 'Live LLM')
             return {**output, 'method': method, 'fallback_reason': None}
         except LLMUnavailable as error:
             message = str(error)
             if 'invalid LLM output' not in message:
+                if not client.configured:
+                    last_reason = 'offline'
+                    break
                 last_reason = 'provider_timeout' if 'timeout' in message.lower() else 'provider_rejected_request' if 'HTTPStatusError' in message else 'privacy_guard' if 'PII guard' in message else 'provider_unavailable'
                 break
             last_reason = 'invalid_answer_or_citations'
@@ -249,7 +294,10 @@ class Conversations:
 
     @staticmethod
     def public(session):
-        return copy.deepcopy({k: session[k] for k in ('id', 'packet_id', 'identity', 'messages', 'busy')})
+        public = copy.deepcopy({k: session[k] for k in ('id', 'packet_id', 'identity', 'messages', 'busy')})
+        for message in public['messages']:
+            message.pop('question_fingerprint', None)
+        return public
 
 
 def register_chat(app, get_state):
@@ -288,17 +336,22 @@ def register_chat(app, get_state):
             state.check_version(body.base_version)
             if body.source_revision != state.baseline.source_revision:
                 raise HTTPException(409, 'Sources changed; start a new conversation')
-            packet = build_packet(state, body, state.fc(), registry(state.baseline.profile))
-            client = copy.copy(state.client)
-            client.sent_prompts = []
+            if body.view == 'overview':
+                packet = build_packet(state, body, state.fc(), registry(state.baseline.profile))
+            else:
+                from .assistant_context import mission_packet
+                packet = mission_packet(state, body)
+                packet['requested_event_id'] = body.event_id
+            from .assistant_policy import assistant_client
+            client = assistant_client(state.client)
             return state, packet, client
 
     @app.post('/api/overview-assistant/conversations')
-    def create(body: OverviewRequest, request: Request, response: Response):
+    def create(body: ConversationRequest, request: Request, response: Response):
         token = owner(request, response)
         _, packet, _ = capture(body)
         session = store.create(token, body, packet)
-        return {**session, 'packet': packet}
+        return {**session, 'packet': {k: v for k, v in packet.items() if not k.startswith('_')}}
 
     @app.get('/api/overview-assistant/conversations/{cid}')
     def restore(cid: str, request: Request):
@@ -307,9 +360,13 @@ def register_chat(app, get_state):
             session = store.public(store.get(cid, token))
         state = get_state()
         with state.lock:
+            auth.allow_unit(session['identity']['unit_id'])
             session['stale'] = (session['identity']['source_revision'] != state.baseline.source_revision or
                                 session['identity']['version'] != state.scenario.version or
                                 session['identity']['digest'] != state.scenario.digest())
+            if session['identity'].get('view') in {'missions', 'dominoes'}:
+                from .davey import identity_of
+                session['stale'] |= any(session['identity'].get(k) != v for k, v in identity_of(state).items())
         return session
 
     @app.delete('/api/overview-assistant/conversations/{cid}')
@@ -325,6 +382,12 @@ def register_chat(app, get_state):
         token = owner(request)
         with store.lock:
             session = store.get(cid, token)
+            if body.request_id:
+                prior = next((m for m in session['messages'] if m.get('request_id') == body.request_id), None)
+                if prior:
+                    if prior.get('question_fingerprint') != hashlib.sha256(body.question.strip().encode()).hexdigest():
+                        raise HTTPException(409, 'Request ID was used for another question')
+                    return store.public(session)
             if session['busy']:
                 raise HTTPException(409, 'A response is already being prepared')
             if len(session['messages']) >= 40:
@@ -334,7 +397,7 @@ def register_chat(app, get_state):
             original = copy.deepcopy(session)
             session['busy'] = True
         try:
-            state, packet, client = capture(OverviewRequest(**original['request']))
+            state, packet, client = capture(ConversationRequest(**original['request']))
             if packet['packet_id'] != original['packet_id']:
                 raise HTTPException(409, 'Overview changed; refresh the conversation')
             question = body.question.strip()
@@ -346,12 +409,23 @@ def register_chat(app, get_state):
                 raise HTTPException(429, 'Assistant busy; retry shortly')
             try:
                 result = generate(client, packet, question, original['messages'], body.semantic_ids)
+                if '_domain' in packet and 'domain_answer' not in result:
+                    from .assistant_context import mission_extensions
+                    result['domain_answer'] = mission_extensions(packet, None, result['method'])
+                if result.get('domain_answer'):
+                    result['domain_answer']['question'] = question
             finally:
                 store.slots.release()
             with state.lock:
                 if packet['identity']['digest'] != state.scenario.digest() or packet['identity']['source_revision'] != state.baseline.source_revision or packet['identity']['version'] != state.scenario.version:
                     raise HTTPException(409, 'State changed during response; refresh the conversation')
-            user = {'id': secrets.token_hex(8), 'role': 'user', 'text': question}
+                if '_domain' in packet:
+                    from .davey import identity_of
+                    if packet['_domain'].identity != identity_of(state):
+                        raise HTTPException(409, 'Exercise context changed during response')
+            user = {'id': secrets.token_hex(8), 'role': 'user', 'text': question,
+                    'request_id': body.request_id,
+                    'question_fingerprint': hashlib.sha256(body.question.strip().encode()).hexdigest()}
             assistant = {'id': secrets.token_hex(8), 'role': 'assistant', **result, 'identity': packet['identity']}
             assistant['text'] = ' '.join(sentence['text'] for section in result['sections'] for sentence in section['sentences'])
             with store.lock:

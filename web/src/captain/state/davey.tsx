@@ -16,6 +16,7 @@ interface DaveyValue {
   loading: boolean;
   error: string | null;
   ask: (question: string) => Promise<boolean>;
+  adoptAnswer: (answer: DaveyAnswer | null) => void;
   trace: (nodeId: string | null) => void;
   clearTrace: () => void;
   traceNodeId: string | null;
@@ -210,6 +211,13 @@ export function DaveyProvider({children}:{children:ReactNode}) {
     }
   },[focus,ship,history,contextNodeId,tab,updateSession]);
 
+  const adoptAnswer=useCallback((next:DaveyAnswer|null)=>{
+    if(!next)return; // An empty destination chat must not erase an explicit graph handoff.
+    setIdentity(next.identity);
+    updateSession(tab,current=>current.history.at(-1)?.answer_id===next.answer_id?current:
+      {...current,history:[...current.history.slice(-19),next],selectedSuggestionId:null,reviewed:new Set(),dismissed:new Set()});
+  },[tab,updateSession]);
+
   const trace=useCallback((nodeId:string|null)=>{
     if(!answer||stale)return;
     setHandoffAnswerId(tab==='missions'?answer.answer_id:null);
@@ -290,10 +298,10 @@ export function DaveyProvider({children}:{children:ReactNode}) {
     updateSession('missions',current=>({...current,dismissed:new Set(current.dismissed).add(id),selectedSuggestionId:null}));
     setTraceTarget(null);
   },[handoffActive,dismiss,updateSession]);
-  const value=useMemo<DaveyValue>(()=>({tab,open,openDrawer,closeDrawer,clearChat,history,answer,stale,loading,error,ask,trace,clearTrace,
+  const value=useMemo<DaveyValue>(()=>({tab,open,openDrawer,closeDrawer,clearChat,history,answer,stale,loading,error,ask,adoptAnswer,trace,clearTrace,
     traceNodeId,contextNodeId,clearContextNode,proposedNodes,proposedLinks,selectedSuggestionId,selectSuggestion,
     reviewed,dismissed,markReviewed,dismiss,restore,graph,selectGraphSuggestion,markGraphReviewed,dismissGraphSuggestion}),
-    [tab,open,openDrawer,closeDrawer,clearChat,history,answer,stale,loading,error,ask,trace,clearTrace,traceNodeId,proposedNodes,proposedLinks,
+    [tab,open,openDrawer,closeDrawer,clearChat,history,answer,stale,loading,error,ask,adoptAnswer,trace,clearTrace,traceNodeId,proposedNodes,proposedLinks,
       contextNodeId,clearContextNode,selectedSuggestionId,selectSuggestion,reviewed,dismissed,markReviewed,dismiss,restore,
       graph,selectGraphSuggestion,markGraphReviewed,dismissGraphSuggestion]);
   return <Context.Provider value={value}>{children}</Context.Provider>;

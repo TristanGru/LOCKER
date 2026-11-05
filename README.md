@@ -6,7 +6,7 @@ Backend setup and architecture: [MissionTwin backend](docs/BACKEND.md). AI confi
 
 Ship and Shore Overview now include floating Ask Davy chat with LLM-written summaries, inline source/calculation citations, session-only follow-ups, and optional local MiniLM/Transformers.js search. See [overview assistant setup, usage and current limits](docs/OVERVIEW_ASSISTANT.md); model assets require a one-time explicit bundle step.
 
-Mission Overview and Davy's Dominoes have the separate [Ask Davey prototype](#ask-davey-prototype). The [Captain decision assistant plan](docs/CAPTAIN_DECISION_ASSISTANT_PLAN.md) covers work beyond these two assistants.
+Mission Overview and Davy's Dominoes share the [Ask Davy conversation foundation](#ask-davy) with Ship and Shore Overview. The [Captain decision assistant plan](docs/CAPTAIN_DECISION_ASSISTANT_PLAN.md) covers work beyond these two assistants.
 
 **Synthetic exercise only. Not an operational readiness authority.** There is no authentication or real-system connector. Do not expose this local demo to an untrusted network or load operational/personnel data into it.
 
@@ -53,15 +53,15 @@ The default route now uses Sakie's layout with a top-level ship selector, DDG-on
 
 The previous advanced workspace is retained at **`/?legacy=1`** for the full assumption editor, report-fact review and structured preview/apply workflow. The walkthrough below describes that advanced workspace where screen names differ. See [UI integration status and remaining merge work](docs/UI_INTEGRATION.md).
 
-## Ask Davey prototype
+## Ask Davy
 
-Open **Mission Overview** or **Davy's Dominoes** and select the floating **Ask Davey · AI** button. It opens a compact popup above the button. Opening the popup or choosing a suggested question makes no model request; analysis starts when you press **Ask**. Davey searches currently eligible requisitions, maintenance records, CASREPs, and daily reports for the selected ship and mission, then combines those passages with the engine's forecast claims. Answers show their generation source, exercise time, citations, and source uncertainty.
+All four overview/graph views use the same floating **Ask Davy** panel, conversation service, default local semantic search, and inline citation renderer. Opening the panel or changing scope makes no generation request. **Send** and summary/follow-up buttons explicitly submit a question. Mission/Dominoes combine eligible requisitions, maintenance records, CASREPs and daily reports with typed engine forecast supports. Numbers and exact values are inserted by the backend, not calculated by the model. Citations open recorded evidence or modeled assessments with partial-lineage warnings.
 
 Mission Overview and Davy's Dominoes use the same floating chat presentation as the Ship and Shore assistants, with forecast warnings, report evidence, and graph suggestions. They keep separate chats. Switching pages closes the popup; reopen it to see that page's chat. **New conversation** clears the active page's chat. Mission scope follows the selected unit in the header and is shown in the popup. **Show in Dominoes** carries a Mission Overview graph suggestion into Dominoes for review while leaving the chat history on Mission Overview.
 
-The default demo shows **Rules-based fallback** warnings from the readiness engine. To enable the live OpenAI response, copy [.env.example](.env.example) to an ignored `.env`, add your Platform key as `LLM_API_KEY`, and set `LOCKER_DAVEY_LIVE=1`. The example selects `gpt-4o-mini`, which supports [Chat Completions Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=chat). Start or restart the demo normally. `MISSIONTWIN_DEMO_MODE=1` keeps ingestion, action parsing, and briefs offline; Davey's separate opt-in permits a model call only after a submitted question. The key stays in server configuration and is never sent to the browser.
+Generation policy is shared across all four views: explicit `LOCKER_DAVEY_LIVE=0` disables fresh assistant calls; `1` enables configured assistant calls even with offline ingestion; when absent, assistants inherit the application's live/demo state. The default demo remains offline. Configure server-side `LLM_BASE_URL`, `LLM_MODEL` and `LLM_API_KEY`, then restart. `MISSIONTWIN_DEMO_MODE=1` still keeps ingestion, action parsing and briefs offline. The key is never sent to the browser. Answers distinguish **Live LLM**, **Cached LLM** and **Deterministic fallback**; a live-capable status is not proof a call succeeded. Strict schema is preferred, with validated JSON-object fallback only for an explicit unsupported-format response.
 
-Live answers can identify **emerging concerns** and propose report-supported nodes and connections in Dominoes. These are labeled **AI-proposed** and can be inspected, marked reviewed, dismissed, or restored. Review changes only the visible overlay; it never changes readiness or applies an action. If the exercise or source snapshot changes, the answer is marked outdated and its evidence links are disabled until you ask again. A live answer requires a configured key and endpoint; this implementation was verified with a mocked OpenAI-compatible transport, without a real account call. See the [brainstorm](docs/ASK_DAVEY_BRAINSTORM.md) and [implementation plan](docs/ASK_DAVEY_IMPLEMENTATION_PLAN.md) for the selected walkthrough and limits.
+Live answers can identify **emerging concerns** and propose report-supported nodes and connections in Dominoes. These are labeled **Tentative graph suggestions · Needs verification** and can be inspected, marked reviewed, dismissed, or restored. Review changes only the visible overlay; it never changes readiness or applies an action. Conversations restore through opaque sessionStorage IDs, are owned by the signed-in account/browser, and expire from bounded server memory. Changed exercise/source context is marked historical and cannot accept new questions until a fresh conversation is started; historical captured citations remain inspectable, not evidence of current state. A live answer requires a configured key and endpoint; this implementation was verified with a mocked OpenAI-compatible transport, without a real account call. See the [brainstorm](docs/ASK_DAVEY_BRAINSTORM.md) and [implementation plan](docs/ASK_DAVEY_IMPLEMENTATION_PLAN.md) for the selected walkthrough and limits.
 
 ## Five-minute presenter walkthrough
 
@@ -122,7 +122,7 @@ The GitHub Actions workflow runs backend and isolated browser checks. It is supp
 | `LLM_BASE_URL` | OpenAI API base URL for live Davey (example: `https://api.openai.com/v1`) |
 | `LLM_MODEL` | Structured-output model for live Davey (example: `gpt-4o-mini`) |
 | `LLM_API_KEY` | Server-side OpenAI Platform API key; keep it in ignored `.env` or the process environment |
-| `LOCKER_DAVEY_LIVE=1` | Allow a live Davey call after explicit submit; default is cached/fallback only |
+| `LOCKER_DAVEY_LIVE` | Shared assistant override: `1` live on explicit submit, `0` validated cache/fallback only; absent inherits app live/demo state |
 | `MISSIONTWIN_ACTIVITY_LOG` | Optional activity-log path; see `missiontwin/domain.py` for the default |
 | `MISSIONTWIN_SESSION_SECRET` | Optional key for signing session cookies. Without it each server start makes a new key, which signs everyone out |
 | `LOCKER_URL` | Target URL for standalone browser tests |

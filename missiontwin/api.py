@@ -280,8 +280,8 @@ def create_app(state: AppState | None = None) -> FastAPI:
     @app.get('/api/overview-assistant/status')
     def overview_status():
         s = S()
-        return {'mode': 'live-capable' if s.client.configured else 'offline',
-                'model': s.client.model, 'generation': 'grounded_summaries_and_chat',
+        from .assistant_policy import assistant_status
+        return {**assistant_status(s.client), 'generation': 'grounded_summaries_and_chat',
                 'embedding_model': 'Xenova/all-MiniLM-L6-v2', 'embedding_runtime': 'Transformers.js 3.8.1 / CPU WASM',
                 'local_assets_bundled': (ROOT / 'web/dist/models/overview-manifest.json').is_file(),
                 'vector_storage': 'browser_memory', 'fallback': 'structured_and_lexical'}
@@ -322,8 +322,8 @@ def create_app(state: AppState | None = None) -> FastAPI:
             data = overview_packet(s, body, s.fc(), registry(s.baseline.profile))
             if body.packet_id and body.packet_id != data['packet_id']:
                 raise HTTPException(409, 'Overview context changed; regenerate')
-            client = copy.copy(s.client)
-            client.sent_prompts = []  # Do not retain overview prompts on the shared client.
+            from .assistant_policy import assistant_client
+            client = assistant_client(s.client)
             from .llm import redact
             body = body.model_copy(update={'question': redact(body.question, body.unit_id, s.baseline.name_index)[0]})
         if overview_slots.acquire(blocking=False):
