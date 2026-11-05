@@ -113,6 +113,9 @@ COVERAGE = {
     'roc_poe_mission_map.csv': ('context_only', 'Assignment context; runtime dependency weights come from the validated mission tree'),
     'mission_equipment_tree.json': ('modeled', 'Profile-specific hierarchy, dependencies and material weights'),
     'status_code_reference.csv': ('context_only', 'Reference vocabulary; arrival regime mapping is an explicit model assumption'),
+    'hazard_model.csv': ('modeled', 'Public regional storm, grid and tide figures applied to invented facilities by stated assumption'),
+    'shore_profile.json': ('modeled', 'Mock installations with invented capability hierarchy, dependencies and weights'),
+    'public_hazard_snapshot.json': ('partial', 'Public regional inputs behind hazard_model.csv; not a measurement of any installation'),
 }
 
 

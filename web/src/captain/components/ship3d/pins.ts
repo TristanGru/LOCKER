@@ -29,7 +29,12 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
  * Resolve each system's mount on this hull and build its pin (sphere, stem, next-domino ring) plus an
  * HTML label in the overlay. Systems whose mount the hull lacks get no pin.
  */
-export function buildPins(info: HullInfo, systems: ShipSystem[], overlay: HTMLElement, onPick: (id: string) => void): PinSet {
+export function buildPins(
+  info: Pick<HullInfo, 'g' | 'mounts' | 'len' | 'labelAll'> & { pinAction?: string },
+  systems: ShipSystem[],
+  overlay: HTMLElement,
+  onPick: (id: string) => void,
+): PinSet {
   overlay.replaceChildren();
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('class', 's3-leaders');
@@ -82,7 +87,7 @@ export function buildPins(info: HullInfo, systems: ShipSystem[], overlay: HTMLEl
       el.type = 'button';
       el.className = 's3-lb' + (s.isNextDomino ? ' dom' : '') + (mt.side === 'dn' ? ' dn' : '');
       el.style.borderColor = meta.hex;
-      el.setAttribute('aria-label', `${s.name}: ${meta.label}${s.isNextDomino ? ', next domino' : ''}. Cut the ship open here.`);
+      el.setAttribute('aria-label', `${s.name}: ${meta.label}${s.isNextDomino ? ', next domino' : ''}. ${info.pinAction ?? 'Cut the ship open here.'}`);
       if (s.isNextDomino) {
         const cap = document.createElement('small');
         cap.className = 's3-dom';

@@ -65,11 +65,19 @@ def validate_events(events, profile):
             raise ValueError('Event requires identity, label, name, unit and interval')
         if event['ship_id'] not in profile.ships or not event.get('end') or event['end'] <= event['start']:
             raise ValueError(f'{event["event_id"]}: invalid unit or event interval')
-        if not set(event.get('mission_areas', [])) <= set(profile.areas):
+        unit = event['ship_id']
+        if not set(event.get('mission_areas', [])) <= set(profile.areas_for(unit)):
             raise ValueError('Event references unknown mission area')
         for r in event.get('required_systems', []):
-            if r['eic'] not in profile.systems or not 0 <= float(r['min_status_score']) <= 1:
+            if r['eic'] not in profile.systems_for(unit) or not 0 <= float(r['min_status_score']) <= 1:
                 raise ValueError('Event references unmapped system or invalid required score')
+        if event.get('supports'):
+            supported = next((e for e in events if e['event_id'] == event['supports']), None)
+            if supported is None or event['event_id'] not in supported.get('prerequisite_events', []):
+                raise ValueError(f'{event["event_id"]}: support event must be a prerequisite of the event it supports')
+            lead = event.get('lead_days')
+            if not isinstance(lead, (int, float)) or not 0 < lead <= 30:
+                raise ValueError(f'{event["event_id"]}: support event requires lead_days between 0 and 30')
         for team in event.get('required_watch_teams', []):
             if team['watchstation_code'] not in profile.watchstations or type(team['k']) is not int or team['k'] < 1:
                 raise ValueError('Event references unknown watchstation or invalid headcount')

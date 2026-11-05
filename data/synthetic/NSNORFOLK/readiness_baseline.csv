@@ -1,0 +1,4 @@
+ship_id,as_of,mission_area,nmet_id,rating,mfom_index,band,p_score,e_score,s_score,t_score,o_score,limiting_factor,provenance
+NSNORFOLK,2026-11-04T06:00:00Z,PIER,CAP-PIER-01 (SYNTH),Y,92,GREEN,90,92,88,86,92,,proposed (facilities are reported through E and limiting factor)
+NSNORFOLK,2026-11-04T06:00:00Z,HDLG,CAP-HDLG-01 (SYNTH),Y,88,GREEN,90,88,88,86,92,Crane hoist PM missed,proposed (facilities are reported through E and limiting factor)
+NSNORFOLK,2026-11-04T06:00:00Z,BASE,CAP-BASE-01 (SYNTH),Y,90,GREEN,90,90,88,86,92,,proposed (facilities are reported through E and limiting factor)

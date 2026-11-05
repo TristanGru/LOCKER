@@ -1,0 +1,2 @@
+ship_id,uic,hull,tycom,force_rev,work_center,mip,equipment_desc,eic,egl_location,mrc,periodicity,man_hours,rate,min_skill_level,sched_week_start,assigned_to,status,status_date,recorded_by_pin,spot_check_score,iem_flag,situational_trigger,notes,as_of,provenance
+NSAHR,99202,NAV-202,CNIC (notional),1-27,MS01,PM-MS01,Mobile transformer,MSUB-XF,WATERFRONT,MS-M1,M,4,CE2,2,2026-10-26,M-2102,ACCOMPLISHED,2026-10-26,M-2101,,false,,,2026-11-04T06:00:00Z,placeholder

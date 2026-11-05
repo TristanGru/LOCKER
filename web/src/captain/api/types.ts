@@ -10,6 +10,7 @@ export type CasrepCategory = 'C2' | 'C3' | 'C4';
 export interface Ship {
   name: string;
   hull: string;
+  kind: 'ship' | 'installation';
   homeport: string;
   deployInDays: number;
 }
@@ -172,10 +173,32 @@ export interface ShipDepartment {
   worst: Status;
 }
 
+/** Public map outline in scene units, used by the installation view. */
+export interface BaseLayout {
+  attribution: string;
+  note: string;
+  piers: { name: string; points: [number, number][]; center: [number, number]; axis: number }[];
+  shoreline: [number, number][];
+  runways: { ref: string; points: [number, number][]; width: number }[];
+  aprons: [number, number][][];
+}
+
+export interface ShipBerth {
+  ship_id: string;
+  name: string;
+  in_port: boolean;
+  pier: string;
+}
+
 export interface ShipPayload {
   name: string;
   hull: string;
-  hullType: HullType;
+  hullType: HullType | 'Installation';
+  kind: 'ship' | 'installation';
+  /** Illustrative scene coordinates for an installation's facilities. */
+  mountPoints?: Record<string, [number, number, number]>;
+  layout?: BaseLayout | null;
+  berths?: ShipBerth[];
   className: string;
   overall: { readyShare: number; ready: number; total: number };
   counts: Record<Status, number>;
@@ -307,7 +330,7 @@ export interface ScenarioResult {
 export interface DemoEvent {
   id: string;
   seq: number;
-  type: 'CASREP' | 'SUPPLY' | 'PERSONNEL' | 'SCHEDULE';
+  type: 'CASREP' | 'SUPPLY' | 'PERSONNEL' | 'SCHEDULE' | 'FACILITY';
   title: string;
   summary: string;
   recordId: string;

@@ -24,7 +24,7 @@ test('source replacement refreshes the live workspace without restarting', async
     const after = await (await request.get('/api/dashboard')).json();
     expect(after.forecast.missions[0].p_ready).toBeLessThan(before.forecast.missions[0].p_ready);
     await expect(page.getByLabel('Source health', { exact: true })).toContainText(after.state.source_revision);
-    await expect(page.locator('.playback-controls')).toContainText('1 / 4 events');
+    await expect(page.locator('.playback-controls')).toContainText('1 / 5 events');
     await page.getByRole('button', { name: 'Mission overview', exact: true }).click();
     await expect(page.locator('.mission-row').first().locator('.status')).toContainText('At risk');
     await expect(page.locator('.mission-row').first()).toContainText('Across event interval');

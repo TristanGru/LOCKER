@@ -1,0 +1,2 @@
+ship_id,cert_id,cert_name,mission_area,status,certified_date,expires,planned_start,depends_on_avail_id,as_of,provenance
+NSNORFOLK,CERT-NSNORFOLK-CRANE,Portal crane load certification,HDLG,CERTIFIED,2026-03-10,2027-03-10,,,2026-11-04T06:00:00Z,placeholder

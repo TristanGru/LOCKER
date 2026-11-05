@@ -53,6 +53,7 @@ FILE_RULES = {
     "roc_poe_mission_map.csv": {"req": ["mission_area", "weight"]},
     "status_code_reference.csv": {"req": ["code", "delay_regime"]},
     "pii_redaction_test.csv": {"req": ["case_id"]},
+    "hazard_model.csv": {"req": ["hazard_id", "eic", "hazard_kind", "as_of"], "ts": ["as_of", "window_start"]},
 }
 PER_SHIP = ["csmp.csv", "requisition_status.csv", "onboard_allowance_cosal.csv", "roster.csv", "quals.csv", "watchbill.csv",
             "nec_billets.csv", "readiness_baseline.csv", "training_readiness.csv", "schedule_30day.csv", "cert_status.csv",
@@ -91,6 +92,17 @@ def _check_row(fname: str, row: dict, profile: Profile | None = None):
             raise ValueError('Unknown onboard status')
         if row['onboard_status'] != 'ONBOARD' and not row.get('status_start'):
             raise ValueError('Personnel change requires an effective start date')
+    if fname == 'hazard_model.csv':
+        if row['hazard_kind'] not in ('RATE', 'WINDOW'):
+            raise ValueError('Hazard kind must be RATE or WINDOW')
+        for key in ('rate_per_day', 'p_trigger', 'median_down_days', 'sigma', 'score'):
+            row[key] = float(row[key])
+            if not 0 <= row[key] < float('inf'):
+                raise ValueError(f'{key} must be finite and nonnegative')
+        if row['p_trigger'] > 1 or row['score'] > 1 or row['sigma'] <= 0 or row['median_down_days'] <= 0:
+            raise ValueError('Invalid hazard probability, score or duration')
+        if row['hazard_kind'] == 'WINDOW' and not row['window_start']:
+            raise ValueError('A window hazard requires window_start')
     if fname == "csmp.csv":
         if len(row["jcn"]) != 13:
             raise ValueError(f"JCN must be 13 chars, got {row['jcn']!r}")
@@ -146,7 +158,8 @@ class Baseline:
     def coverage(self):
         """Conservative coverage: malformed required evidence makes the unit unknown."""
         required = {'csmp.csv', 'requisition_status.csv', 'roster.csv', 'quals.csv', 'training_readiness.csv',
-                    'cert_status.csv', 'schedule_30day.csv', 'availabilities.csv', 'onboard_allowance_cosal.csv', 'sked_schedule.csv'}
+                    'cert_status.csv', 'schedule_30day.csv', 'availabilities.csv', 'onboard_allowance_cosal.csv', 'sked_schedule.csv',
+                    'hazard_model.csv'}
         out = {s: [] for s in self.profile.ship_ids}
         for issue in self.issues:
             if issue.kind == 'extraction':
@@ -385,7 +398,13 @@ def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) ->
                 b.rows[(ship, fname)] = read_csv(b, p, f"{ship}/{fname}", fname, ship)
             else:
                 b.issues.append(IngestIssue(file=f"{ship}/{fname}", loc="file", reason="file missing"))
-        if not (data_dir / ship / 'casrep_messages').is_dir():
+        if b.profile.kind_of(ship) == 'installation':
+            p = data_dir / ship / 'hazard_model.csv'
+            if p.exists():
+                b.rows[(ship, 'hazard_model.csv')] = read_csv(b, p, f'{ship}/hazard_model.csv', 'hazard_model.csv', ship)
+            else:
+                b.issues.append(IngestIssue(file=f'{ship}/hazard_model.csv', loc='file', reason='file missing'))
+        elif not (data_dir / ship / 'casrep_messages').is_dir():
             b.issues.append(IngestIssue(file=f'{ship}/casrep_messages/', loc='folder', reason='Required casualty feed missing'))
         for p in sorted((data_dir / ship / "casrep_messages").glob("*.txt")):
             rel = f"{ship}/casrep_messages/{p.name}"
@@ -738,7 +757,8 @@ def find_contradictions(v: View) -> list[Contradiction]:
                 continue
             if fs["storeroom_on_hand"] <= fs["storeroom_allowance"]:
                 needers = [s for s in SHIP_IDS if s != ship and any(
-                    r["niin"] == fs["niin"] and r.get("casrep_id") and r["status_code"] != "BA" for r in v.requisitions(s))]
+                    r["niin"] == fs["niin"] and (r.get("casrep_id") or v.b.profile.kind_of(s) == "installation")
+                    and r["status_code"] != "BA" for r in v.requisitions(s))]
                 if needers:
                     out.append(Contradiction(id="X5", ship_id=ship, title=f"Borrowing NIIN {fs['niin']} drops {ship} below allowance",
                                              detail=f"{', '.join(needers)} needs this part; {ship} holds {fs['storeroom_on_hand']} of allowance {fs['storeroom_allowance']}.",
@@ -756,7 +776,8 @@ def find_contradictions(v: View) -> list[Contradiction]:
             if s["status"] == "LOST" and s["periodicity"] not in ("D", "W", "R"):
                 after = [j for j in jobs if j["eic"] == s["eic"] and j["date_discovered"] and j["date_discovered"] >= s["sched_week_start"]]
                 if not after:
-                    out.append(Contradiction(id="X7", ship_id=ship, title=f"Lost PMS on {s['eic']} with no 2-Kilo",
+                    job_word = 'work order' if v.b.profile.kind_of(ship) == 'installation' else '2-Kilo'
+                    out.append(Contradiction(id="X7", ship_id=ship, title=f"Lost PMS on {s['eic']} with no {job_word}",
                                              detail=f"MRC {s['mrc']} week of {s['sched_week_start']:%d %b} not accomplished; no maintenance action opened since.",
                                              sources=[s["_src"]], severity="warn"))
         # X8: NEC held per ship's roster but FLTMPS shows nobody in the billet
@@ -780,6 +801,22 @@ def find_contradictions(v: View) -> list[Contradiction]:
                 out.append(Contradiction(id="X9", ship_id=ship, title=f"Watchbill assigns {w['member_id']} to {w['watchstation_code']} unqualified",
                                          detail=f"{w['date']:%d %b} {w['watch_period']}: qual status {q['qual_status'] if q else 'none'} (SFTRM requires qualified or interim).",
                                          sources=[w["_src"]] + ([q["_src"]] if q else []), severity="high"))
+    # X11: a ship's LOGREQ requests shore power from a pier with an open failure
+    for event in v.b.events:
+        if not event.get('supports'):
+            continue
+        supported = next((e for e in v.b.events if e['event_id'] == event['supports']), None)
+        if supported is None:
+            continue
+        required = {r['eic'] for r in event.get('required_systems', [])}
+        systems = v.b.profile.systems
+        open_jobs = [j for j in v.rows(event['ship_id'], 'csmp.csv') if j['job_state'] not in ('COMPLETED', 'CANCELLED') and j['status_code'] == '2'
+                     and any(j['eic'] == eic or j['eic'] in {c['eic'] for c in systems[eic]['components']} for eic in required if eic.startswith('SP'))]
+        requests = [m for m in v.movements(supported['ship_id']) if m.get('kind') == 'LOGREQ' and any('SHORE POWER' in line for line in m['items'])]
+        if open_jobs and requests:
+            out.append(Contradiction(id='X11', ship_id=event['ship_id'], title=f"{supported['ship_id']} LOGREQ requests shore power from a failed pier",
+                                     detail=f"{requests[-1]['file']} requests shore power; job {open_jobs[0]['jcn']} shows {open_jobs[0]['equipment_noun']}.",
+                                     sources=[requests[-1]['_src'], open_jobs[0]['_src']], severity='high'))
     # X10: stale sources
     for f, info in v.stale_files(thr).items():
         ship = f.split("/")[0]

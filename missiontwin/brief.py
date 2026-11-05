@@ -56,7 +56,7 @@ def build_brief(fc: dict, ship_id: str, ranking: dict | None, contradictions: li
         if m["ship_id"] != ship_id or not m["next_domino"]:
             continue
         g = next(x for x in m["gates"] if x["gate_id"] == m["next_domino"])
-        srcs = []
+        srcs = list(g.get("sources", []))
         for it in g.get("items", []):
             srcs += it.get("sources", [])
         L.append(f"- {m['label']}: {g['label']} (P ok {g['p_ok'] * 100:.0f}%; making it certain adds {g['uplift'] * 100:.0f} pts). {cite(srcs)}")

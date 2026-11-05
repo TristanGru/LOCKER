@@ -126,6 +126,8 @@ class Gen:
         self.gen_daily_reports()
         self.gen_readiness_baseline()
         self.gen_insurv()
+        from .generate_shore import generate_shore
+        generate_shore(self)
         self.gen_ledger_catalog_feed()
         return self.out
 
@@ -1213,6 +1215,9 @@ class Gen:
              "kind": "schedule", "ship_id": "KESSLER",
              "refs": ["KESSLER/schedule_30day.csv#SCH-KESSLER-07", "KESSLER/logreq/KESSLER_071500Z_NOV_26.txt",
                       "KESSLER/daily_reports/daily_status_KESSLER_20261106.pdf"]},
+            {"event_id": "E5", "known_at": "2026-11-08T12:00:00Z", "title": "Pier 12 transformer fails at NAVAL STATION NORFOLK (MOCK): replacement status BC",
+             "kind": "facility", "ship_id": "NSNORFOLK",
+             "refs": ["NSNORFOLK/csmp.csv#99201SP120007", "NSNORFOLK/requisition_status.csv#N9920163120001"]},
         ], "release_rule": "a record with known_at after scenario now is released by the first event whose known_at >= the record's known_at",
             "provenance": "proposed"}
         self.write_json(sq / "scenario_feed.json", feed)

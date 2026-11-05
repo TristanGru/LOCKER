@@ -17,6 +17,9 @@ class SourceRef(BaseModel):
     span: str = ""  # verbatim text when the fact came from free text
     key: str = ""  # record key (JCN, doc number, member_id ...)
 
+    def __deepcopy__(self, memo=None):
+        return self  # citations are never mutated; sharing them keeps candidate evaluation fast
+
 
 # ------------------------------------------------------------------ actions (R7)
 class RemovePerson(BaseModel):

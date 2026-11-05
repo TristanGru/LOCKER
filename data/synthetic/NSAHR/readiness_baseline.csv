@@ -1,0 +1,2 @@
+ship_id,as_of,mission_area,nmet_id,rating,mfom_index,band,p_score,e_score,s_score,t_score,o_score,limiting_factor,provenance
+NSAHR,2026-11-04T06:00:00Z,MOBL,CAP-MOBL-01 (SYNTH),Y,94,GREEN,90,94,88,86,92,,proposed (facilities are reported through E and limiting factor)

@@ -61,6 +61,21 @@ type View =
   | "whatif"
   | "brief"
   | "activity";
+/** This workspace's viewer is a DDG, so it stays ship-only. Installations use the captain UI. */
+function shipsOnly<T>(dashboard: T): T {
+  const data = dashboard as any;
+  const ships = data.state.ships.filter((unit: any) => unit.kind !== "installation");
+  const ids = new Set(ships.map((unit: any) => unit.ship_id));
+  return {
+    ...data,
+    state: { ...data.state, ships },
+    forecast: { ...data.forecast, missions: data.forecast.missions.filter((mission: any) => ids.has(mission.ship_id)) },
+    visualization: {
+      ...data.visualization,
+      systems: data.visualization.systems.filter((system: any) => !system.units || system.units.some((unit: string) => ids.has(unit))),
+    },
+  };
+}
 const eventRisk = (mission: Mission) => mission.p_assessed;
 const priority = (mission: Mission) => mission.p_assessed ?? -1;
 const navigation = [
@@ -101,7 +116,7 @@ export default function Workspace() {
   async function refresh() {
     const sequence = ++refreshSequence.current;
     try {
-      const next = await api.dashboard();
+      const next = shipsOnly(await api.dashboard());
       if (sequence !== refreshSequence.current) return;
       currentVersion.current = next.state.version;
       currentHealth.current = next.sources.last_attempt.at;

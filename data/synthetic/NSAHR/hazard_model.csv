@@ -1,0 +1,2 @@
+hazard_id,ship_id,eic,hazard_kind,rate_per_day,window_start,p_trigger,median_down_days,sigma,score,title,derivation,public_source,as_of,provenance
+HZ-RAIN,NSAHR,LGATE-ROAD,RATE,0.007939,,1.0,0.0625,0.5,0.0,Rain flood risk: primary access road,29 rain flood event-days in Norfolk-area Storm Events records 2016-2025; effect on this facility is assumed,NOAA NCEI Storm Events,2026-11-04T06:00:00Z,sourced (regional rate); applied by assumption

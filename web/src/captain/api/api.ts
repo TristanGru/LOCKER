@@ -26,7 +26,8 @@ function sourceAge(d:any, refs:any[]):number {
   const times=refs.map(ref=>d.sources.sources.find((s:any)=>ref.file.startsWith(s.file.replace(/\/$/,'')))?.as_of).map((x:string)=>Date.parse(x)).filter(Number.isFinite);
   return times.length ? Math.max(0,(Date.parse(d.state.cursor)-Math.min(...times))/3600000) : NaN;
 }
-const code = (m: any) => ({'EVT-KESSLER-01':'TIDEWATCH','EVT-KESSLER-02':'SEASHIELD','EVT-VARNELL-01':'DEEP LANTERN','EVT-ASHBY-01':'IRON HORIZON'}[m.event_id] || m.label);
+const CODES:Record<string,string> = {'EVT-KESSLER-01':'TIDEWATCH','EVT-KESSLER-02':'SEASHIELD','EVT-VARNELL-01':'DEEP LANTERN','EVT-ASHBY-01':'IRON HORIZON'};
+const code = (m: any) => CODES[m.event_id] || (m.supports && CODES[m.supports] ? `PIER SUPPORT: ${CODES[m.supports]}` : m.label);
 const sourceId = (s: any) => 'src:' + encodeURIComponent(JSON.stringify(s));
 const sources = (rows: any[] = []) => rows.map(sourceId);
 /** Calendar days from the exercise date to the event date. Clock time was rounding a 12-day gap up to 13. */
@@ -66,10 +67,24 @@ function graph(d: any, focus = 'all'): T.GraphPayload {
       const gid=`${m.id}|${g.gate_id}`;
       add(gid,g.kind==='team'?'person':'equipment',g.label,g.p_ok,g.sources || g.items.flatMap((i:any)=>i.sources || []),[m.id],'Event-interval requirement');
       edges.push({id:m.id+'>'+gid,source:m.id,target:gid,critical:g.p_ok==null || g.p_ok<d.forecast.bands.green});
-      for (const i of g.items || []) {
-        const id=gid+'|'+i.key;
-        add(id,i.kind==='person'?'person':'part',i.title,raw.p_assessed==null?null:(i.p_available_interval ?? (i.p_active_at_mission!=null?1-i.p_active_at_mission:g.p_ok)),i.sources || [],[m.id],(i.explain || []).join('; '));
-        edges.push({id:gid+'>'+id,source:gid,target:id,critical:false});
+      const addItems=(gate:any,parentId:string,mission:any)=>{
+        for (const i of gate.items || []) {
+          const id=parentId+'|'+i.key;
+          add(id,i.kind==='person'?'person':'part',i.title,mission.p_assessed==null?null:(i.p_available_interval ?? (i.p_active_at_mission!=null?1-i.p_active_at_mission:gate.p_ok)),i.sources || [],[m.id],(i.explain || []).join('; '));
+          edges.push({id:parentId+'>'+id,source:parentId,target:id,critical:false});
+        }
+      };
+      addItems(g,gid,raw);
+      // The dependency chain continues ashore, so a ship event shows which facility is limiting it.
+      if (g.supporting_event) {
+        const parent=d.forecast.missions.find((x:any)=>x.event_id===g.supporting_event);
+        for (const pg of parent?.gates || []) {
+          if (pg.p_ok!=null && pg.p_ok>=d.forecast.bands.green) continue;
+          const pid=gid+'|'+pg.gate_id;
+          add(pid,pg.kind==='team'?'person':'equipment',`${parent.ship_id}: ${pg.label}`,pg.p_ok,(pg.items || []).flatMap((i:any)=>i.sources || []),[m.id],'Shore support requirement');
+          edges.push({id:gid+'>'+pid,source:gid,target:pid,critical:true});
+          addItems(pg,pid,parent);
+        }
       }
     }
   }
@@ -86,21 +101,23 @@ async function getMissions():Promise<T.MissionsPayload> {
   const unit=d.state.ships.find((s:any)=>s.ship_id===selectedShip) || d.state.ships[0];
   const missions=missionRows(d,unit.ship_id);
   const feeds=d.sources.sources.map((s:any)=>({id:s.file,label:`${s.real_system}: ${s.status} / ${s.usage}`,asOf:s.as_of,ageHours:Math.max(0,(Date.parse(d.state.cursor)-Date.parse(s.as_of))/3600000),stale:s.status!=='loaded'}));
-  return {ship:{name:unit.name,hull:unit.hull,homeport:'Synthetic exercise',deployInDays:missions[0]?.daysOut || 0},missions,history:{},freshness:{feeds,oldestHours:Math.max(0,...feeds.map((f:any)=>f.ageHours).filter(Number.isFinite)),staleCount:feeds.filter((f:any)=>f.stale).length},stopped:paused,generatedAt:d.state.cursor};
+  return {ship:{name:unit.name,hull:unit.hull,kind:unit.kind || 'ship',homeport:'Synthetic exercise',deployInDays:missions[0]?.daysOut || 0},missions,history:{},freshness:{feeds,oldestHours:Math.max(0,...feeds.map((f:any)=>f.ageHours).filter(Number.isFinite)),staleCount:feeds.filter((f:any)=>f.stale).length},stopped:paused,generatedAt:d.state.cursor};
 }
 async function getShip():Promise<T.ShipPayload> {
   const ship=selectedShip, d=await dashboard(), missions=missionRows(d,ship), focus=[...missions].sort((a,b)=>a.odds-b.odds)[0];
   const unit=d.state.ships.find((s:any)=>s.ship_id===ship), raw=d.forecast.missions.filter((m:any)=>m.ship_id===ship);
-  const systems:T.ShipSystem[]=d.visualization.systems.filter((s:any)=>s.eic===s.system_eic).map((s:any)=>{
+  const ashore=unit.kind==='installation', areaNames=d.visualization.mission_areas || {};
+  const systems:T.ShipSystem[]=d.visualization.systems.filter((s:any)=>s.eic===s.system_eic && (s.units || []).includes(ship)).map((s:any)=>{
     const gates=raw.flatMap((m:any)=>m.gates.filter((g:any)=>g.gate_id==='system:'+s.eic));
     const index=Math.max(0,d.forecast.grid_dates.map((t:string)=>Date.parse(t)<=Date.parse(d.state.cursor)).lastIndexOf(true));
     const material=d.forecast.ships[ship].system_p_ok[s.eic]?.[index];
     const p=gates.length ? (gates.every((g:any)=>g.p_ok!=null)?Math.min(...gates.map((g:any)=>g.p_ok)):NaN) : probability(material ?? null);
-    return {id:gates.length?`${raw.find((m:any)=>m.gates.some((g:any)=>g.gate_id==='system:'+s.eic)).event_id}|system:${s.eic}`:'system:'+s.eic,name:s.eic==='HELO'?'Helo deck':s.name,tag:s.eic,department:s.mission_areas[0] || 'Other',deck:['engine_p','engine_s','genset_1','genset_2','chill','sonar'].includes(s.mounts[0])?'below':'top',location:'Illustrative DDG mount',mount:s.mounts[0] || null,status:oddsStatus(p),reason:Number.isNaN(p)?'Insufficient evidence':gates.length?`Worst scheduled event-interval requirement: ${pct(p)}`:`Material capability (score >= 0.6), nearest forecast sample: ${pct(p)}. Not an event-interval gate.`,dataAgeHours:sourceAge(d,gates.flatMap((g:any)=>g.items.flatMap((i:any)=>i.sources || []))),stale:gates.some((g:any)=>g.items.some((i:any)=>(i.sources || []).some((r:any)=>Object.keys(d.issues.stale).some(f=>r.file.startsWith(f))))),sourceIds:sources(gates.length?gates.flatMap((g:any)=>g.items.flatMap((i:any)=>i.sources || [])):[{file:'squadron/mission_equipment_tree.json',key:s.eic}]),isNextDomino:focus?.nextDominoId?.endsWith('system:'+s.eic) || false,dominoVia:null};
+    return {id:gates.length?`${raw.find((m:any)=>m.gates.some((g:any)=>g.gate_id==='system:'+s.eic)).event_id}|system:${s.eic}`:'system:'+s.eic,name:s.eic==='HELO'?'Helo deck':s.name,tag:s.eic,department:(ashore?areaNames[s.mission_areas[0]]:s.mission_areas[0]) || 'Other',deck:!ashore && ['engine_p','engine_s','genset_1','genset_2','chill','sonar'].includes(s.mounts[0])?'below':'top',location:ashore?'Illustrative base layout':'Illustrative DDG mount',mount:s.mounts[0] || null,status:oddsStatus(p),reason:Number.isNaN(p)?'Insufficient evidence':gates.length?`Worst scheduled event-interval requirement: ${pct(p)}`:`Material capability (score >= 0.6), nearest forecast sample: ${pct(p)}. Not an event-interval gate.`,dataAgeHours:sourceAge(d,gates.flatMap((g:any)=>g.items.flatMap((i:any)=>i.sources || []))),stale:gates.some((g:any)=>g.items.some((i:any)=>(i.sources || []).some((r:any)=>Object.keys(d.issues.stale).some(f=>r.file.startsWith(f))))),sourceIds:sources(gates.length?gates.flatMap((g:any)=>g.items.flatMap((i:any)=>i.sources || [])):[{file:ashore?'squadron/shore_profile.json':'squadron/mission_equipment_tree.json',key:s.eic}]),isNextDomino:focus?.nextDominoId?.endsWith('system:'+s.eic) || false,dominoVia:null};
   });
   const tally=(xs:T.ShipSystem[])=>({ready:xs.filter(s=>s.status==='ready').length,watch:xs.filter(s=>s.status==='watch').length,risk:xs.filter(s=>s.status==='risk').length,unknown:xs.filter(s=>s.status==='unknown').length});
   const counts=tally(systems);
-  return {name:unit.name,hull:unit.hull,hullType:'DDG',className:'Illustrative DDG',systems,counts,overall:{ready:counts.ready,total:systems.length,readyShare:counts.ready/systems.length},departments:[...new Set(systems.map(s=>s.department))].map(id=>{const xs=systems.filter(s=>s.department===id), c=tally(xs);return {id,name:id,counts:c,ready:c.ready,total:xs.length,worst:c.unknown?'unknown':c.risk?'risk':c.watch?'watch':'ready'};}),missionAtRisk:focus?.status!=='ready'?focus:null,nextDomino:focus?.nextDominoId?{nodeId:focus.nextDominoId,label:focus.nextDominoLabel || '',reason:focus.nextDominoReason || '',systemId:systems.find(s=>s.isNextDomino)?.id || null,missionId:focus.id,missionCode:focus.code,gain:0,sourceIds:[]}:null,generatedAt:d.state.cursor};
+  const mountPoints=ashore?Object.fromEntries(systems.flatMap(s=>s.mount && d.visualization.mounts[s.mount]?[[s.mount,d.visualization.mounts[s.mount]]]:[])):undefined;
+  return {name:unit.name,hull:unit.hull,kind:ashore?'installation':'ship',mountPoints,layout:ashore?d.visualization.layouts?.[ship] ?? null:undefined,berths:ashore?d.state.berths:undefined,hullType:ashore?'Installation':'DDG',className:ashore?'Mock installation for demonstration':'Illustrative DDG',systems,counts,overall:{ready:counts.ready,total:systems.length,readyShare:counts.ready/systems.length},departments:[...new Set(systems.map(s=>s.department))].map(id=>{const xs=systems.filter(s=>s.department===id), c=tally(xs);return {id,name:id,counts:c,ready:c.ready,total:xs.length,worst:c.unknown?'unknown':c.risk?'risk':c.watch?'watch':'ready'};}),missionAtRisk:focus?.status!=='ready'?focus:null,nextDomino:focus?.nextDominoId?{nodeId:focus.nextDominoId,label:focus.nextDominoLabel || '',reason:focus.nextDominoReason || '',systemId:systems.find(s=>s.isNextDomino)?.id || null,missionId:focus.id,missionCode:focus.code,gain:0,sourceIds:[]}:null,generatedAt:d.state.cursor};
 }
 function deltas(before:any,after:any):T.MissionDelta[] { return after.missions.map((m:any)=>{const b=before.missions.find((x:any)=>x.event_id===m.event_id); return {missionId:m.event_id,code:code(m),before:probability(b.p_assessed),after:probability(m.p_assessed),statusBefore:oddsStatus(probability(b.p_assessed)),statusAfter:oddsStatus(probability(m.p_assessed))};}); }
 async function mutate(path:string,body:any={}) {
@@ -115,7 +132,7 @@ async function getFixes(missionId:string):Promise<T.FixesPayload> {
   fixes.forEach((fix:T.Fix)=>shownFixes.set(fix.id,{fix,version:d.state.version}));
   return {missionId,fixes,decided:[]};
 }
-const event=(e:any,i:number):T.DemoEvent=>({id:e.event_id,seq:i+1,type:({casrep:'CASREP',supply:'SUPPLY',personnel:'PERSONNEL',schedule:'SCHEDULE'} as any)[e.kind] || 'SCHEDULE',title:e.title,summary:e.title,recordId:e.refs[0]?sourceId({file:e.refs[0].split('#')[0]}):'',arrivedAt:e.played?e.known_at:undefined});
+const event=(e:any,i:number):T.DemoEvent=>({id:e.event_id,seq:i+1,type:({casrep:'CASREP',supply:'SUPPLY',personnel:'PERSONNEL',schedule:'SCHEDULE',facility:'FACILITY'} as any)[e.kind] || 'SCHEDULE',title:e.title,summary:e.title,recordId:e.refs[0]?sourceId({file:e.refs[0].split('#')[0]}):'',arrivedAt:e.played?e.known_at:undefined});
 export const api = {
   getMissions,getShip,getFixes,
   getGraph:async(focus='all')=>graph(await dashboard(),focus),

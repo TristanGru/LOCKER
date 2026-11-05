@@ -1,4 +1,5 @@
 import {
+  Building2,
   FileText,
   FlaskConical,
   LayoutDashboard,
@@ -27,6 +28,7 @@ interface NavItem {
 
 export const NAV: NavItem[] = [
   { to: '/', label: 'Ship Overview', icon: Ship },
+  { to: '/shore', label: 'Shore Overview', icon: Building2 },
   { to: '/missions', label: 'Mission Overview', icon: LayoutDashboard },
   { to: '/dominoes', label: "Davy's Dominoes", icon: Network },
   { to: '/fixes', label: 'Fixes', icon: Wrench },

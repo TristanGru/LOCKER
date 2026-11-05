@@ -1,0 +1,2 @@
+doc_number,ship_id,dodaac,jcn,casrep_id,nsn,niin,nomenclature,qty,unit_of_issue,priority_designator,issue_priority_group,rdd,nors,date_requisitioned,status_code,status_date,esd,delay_regime,status_history,source_of_supply,tcn,expedite_flag,system_of_record,as_of,provenance
+N9920163120001,NSNORFOLK,N99201,99201SP120007,,6120-01-999-8001,019998001,"TRANSFORMER, PAD-MOUNT, PIER POWER",1,EA,02,1,999,true,2026-11-08,BC,2026-11-08,2026-12-15,LONG,2026-11-08T12:00:00Z BC 2026-12-15,NAVSUP WSS,,false,NOSS (proposed),2026-11-08T12:00:00Z,proposed
