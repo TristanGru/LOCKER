@@ -59,8 +59,8 @@ function Stage({ ship, onOpen, onFail }: { ship: ShipPayload; onOpen: (id: strin
   const [inside, setInside] = useState<string | null>(null);
 
   // latest props for scene callbacks
-  const live = useRef({ onOpen, onFail, systems: ship.systems });
-  live.current = { onOpen, onFail, systems: ship.systems };
+  const live = useRef({ onOpen, onFail, systems: ship.systems, points: ship.mountPoints ?? {} });
+  live.current = { onOpen, onFail, systems: ship.systems, points: ship.mountPoints ?? {} };
 
   const hullNumber = (/-(\d+)/.exec(ship.hull)?.[1] ?? '00').padStart(2, '0');
   const key = pinKey(ship.systems);
@@ -94,7 +94,7 @@ function Stage({ ship, onOpen, onFail }: { ship: ShipPayload; onOpen: (id: strin
   }, []);
 
   useEffect(() => {
-    sceneRef.current?.setHull(hullType, hullNumber, live.current.systems);
+    sceneRef.current?.setHull(hullType, hullNumber, live.current.systems, live.current.points);
   }, [hullType, hullNumber]);
 
   const firstKey = useRef(true);
@@ -114,11 +114,27 @@ function Stage({ ship, onOpen, onFail }: { ship: ShipPayload; onOpen: (id: strin
   const cutAt = useCallback((id: string) => sceneRef.current?.cutAtSystem(id), []);
 
   const rows = useMemo(() => ship.systems.filter((s) => s.mount && s.deck !== 'none'), [ship.systems]);
+  // Safety net: a system that needs attention but has no place on the drawing is still listed on it.
+  const unplaced = useMemo(
+    () => (mounts.size ? ship.systems.filter((s) => s.status !== 'ready' && (!s.mount || s.deck === 'none' || !mounts.has(s.mount))) : []),
+    [ship.systems, mounts],
+  );
   const [menu, setMenu] = useState<FilterMenuId | null>(null);
 
   return (
     <div ref={hostRef} className="s3-stage relative h-[38rem] overflow-hidden">
       <div ref={overlayRef} className="s3-overlay" />
+      {unplaced.length > 0 && (
+        <div className="on-stage absolute bottom-12 left-3 z-20 max-w-[18rem] rounded border border-[rgba(140,180,220,.26)] bg-[rgba(6,11,20,.92)] p-3 text-xs" role="region" aria-label="Systems not drawn on the model">
+          <div className="mb-1.5 font-semibold uppercase tracking-[0.12em] text-[#9fb0c6]">Not on the drawing</div>
+          {unplaced.map((s) => (
+            <button key={s.id} type="button" onClick={() => onOpen(s.id)} className="flex w-full items-center justify-between gap-3 rounded px-1 py-0.5 text-left text-[#e6eef8] hover:bg-white/10">
+              <span className="truncate">{s.name}</span>
+              <span className="shrink-0 font-semibold" style={{ color: STATUS[s.status].hex }}>{STATUS[s.status].label}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <FilterBar
         menu={menu}
         setMenu={setMenu}
