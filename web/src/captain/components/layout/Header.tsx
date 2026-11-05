@@ -18,13 +18,16 @@ export function Header() {
   }, [data, setStopped, focus, setFocus]);
 
   return (
-    <header className="relative z-40 flex min-w-0 items-center gap-4 border-b border-line bg-abyss-900 px-5 py-3">
-      <div className="flex shrink-0 items-center gap-3">
-        <LogoMark className="h-10 w-10" />
-        <span className="text-[1.35rem] font-extrabold tracking-[0.16em] text-ink">LOCKER</span>
+    <header className="on-navy relative z-40 flex min-w-0 items-center gap-5 border-b-2 border-[rgb(var(--accent))] bg-masthead px-5 py-2.5">
+      <div className="flex shrink-0 items-center gap-3 border-r border-line pr-5">
+        <LogoMark className="h-9 w-9" />
+        <span className="leading-none">
+          <span className="block text-[1.2rem] font-bold tracking-[0.12em] text-ink">LOCKER</span>
+          <span className="mt-1 block text-[0.68rem] font-medium uppercase tracking-[0.08em] text-ink-dim">Readiness decision support</span>
+        </span>
       </div>
 
-      <label className="text-sm text-ink-muted">{ashore ? 'Installation' : 'Ship'}<select aria-label={ashore ? 'Selected installation' : 'Selected ship'} value={ship} onChange={e=>changeShip(e.target.value)} className="ml-2 rounded border border-line bg-abyss-950 p-2 text-ink">{snapshot?.state.ships.filter((s: any)=>(s.kind==='installation')===ashore).map((s: any)=><option key={s.ship_id} value={s.ship_id}>{s.name}</option>)}</select></label>
+      <label className="flex items-center gap-2 text-[0.78rem] font-semibold uppercase tracking-[0.06em] text-ink-dim">{ashore ? 'Installation' : 'Ship'}<select aria-label={ashore ? 'Selected installation' : 'Selected ship'} value={ship} onChange={e=>changeShip(e.target.value)} className="rounded border border-line-strong bg-abyss-950 px-2.5 py-1.5 text-sm font-semibold normal-case tracking-normal text-ink">{snapshot?.state.ships.filter((s: any)=>(s.kind==='installation')===ashore).map((s: any)=><option key={s.ship_id} value={s.ship_id}>{s.name}</option>)}</select></label>
       {data && (
         <div className="hidden min-w-0 items-center truncate border-l border-line pl-4 text-sm text-ink-muted lg:flex">
           <span className="truncate font-semibold text-ink">{data.ship.name}</span>
@@ -38,7 +41,7 @@ export function Header() {
       <div className="ml-auto flex shrink-0 items-center gap-3">
         <ThemeToggle />
         <FreshnessIndicator freshness={data?.freshness ?? null} />
-        <details className="relative text-sm text-ink-muted"><summary>Sources / controls</summary><div className="absolute right-0 z-50 mt-3 max-h-[75vh] w-[min(90vw,42rem)] overflow-auto rounded-xl border border-line bg-abyss-950 p-5">
+        <details className="relative text-sm text-ink-muted"><summary className="cursor-pointer hover:text-ink">Sources / controls</summary><div className="absolute right-0 z-50 mt-3 max-h-[75vh] w-[min(90vw,42rem)] overflow-auto theme-surface rounded border border-line bg-abyss-900 p-5 text-ink shadow-[0_18px_40px_-18px_rgba(0,0,0,0.5)]">
           <p>Synthetic exercise • event-interval readiness</p><p>Source revision: {snapshot?.state.source_revision}</p>
           <p>Refresh: {snapshot?.sources.last_attempt.status} {snapshot?.sources.last_attempt.error}</p>
           <button className="m-2 underline" onClick={async()=>{if(!confirm('Validate and refresh sources? Active decisions block changed imports.'))return;try{await backend('sources/refresh',{base_version:snapshot.state.version});}catch(e){alert(String(e));}finally{bump();}}}>Refresh sources</button>

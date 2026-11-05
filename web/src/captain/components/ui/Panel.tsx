@@ -19,10 +19,10 @@ export function Panel({
   return (
     <section className={clsx('glass relative overflow-hidden', className)}>
       {(title || actions) && (
-        <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
+        <header className="flex items-center justify-between gap-3 border-b border-line bg-abyss-800 px-5 py-2.5">
           <div className="flex items-center gap-2.5">
-            {icon && <span className="text-accent">{icon}</span>}
-            {title && <h2 className="label-caps !text-ink-muted">{title}</h2>}
+            {icon && <span className="text-ink-muted">{icon}</span>}
+            {title && <h2 className="text-[0.95rem] font-semibold text-ink">{title}</h2>}
           </div>
           {actions}
         </header>
@@ -36,7 +36,7 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="text-[2rem] font-bold leading-tight tracking-tight text-ink">{title}</h1>
+        <h1 className="text-[1.9rem] font-bold leading-tight text-ink">{title}</h1>
         {subtitle && <p className="mt-1 text-lg text-ink-muted">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-3">{actions}</div>}

@@ -106,7 +106,7 @@ export function MissionRow({ mission: m, index }: { mission: Mission; index: num
             type="button"
             onClick={go}
             className={clsx(
-              'inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition',
+              'inline-flex items-center gap-1.5 rounded-sm px-4 py-2 text-sm font-bold transition',
               action.solid ? 'bg-accent text-[color:var(--on-accent)] hover:brightness-110' : 'border border-line-strong text-ink hover:border-ink-muted hover:bg-ink/[0.06]',
             )}
           >

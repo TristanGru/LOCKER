@@ -4,7 +4,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { api, backend } from '../api/api';
 import type { ShipPayload, Status } from '../api/types';
 import { AttentionPanel } from '../components/ship/AttentionPanel';
-import { DepartmentCard } from '../components/ship/DepartmentCard';
+import { SystemsTable } from '../components/ship/SystemsTable';
 import { Panel } from '../components/ui/Panel';
 import { EmptyState, ErrorState, Skeleton } from '../components/ui/States';
 import clsx from '../lib/clsx';
@@ -179,12 +179,12 @@ function Body({ ship, filter, setFilter, onOpen }: { ship: ShipPayload; filter: 
                       onClick={() => setFilter(f.id)}
                       className={clsx(
                         'inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-semibold transition',
-                        filter === f.id ? 'bg-accent/15 text-accent shadow-[inset_0_0_0_1px_rgba(34,211,238,0.5)]' : 'text-ink-muted hover:text-ink',
+                        filter === f.id ? 'bg-abyss-800 text-ink shadow-[inset_0_-3px_0_rgb(var(--accent))]' : 'text-ink-muted hover:text-ink',
                       )}
                     >
                       {Icon && <Icon className={clsx('h-4 w-4', f.id !== 'all' && STATUS[f.id].text)} aria-hidden />}
                       {f.label}
-                      <span className="num rounded-full bg-ink/[0.08] px-1.5 text-xs">{n}</span>
+                      <span className="num rounded-sm bg-ink/[0.08] px-1.5 text-xs">{n}</span>
                     </button>
                   );
                 })}
@@ -195,11 +195,7 @@ function Body({ ship, filter, setFilter, onOpen }: { ship: ShipPayload; filter: 
                 Pick another filter to see the rest of this unit.
               </EmptyState>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                {depts.map((d, i) => (
-                  <DepartmentCard key={d.id} dept={d} systems={shown.filter((s) => s.department === d.id)} onOpen={onOpen} index={i} />
-                ))}
-              </div>
+              <SystemsTable departments={depts} systems={shown} onOpen={onOpen} />
             )}
           </section>
         </div>

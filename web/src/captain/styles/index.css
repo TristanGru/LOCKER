@@ -3,50 +3,79 @@
 @tailwind utilities;
 
 @layer base {
-  /* Light is the default. Channels are space-separated so Tailwind opacity modifiers work. */
+  /* Light is the default: paper and ink neutrals, one institutional navy, status colors reserved for status
+     (USWDS palette families; status pairs icon + word, never color alone, per MIL-STD-1472 / Astro UXDS).
+     Channels are space-separated so Tailwind opacity modifiers work. */
   :root,
-  :root[data-theme='light'] {
+  :root[data-theme='light'],
+  .theme-surface {
     color-scheme: light;
-    --abyss-950: 244 247 251;
+    --abyss-950: 240 240 237;
     --abyss-900: 255 255 255;
     --abyss-850: 255 255 255;
-    --abyss-800: 236 242 248;
-    --abyss-700: 223 232 242;
-    --abyss-600: 206 218 232;
-    --ink: 18 32 51;
-    --ink-muted: 55 74 96;
-    --ink-dim: 82 102 124;
-    --line: 186 201 216;
-    --line-strong: 148 168 188;
-    --accent: 8 116 144;
-    --ready: 4 120 87;
-    --watch: 146 84 7;
-    --risk: 190 18 60;
-    --stale: 71 85 105;
+    --abyss-800: 246 246 244;
+    --abyss-700: 233 233 229;
+    --abyss-600: 216 217 213;
+    --ink: 27 27 27;
+    --ink-muted: 61 64 68;
+    --ink-dim: 92 96 102;
+    --line: 214 215 217;
+    --line-strong: 160 165 170;
+    --accent: 26 68 128;
+    --ready: 22 122 53;
+    --watch: 158 93 0;
+    --risk: 181 9 9;
+    --stale: 92 96 102;
+    --masthead: 16 37 66;
+    --banner: 0 122 51;
     --on-accent: #ffffff;
-    --shadow-glass: 0 1px 0 0 rgba(255, 255, 255, 0.9) inset, 0 16px 36px -22px rgba(18, 40, 70, 0.28);
+    --on-status: 255 255 255;
+    --shadow-glass: none;
     font-size: 17px;
   }
-  :root[data-theme='dark'] {
+  :root[data-theme='dark'],
+  :root[data-theme='dark'] .theme-surface {
     color-scheme: dark;
-    --abyss-950: 3 6 12;
-    --abyss-900: 6 11 20;
-    --abyss-850: 8 16 28;
-    --abyss-800: 11 21 36;
-    --abyss-700: 17 30 51;
-    --abyss-600: 26 42 68;
-    --ink: 230 238 248;
-    --ink-muted: 159 176 198;
-    --ink-dim: 107 125 149;
-    --line: 48 70 96;
-    --line-strong: 78 108 142;
-    --accent: 34 211 238;
-    --ready: 52 211 153;
-    --watch: 251 191 36;
-    --risk: 251 77 93;
-    --stale: 148 163 184;
-    --on-accent: #042028;
-    --shadow-glass: 0 1px 0 0 rgba(255, 255, 255, 0.04) inset, 0 20px 50px -20px rgba(0, 0, 0, 0.7);
+    --abyss-950: 14 18 23;
+    --abyss-900: 21 27 34;
+    --abyss-850: 21 27 34;
+    --abyss-800: 28 35 44;
+    --abyss-700: 36 45 56;
+    --abyss-600: 48 58 71;
+    --ink: 231 234 237;
+    --ink-muted: 176 184 193;
+    --ink-dim: 139 148 158;
+    --line: 47 56 67;
+    --line-strong: 78 90 104;
+    --accent: 115 179 231;
+    --ready: 94 196 110;
+    --watch: 255 179 2;
+    --risk: 255 92 92;
+    --stale: 139 148 158;
+    --masthead: 10 24 44;
+    --banner: 0 122 51;
+    --on-accent: #0e1217;
+    --on-status: 14 18 23;
+    --shadow-glass: none;
+  }
+  /* The masthead is always navy, so its children use a light-on-navy set of the same tokens. */
+  .on-navy {
+    --abyss-950: 10 26 48;
+    --abyss-900: 22 44 74;
+    --abyss-850: 22 44 74;
+    --abyss-800: 30 55 90;
+    --ink: 255 255 255;
+    --ink-muted: 200 212 226;
+    --ink-dim: 165 182 202;
+    --line: 58 84 118;
+    --line-strong: 104 130 164;
+    --accent: 140 190 235;
+    --ready: 94 196 110;
+    --watch: 255 179 2;
+    --risk: 255 92 92;
+    --stale: 165 182 202;
+    --on-accent: #0a1a30;
+    color: rgb(var(--ink));
   }
   @media (min-width: 1800px) {
     :root {
@@ -62,7 +91,7 @@
 
   body {
     @apply bg-abyss-950 font-sans text-ink antialiased;
-    font-feature-settings: 'cv11', 'ss01', 'tnum';
+    font-feature-settings: 'kern', 'liga';
   }
 
   ::selection {
@@ -72,7 +101,7 @@
   :focus-visible {
     outline: 2px solid rgb(var(--accent));
     outline-offset: 2px;
-    border-radius: 6px;
+    border-radius: 2px;
   }
 
   * {
@@ -82,36 +111,39 @@
 }
 
 @layer components {
+  /* Flat surfaces: hairline border, no blur, no glow. Dialogs keep one plain drop shadow for elevation. */
   .glass {
-    @apply rounded-2xl border border-line bg-abyss-850/70 shadow-glass backdrop-blur-md;
+    @apply rounded border border-line bg-abyss-850;
   }
   .glass-strong {
-    @apply rounded-2xl border border-line-strong bg-abyss-800/85 shadow-glass backdrop-blur-xl;
+    @apply rounded border border-line-strong bg-abyss-900 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.45)];
   }
   .hairline {
     @apply border-line;
   }
   .label-caps {
     /* 14px+ and #9fb0c6: the old 12px #6b7d95 caps failed contrast on a projector. */
-    @apply text-sm font-semibold uppercase tracking-[0.12em] text-ink-muted;
+    @apply text-[0.78rem] font-semibold uppercase tracking-[0.06em] text-ink-muted;
   }
+  /* Figures: proportional typeface, fixed-width digits (as in printed briefs). Record IDs keep font-mono. */
   .num {
-    @apply font-mono tabular-nums;
+    @apply font-sans tabular-nums;
+    font-feature-settings: "tnum", "lnum";
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40;
+    @apply inline-flex items-center justify-center gap-2 rounded border px-4 py-2 text-sm font-semibold transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-40;
   }
   .btn-ghost {
-    @apply btn border-line bg-ink/[0.03] text-ink-muted hover:border-line-strong hover:bg-ink/[0.06] hover:text-ink;
+    @apply btn border-line-strong bg-abyss-900 text-ink hover:bg-abyss-800;
   }
   .btn-accent {
-    @apply btn border-accent/60 bg-accent/15 text-accent hover:bg-accent/25 hover:shadow-focus;
+    @apply btn border-accent bg-accent text-[color:var(--on-accent)] hover:brightness-110;
   }
   .btn-ready {
-    @apply btn border-ready/50 bg-ready/15 text-ready hover:bg-ready/25;
+    @apply btn border-ready bg-ready text-[rgb(var(--on-status))] hover:brightness-110;
   }
   .btn-risk {
-    @apply btn border-risk/60 bg-risk/15 text-risk hover:bg-risk/25;
+    @apply btn border-risk bg-risk text-[rgb(var(--on-status))] hover:brightness-110;
   }
   /* Stale data: grey diagonal stripes */
   .stale-stripes {
@@ -219,10 +251,11 @@
   position: absolute;
   transform: translate(-50%, -100%);
   white-space: nowrap;
-  background: rgba(6, 11, 20, 0.92);
+  background: rgba(12, 18, 26, 0.94);
   border: 1px solid;
-  border-radius: 8px;
-  padding: 3px 9px;
+  border-left-width: 4px;
+  border-radius: 2px;
+  padding: 3px 9px 3px 7px;
   font-size: 13px;
   font-weight: 600;
   line-height: 1.25;
@@ -235,7 +268,7 @@
   filter: brightness(1.25);
 }
 .s3-lb:focus-visible {
-  outline: 2px solid #22d3ee;
+  outline: 2px solid #ffffff;
   outline-offset: 2px;
 }
 .s3-lb small {
@@ -244,21 +277,23 @@
   font-weight: 700;
 }
 .s3-lb small.s3-dom {
-  color: #fb4d5d;
-  letter-spacing: 0.12em;
+  color: #ff6b6b;
+  letter-spacing: 0.08em;
 }
 .s3-lb.dn {
   transform: translate(-50%, 0);
 }
 .s3-lb.dom {
-  box-shadow: 0 0 22px -6px rgba(251, 77, 93, 0.9);
+  outline: 1px solid rgba(255, 92, 92, 0.75);
+  outline-offset: 2px;
 }
 /* Shore Overview: the selected facility stands out, the rest step back. */
 .s3-lb.sel {
   z-index: 5;
   border-width: 2px;
   font-size: 14px;
-  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.35), 0 8px 24px -8px rgba(0, 0, 0, 0.7);
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
 }
 .s3-lb.dim {
   opacity: 0.38;
@@ -267,5 +302,136 @@
   opacity: 0.9;
 }
 .s3-stage {
-  background: radial-gradient(ellipse at 50% 38%, #14354f 0%, #09131f 52%, #04080f 100%);
+  background: #0f1923;
+}
+
+/* ---- Printed readiness brief (Brief.tsx PrintBrief): letter pages, marking and page numbers on every page ---- */
+@page {
+  size: letter;
+  margin: 0.55in 0.45in 0.6in;
+  @top-center {
+    content: 'UNCLASSIFIED // SYNTHETIC EXERCISE DATA \00B7  NOT FOR OPERATIONAL USE';
+    font: 700 7pt 'Public Sans', Arial, sans-serif;
+    letter-spacing: 0.08em;
+    color: #007a33;
+  }
+  @bottom-center {
+    content: 'UNCLASSIFIED // SYNTHETIC EXERCISE DATA \00B7  NOT FOR OPERATIONAL USE';
+    font: 700 7pt 'Public Sans', Arial, sans-serif;
+    letter-spacing: 0.08em;
+    color: #007a33;
+  }
+  @bottom-left {
+    content: 'LOCKER \00B7  CO readiness brief';
+    font: 400 7pt 'Public Sans', Arial, sans-serif;
+    color: #555;
+  }
+  @bottom-right {
+    content: 'Page ' counter(page) ' of ' counter(pages);
+    font: 400 7pt 'Public Sans', Arial, sans-serif;
+    color: #555;
+  }
+}
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    height: auto !important;
+  }
+}
+.pb {
+  font: 400 8.8pt/1.32 'Public Sans', Arial, sans-serif;
+  color: #111;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.pb h1 {
+  font-size: 15pt;
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0;
+}
+.pb h2 {
+  font-size: 9.2pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #1a4480;
+  border-bottom: 1.2pt solid #1a4480;
+  padding-bottom: 1.5pt;
+  margin: 9pt 0 4pt;
+  break-after: avoid;
+}
+.pb h3 {
+  font-size: 8.8pt;
+  font-weight: 700;
+  margin: 6pt 0 2pt;
+  break-after: avoid;
+}
+.pb table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.1pt;
+  line-height: 1.28;
+}
+.pb th {
+  text-align: left;
+  font-weight: 600;
+  background: #eceef1;
+  border-bottom: 0.8pt solid #7a7f86;
+  padding: 2pt 4pt;
+  vertical-align: bottom;
+}
+.pb td {
+  border-bottom: 0.5pt solid #cfd3d7;
+  padding: 2pt 4pt;
+  vertical-align: top;
+}
+.pb tr {
+  break-inside: avoid;
+}
+.pb thead {
+  display: table-header-group;
+}
+.pb .r {
+  text-align: right;
+}
+.pb .muted {
+  color: #555;
+}
+.pb .tn {
+  font-variant-numeric: tabular-nums lining-nums;
+  white-space: nowrap;
+}
+.pb .mono {
+  font-family: 'IBM Plex Mono', Consolas, monospace;
+  font-size: 7.2pt;
+  color: #333;
+}
+.pb .st-risk {
+  color: #b50909;
+  font-weight: 700;
+}
+.pb .st-watch {
+  color: #8a5100;
+  font-weight: 700;
+}
+.pb .st-ready {
+  color: #167a35;
+  font-weight: 700;
+}
+.pb .st-unknown {
+  color: #555;
+  font-weight: 700;
+}
+.pb ul.bl {
+  margin: 0;
+  padding-left: 11pt;
+}
+.pb ul.bl li {
+  margin: 1.5pt 0;
+}
+.pb .box {
+  border: 0.8pt solid #7a7f86;
+  padding: 4pt 7pt;
 }

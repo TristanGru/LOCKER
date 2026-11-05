@@ -14,7 +14,8 @@ import { STATUS, oddsStatus, pct, getBands } from '../theme/status';
 
 type Kind = ScenarioChange['kind'];
 /** A run plus a plain-language note when the result needs explaining. */
-type Run = ScenarioResult & { hint?: string };
+/** A run plus the backend's own note (sandbox statement) and a plain-language hint when the result needs explaining. */
+type Run = ScenarioResult & { hint?: string; note?: string };
 
 /** Two changes are the same if they touch the same thing (a sailor is the same person on every mission). */
 const changeKey = (c: ScenarioChange) =>
@@ -75,7 +76,7 @@ export function WhatIf() {
           : !moved
             ? 'The model has slack here: the change does not reach anything that limits a mission. Combine it with other changes to stress the plan.'
             : undefined;
-      setResults((prev) => [{ ...r, id: `Run ${runCount.current++}`, description: list.map((c) => describe(c, labelOf)), hint }, ...prev].slice(0, 6));
+      setResults((prev) => [{ ...r, id: `Run ${runCount.current++}`, description: list.map((c) => describe(c, labelOf)), note: r.description.join(' '), hint }, ...prev].slice(0, 6));
       bump(); // the run is written to the activity log
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -219,7 +220,7 @@ export function WhatIf() {
           <Panel title="Quick scenarios">
             <div className="flex flex-wrap gap-2">
               {presets.map((p) => (
-                <button key={p.label} className="rounded-full border border-line px-3 py-1.5 text-sm text-ink-muted transition hover:border-accent/50 hover:text-ink" disabled={running} onClick={() => run(p.changes)}>
+                <button key={p.label} className="rounded-sm border border-line px-3 py-1.5 text-sm text-ink-muted transition hover:border-accent/50 hover:text-ink" disabled={running} onClick={() => run(p.changes)}>
                   {p.label}
                 </button>
               ))}
@@ -295,6 +296,7 @@ function ResultView({ result, labelOf, running }: { result: Run; labelOf: (id: s
             )}
           </p>
         )}
+        {result.note && <p className="mt-2 text-sm text-ink-muted">{result.note}</p>}
         {result.hint && <p className="mt-2 rounded-xl border border-accent/40 bg-accent/[0.06] px-4 py-3 text-sm text-ink">{result.hint}</p>}
 
         <div className="mt-5 grid gap-3 md:grid-cols-3">
@@ -392,7 +394,7 @@ function Slider({ label, value, min, max, step, unit, onChange, note }: { label:
           {value} {unit}
         </span>
       </span>
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="mt-3 w-full accent-[#22d3ee]" />
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="mt-3 w-full accent-[rgb(var(--accent))]" />
       <span className="num flex justify-between text-xs text-ink-dim">
         <span>
           {min} {unit}
