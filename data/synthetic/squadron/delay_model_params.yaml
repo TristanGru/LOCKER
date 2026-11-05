@@ -75,7 +75,7 @@ program_office_release_days:
     min: 2
     max: 5
   tag: assumed
-  source: no public source
+  source: no public source; used when a program office wholesale record states no release_lead_days
 engineering_validation_days:
   value:
     min: 1

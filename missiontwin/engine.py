@@ -24,7 +24,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .domain import (AREAS, COMPONENT_TO_SYSTEM, CRITICAL_CAP, LOG_DIR, MONTHS, SCENARIO_NOW, SHIP_IDS, SHIPS, SYSTEMS,
+from .domain import (AREAS, COMPONENT_TO_SYSTEM, CRITICAL_CAP, INPORT_CODES, LOG_DIR, MONTHS, SCENARIO_NOW, SHIP_IDS, SHIPS, SYSTEMS,
                      UTC, WATCHSTATIONS, band, date_dt, day_of, dt_of, format_dtg, iso, local_label, parse_ts, parts_index)
 from .ingest import Baseline, View, fact_date
 from .models import SourceRef
@@ -137,21 +137,34 @@ class Item:
     explain: list = field(default_factory=list)
     part_niin: str = ""
     doc_number: str = ""
+    # Extra supply routes added by fixes, as (base, stages). The open requisition is not cancelled: the item ends
+    # when the first route completes. Each route draws its own stream, so the original route keeps the same
+    # samples with or without a fix (common random numbers).
+    alternates: list = field(default_factory=list)
 
     def sample_end(self, seed: int, n: int) -> np.ndarray:
-        if self.persistent:
+        if self.persistent and not self.alternates:
             return np.full(n, INF)
-        rng = rng_for(seed, "item:" + self.key)
-        e = np.full(n, self.base, dtype=float)
-        for s in self.stages:
-            e = e + s.sample(rng, n)
+        e = np.full(n, INF)
+        if not self.persistent:
+            rng = rng_for(seed, "item:" + self.key)
+            e = np.full(n, self.base, dtype=float)
+            for s in self.stages:
+                e = e + s.sample(rng, n)
+        for i, (base, stages) in enumerate(self.alternates):
+            rng = rng_for(seed, f"item:{self.key}:route{i + 1}")
+            route = np.full(n, base, dtype=float)
+            for s in stages:
+                route = route + s.sample(rng, n)
+            e = np.minimum(e, route)
         return np.maximum(np.maximum(e, self.not_before), self.floor)
 
     def planned_end(self) -> float:
-        if self.persistent:
+        if self.persistent and not self.alternates:
             return INF
-        e = self.base + sum(s.point() for s in self.stages)
-        return max(e, self.not_before, self.floor)
+        routes = ([] if self.persistent else [self.base + sum(s.point() for s in self.stages)])
+        routes += [base + sum(s.point() for s in stages) for base, stages in self.alternates]
+        return max(min(routes), self.not_before, self.floor)
 
 
 @dataclass
@@ -201,6 +214,17 @@ class Mission:
     sources: list
     consequence: str = ""
     moved_note: str = ""
+    codename: str = ""  # from the event plan (events_missions.json); reports and requests use it
+
+    @property
+    def display(self) -> str:
+        """Short name for generated text: the event plan's codename, else its label."""
+        return self.codename or self.label
+
+
+def mission_display(m: dict) -> str:
+    """The same short name for a forecast mission record."""
+    return m.get("codename") or m["label"]
 
 
 @dataclass
@@ -386,7 +410,7 @@ def etr_slip_stage(params) -> Stage:
 def inport_place(sw: ShipWorld, t: float) -> str | None:
     for b in sw.blocks:
         if b["s"] <= t < b["e"]:
-            if b['code'] not in ('UPK', 'INPORT', 'AVAIL', 'HOLUPK', 'RFS'):
+            if b['code'] not in INPORT_CODES:
                 return None
             # Messages constrain the matching planned port window, never imply a new track.
             for movement in getattr(sw, 'movements', []):
@@ -479,7 +503,7 @@ def build_world(scn: Scenario) -> World:
                 certs=list(ev.get("prerequisite_certs", [])), areas=list(ev.get("mission_areas", [])),
                 prereqs=list(ev.get("prerequisite_events", [])), avail_id=ev.get("prerequisite_avail") or "",
                 block_id=blk["block_id"] if blk else "", sources=srcs, consequence=ev.get("consequence_if_missed", ""),
-                moved_note=moved))
+                moved_note=moved, codename=(ev.get("codename") or "").strip()))
         # people: quals x roster x verified facts
         roster = {r["member_id"]: r for r in v.rows(s, "roster.csv")}
         for q in v.rows(s, "quals.csv"):
@@ -696,9 +720,11 @@ def apply_fix(world: World, fix: dict, at: float):
                     donor.cannibalizable.remove((st['niin'], st['donor_comp']))
                     ce = pval(world.params, "cannibalize_extra_days")
                     stages = stages + [Stage("uniform", ce["min"], ce["max"], label="remove from donor")]
-                item.base, item.stages = t0, stages + [ins]
-                item.floor = at
-                item.explain = [f"FIX: {src_kind.replace('_', '-')} NIIN {st['niin']} from {st['donor']} ({how})", "+ install/repair (ledger)"]
+                # A second source races the open requisition; the requisition stays open.
+                item.alternates.append((t0, stages + [ins]))
+                item.floor = max(item.floor, at)
+                item.explain = item.explain + [f"FIX: {src_kind.replace('_', '-')} NIIN {st['niin']} from {st['donor']} ({how}) + install/repair (ledger); "
+                                               "the open requisition stays open and whichever part arrives first is installed"]
                 item.sources.append(donor.stock.get(st["niin"], {}).get("src") or SourceRef(file="squadron/fleet_onboard_stock.csv"))
                 if src_kind == "cross_deck":
                     if st["niin"] in donor.stock:
@@ -724,21 +750,24 @@ def apply_fix(world: World, fix: dict, at: float):
                 asset = next((w for w in world.wholesale.get(st['niin'], []) if w['holder'] == holder and w['on_hand_qty'] > 0), None)
                 if asset is None:
                     raise ValueError('Wholesale asset is no longer available')
-                stages = []
-                if holder == "PROGRAM_OFFICE":
-                    r = pval(world.params, "program_office_release_days")
-                    v = pval(world.params, "engineering_validation_days")
-                    stages = [Stage("uniform", r["min"], r["max"], label="program office release"),
-                              Stage("uniform", v["min"], v["max"], label="engineering validation")]
+                # The holder's stated release lead is sourced; release_lead_days is optional in the contract, so a
+                # blank record falls back to the ledger (as CONUS transit does below).
+                lead = asset.get('release_lead_days')
+                if lead not in (None, ''):
+                    stages = [Stage('fixed', float(lead), label='source release lead')]
+                elif holder == 'PROGRAM_OFFICE':
+                    r = pval(world.params, 'program_office_release_days')
+                    stages = [Stage('uniform', r['min'], r['max'], label='program office release (ledger; record states no lead)')]
                 else:
-                    stages = [Stage("fixed", 1, label="WSS release")]
-                stages = [Stage('fixed', float(asset['release_lead_days']), label='source release lead')]
+                    stages = [Stage('fixed', 1, label='WSS release (record states no lead)')]
                 if asset.get('requires_engineering_validation'):
                     validation = pval(world.params, 'engineering_validation_days')
                     stages.append(Stage('uniform', validation['min'], validation['max'], label='engineering validation'))
                 stages.append(Stage('fixed', float(asset.get('transit_days_conus') or pval(world.params, 'transit_days_conus_default')), label='CONUS transit'))
-                item.base, item.stages, item.floor = at, stages + [ins], at
-                item.explain = [f"FIX: pull NIIN {st['niin']} from {holder}"] + [s.describe() for s in stages] + ["+ install/repair (ledger)"]
+                item.alternates.append((at, stages + [ins]))
+                item.floor = max(item.floor, at)
+                item.explain = item.explain + [f"FIX: pull NIIN {st['niin']} from {holder}: " + "; ".join(s.describe() for s in stages)
+                                               + " + install/repair (ledger); the open requisition stays open and whichever part arrives first is installed"]
                 item.sources.append(SourceRef(file="squadron/wholesale_stock.csv", key=st["niin"]))
                 for w in world.wholesale.get(st["niin"], []):
                     if w["holder"] == holder and w["on_hand_qty"] > 0:
@@ -999,6 +1028,32 @@ def _fix_digest(world: World) -> str:
     return hashlib.sha256(json.dumps(world.fixes, sort_keys=True, default=str).encode()).hexdigest()[:12] if world.fixes else "-"
 
 
+def _interval_samples(sw: ShipWorld, mission: Mission) -> list[float]:
+    """Times that cover an event window: every 6 h plus each personnel, training and cert boundary inside it.
+    Shared by the Monte Carlo assessment and the planned case so both judge the same window."""
+    boundaries = [mission.start, max(mission.start, mission.end - 1e-6)]
+    for holders in sw.holders.values():
+        for holder in holders:
+            for beginning, ending, _reason, _source in holder.off:
+                boundaries.extend([beginning, ending])
+            boundaries.extend([holder.on_until, holder.on_base])
+    boundaries.extend(training['expires'] + 1e-6 for training in sw.trainings)
+    boundaries.extend(cert["expires"] + 1e-6 for cert in sw.certs.values())
+    return sorted(set(list(np.arange(mission.start, mission.end, .25)) +
+                      [point for point in boundaries if mission.start <= point < mission.end]))
+
+
+def _first_window(ok: np.ndarray, fine: np.ndarray, start: float, duration: float, step: float) -> float | None:
+    """Earliest grid time >= `start` from which `ok` holds for a whole window of `duration` days."""
+    span = max(1, int(math.ceil(duration / step)))
+    if span > len(ok):
+        return None
+    failures = np.concatenate([[0], np.cumsum(~ok)])
+    clean = (failures[span:] - failures[:-span]) == 0  # clean[i]: ok[i:i + span] all hold
+    idx = np.where(clean & (fine[:len(clean)] >= start - 1e-9))[0]
+    return float(fine[idx[0]]) if len(idx) else None
+
+
 def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
     SYSTEMS, AREAS = world.profile.systems, world.profile.areas
     dt_of = world.profile.dt_of
@@ -1009,21 +1064,10 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
     interval_columns = {}
     for s, sw in world.ships.items():
         times = list(grid) + [mission.start for mission in sw.missions]
-        if sw.missions:  # interval readiness is decision data, not optional presentation detail
-            for mission in sw.missions:
-                boundaries = [mission.start, max(mission.start, mission.end - 1e-6)]
-                for holders in sw.holders.values():
-                    for holder in holders:
-                        for beginning, ending, reason, source in holder.off:
-                            boundaries.extend([beginning, ending])
-                boundaries.extend(training['expires'] + 1e-6 for training in sw.trainings)
-                boundaries.extend(holder.on_until for holders in sw.holders.values() for holder in holders)
-                boundaries.extend(holder.on_base for holders in sw.holders.values() for holder in holders)
-                boundaries.extend(cert["expires"] + 1e-6 for cert in sw.certs.values())
-                samples = sorted(set(list(np.arange(mission.start, mission.end, .25)) +
-                    [point for point in boundaries if mission.start <= point < mission.end]))
-                interval_columns[mission.event_id] = list(range(len(times), len(times) + len(samples)))
-                times.extend(samples)
+        for mission in sw.missions:  # interval readiness is decision data, not optional presentation detail
+            samples = _interval_samples(sw, mission)
+            interval_columns[mission.event_id] = list(range(len(times), len(times) + len(samples)))
+            times.extend(samples)
         T_by_ship[s] = np.array(times, dtype=float)
     r = _evaluate(world, T_by_ship, n, seed, planned=False)
     G = len(grid)
@@ -1081,7 +1125,7 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
                     others &= arr2
             uplift = float(others.mean()) - assessment
             g = next((x for x in interval_gates_raw if x['id'] == gid), None)
-            row = {"gate_id": gid, "kind": g["kind"] if g else "prereq", "label": g["label"] if g else f"{_mission(world, gid[7:]).label} ready first",
+            row = {"gate_id": gid, "kind": g["kind"] if g else "prereq", "label": g["label"] if g else f"{_mission(world, gid[7:]).display} ready first",
                    "p_ok": float(arr.mean()), "uplift": uplift}
             if detail:
                 row.update(_gate_detail(world, world.ships[s], m, g, r[s], G, n) if g else
@@ -1117,7 +1161,7 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
         interval_probability = round(assessment, 4)
         interval_gates = [{'gate_id': g['id'], 'label': g['label'], 'p_ok': round(float(g['ok'].all(axis=1).mean()), 4)} for g in interval_gates_raw]
         missions_out.append({
-            "event_id": eid, "label": m.label, "ship_id": s, "name": m.name, "start": iso(dt_of(m.start)),
+            "event_id": eid, "label": m.label, "codename": m.codename, "ship_id": s, "name": m.name, "start": iso(dt_of(m.start)),
             "start_dtg": format_dtg(dt_of(m.start)), "start_local": local_label(dt_of(m.start)), "day": round(m.start, 2),
             "p_ready": round(p, 4), "p_assessed": interval_probability, "band": band(assessment, bands), "next_domino": nd, "gates": gate_rows, "curve": curve,
             "planned": planned.get(eid), "areas": m.areas, "moved_note": m.moved_note, "consequence": m.consequence,
@@ -1242,7 +1286,11 @@ def _gate_detail(world, sw, m, g, r, G, n) -> dict:
 
 # ====================================================================== planned case (R1)
 def planned_case(world: World) -> dict:
-    """Deterministic: stated ETAs and point estimates, no randomness. MAKE/MISS margin and the binding chain."""
+    """Deterministic: stated ETAs and point estimates, no randomness. MAKE/MISS margin and the binding chain.
+
+    Uses the same event-interval rule as the assessment: MAKE only if every requirement holds across the whole
+    event window (sampled by `_interval_samples`) and every prerequisite event makes and ends before this starts.
+    """
     _day_str = lambda day: globals()['_day_str'](day, world.profile)
     dt_of = world.profile.dt_of
     # Planned case must reach every event's end even though the daily window is fixed at 30 days.
@@ -1250,55 +1298,69 @@ def planned_case(world: World) -> dict:
                          max(m.end for sw in world.ships.values() for m in sw.missions)))) + 45
     step = 0.25
     fine = np.arange(max(0.0, math.floor(world.cursor * 4) / 4), H, step)
-    T_by_ship = {}
-    for s, sw in world.ships.items():
-        T_by_ship[s] = np.concatenate([fine, np.array([m.start for m in sw.missions], dtype=float)])
-    r = _evaluate(world, T_by_ship, 1, 0, planned=True)
     F = len(fine)
+    T_by_ship, window_cols = {}, {}
+    for s, sw in world.ships.items():
+        times = list(fine)
+        for m in sw.missions:
+            samples = _interval_samples(sw, m)
+            window_cols[m.event_id] = list(range(len(times), len(times) + len(samples)))
+            times.extend(samples)
+        T_by_ship[s] = np.array(times, dtype=float)
+    r = _evaluate(world, T_by_ship, 1, 0, planned=True)
     own = {}
     for s, sw in world.ships.items():
-        for i, m in enumerate(sw.missions):
-            gates = _gates(world, sw, m, r[s], list(range(F)) + [F + i])
-            own[m.event_id] = (s, m, gates)
+        for m in sw.missions:
+            # Gate arrays: columns [:F] are the fine grid, columns [F:] are this event's window samples.
+            own[m.event_id] = (s, m, _gates(world, sw, m, r[s], list(range(F)) + window_cols[m.event_id]))
     out = {}
+
+    def holds(gate) -> bool:
+        return bool(gate["ok"][0, F:].all())
 
     def make(eid, seen=()):
         s, m, gates = own[eid]
-        ok = all(bool(g["ok"][0, -1]) for g in gates)
+        ok = all(holds(g) for g in gates)
         for pe in m.prereqs:
             if pe in own and pe not in seen:
-                ok = ok and make(pe, seen + (eid,))
+                ok = ok and make(pe, seen + (eid,)) and own[pe][1].end <= m.start
         return ok
 
     for eid, (s, m, gates) in own.items():
         mk = make(eid)
+        duration = m.end - m.start
         allfine = np.ones(F, bool)
         for g in gates:
             allfine &= g["ok"][0, :F]
-        prereq_ok = all(make(pe) for pe in m.prereqs if pe in own)
+        prereq_ok = all(make(pe) and own[pe][1].end <= m.start for pe in m.prereqs if pe in own)
         chain = []
         for g in gates:
-            ok_start = bool(g["ok"][0, -1])
-            gate_fine = g["ok"][0, :F]
-            idx = np.where(gate_fine & (fine >= m.start - 1e-9))[0]
-            ready_t = float(fine[idx[0]]) if len(idx) else None
-            if not ok_start:
+            if not holds(g):
+                ready_t = _first_window(g["ok"][0, :F], fine, m.start, duration, step)
                 chain.append({"gate_id": g["id"], "label": g["label"], "ready": _day_str(ready_t) if ready_t is not None else None,
-                              "why": _planned_why(world, world.ships[s], g, m, r[s])})
+                              "why": _planned_why(world, world.ships[s], g, m, r[s], window_cols[eid])})
         for pe in m.prereqs:
-            if pe in own and not make(pe):
-                chain.append({"gate_id": f"prereq:{pe}", "label": f"{_mission(world, pe).label} must succeed first", "ready": None,
-                              "why": [f"{_mission(world, pe).label} planned MISS"]})
+            if pe not in own:
+                continue
+            parent = own[pe][1]
+            if not make(pe):
+                chain.append({"gate_id": f"prereq:{pe}", "label": f"{parent.display} must succeed first", "ready": None,
+                              "why": [f"{parent.display} planned MISS"]})
+            elif parent.end > m.start:
+                chain.append({"gate_id": f"prereq:{pe}", "label": f"{parent.display} must finish first", "ready": _day_str(parent.end),
+                              "why": [f"{parent.display} ends {format_dtg(dt_of(parent.end))}, after this event starts"]})
         if mk:
-            idx = np.where(allfine & (fine >= world.cursor - 1e-9))[0]
-            rd = float(fine[idx[0]]) if len(idx) else world.cursor
+            # Ready date: start of the unbroken ready stretch that carries through the end of the event.
+            idx = np.where((fine >= world.cursor - 1e-9) & (fine < m.end))[0]
+            broken = idx[~allfine[idx]]
+            rd = float(fine[broken[-1] + 1]) if len(broken) else float(fine[idx[0]]) if len(idx) else world.cursor
+            rd = min(rd, m.start)
             margin = m.start - rd
-            ready_date = _day_str(rd)
         else:
-            idx = np.where(allfine & (fine >= m.start - 1e-9))[0]
-            rd = float(fine[idx[0]]) if (len(idx) and prereq_ok) else None
+            # Earliest start on or after the planned one at which a window of the same length would hold.
+            rd = _first_window(allfine, fine, m.start, duration, step) if prereq_ok else None
             margin = (m.start - rd) if rd is not None else None
-            ready_date = _day_str(rd)
+        ready_date = _day_str(rd)
         out[eid] = {"result": "MAKE" if mk else "MISS", "ready_date": ready_date,
                     "ready_dtg": format_dtg(dt_of(rd)) if rd is not None else None,
                     "margin_days": round(margin, 2) if margin is not None else None, "chain": chain,
@@ -1306,27 +1368,29 @@ def planned_case(world: World) -> dict:
     return out
 
 
-def _planned_why(world, sw, g, m, r) -> list[str]:
+def _planned_why(world, sw, g, m, r, window_cols) -> list[str]:
+    """Plain reasons a requirement fails somewhere in the event window [m.start, m.end)."""
     SYSTEMS = world.profile.systems
     dt_of = world.profile.dt_of
     why = []
     if g["kind"] == "system":
         comps = {c["eic"] for c in SYSTEMS[g["eic"]]["components"]} | {g["eic"]}
         for obj, arr in r["info"]:
-            if isinstance(obj, Item) and obj.eic in comps and obj.start <= m.start < obj.planned_end():
+            if isinstance(obj, Item) and obj.eic in comps and obj.start < m.end and m.start < obj.planned_end():
                 pe = obj.planned_end()
                 why.append(f"{obj.title}: ready {format_dtg(dt_of(pe)) if pe < INF / 2 else 'not in horizon'}")
                 why += [f"  {e}" for e in obj.explain]
     elif g["kind"] == "team":
-        col = len(r["T"]) - len(sw.missions) + sw.missions.index(m)
-        cnt = int(r["teams"][g["ws"]][0, col])
-        why.append(f"{cnt} of {g['k']} required aboard at mission start")
+        cnt = int(r["teams"][g["ws"]][0, window_cols].min())
+        why.append(f"{cnt} of {g['k']} required aboard at the low point of the event window")
         for h, aboard in r["team_det"][g["ws"]]:
             for a, z, w, _s in h.off:
-                if a <= m.start < z:
+                if a < m.end and m.start < z:
                     why.append(f"  {h.rate} {h.member_id}: {w} {format_dtg(dt_of(a))}" + (f" to {format_dtg(dt_of(z))}" if z < INF / 2 else ""))
     elif g["kind"] == "training":
-        why.append(f"{g['t']['name']} expires {format_dtg(dt_of(g['t']['expires']))}")
+        t = g["t"]
+        refresh = f"refresh {format_dtg(dt_of(t['refresh']))}" if t["refresh"] is not None else "no refresh scheduled"
+        why.append(f"{t['name']} expires {format_dtg(dt_of(t['expires']))}; {refresh}")
     elif g["kind"] == "cert":
         why.append(f"{g['cert_id']} not certified or expired")
     elif g["kind"] == "avail":
@@ -1344,7 +1408,7 @@ def domino_graph(fc: dict, ship_id: str, event_id: str | None = None) -> dict:
         if m["ship_id"] != ship_id or (event_id and m["event_id"] != event_id):
             continue
         mid = f"mission:{m['event_id']}"
-        G.add_node(mid, kind="mission", label=f"{m['label']}: {m['name']}", p=m['p_assessed'], band=m['band'], sources=m["sources"],
+        G.add_node(mid, kind="mission", label=f"{mission_display(m)}: {m['name']}", p=m['p_assessed'], band=m['band'], sources=m["sources"],
                    p_ready=m.get("curve"))
         for g in m["gates"]:
             gid = f"{m['event_id']}|{g['gate_id']}"

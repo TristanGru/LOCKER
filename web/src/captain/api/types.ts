@@ -245,6 +245,8 @@ export interface FixesPayload {
   missionId: string;
   fixes: Fix[];
   decided: Fix[];
+  /** Backend explanation when every evaluated option was pruned. */
+  note?: string;
 }
 
 export type DecisionKind = 'approve' | 'reject' | 'modify';

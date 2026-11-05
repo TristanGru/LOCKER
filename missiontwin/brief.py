@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from . import BANNER
 from .domain import SHIPS, format_dtg, local_label, parse_ts
+from .engine import mission_display
 
 
 def build_brief(fc: dict, ship_id: str, ranking: dict | None, contradictions: list, stale: dict, decisions: list) -> dict:
@@ -36,13 +37,13 @@ def build_brief(fc: dict, ship_id: str, ranking: dict | None, contradictions: li
             continue
         pl = m["planned"] or {}
         margin = pl.get("margin_days")
-        plan_txt = f"Planned at start only (on stated ETAs): {pl.get('result')}"
+        plan_txt = f"Planned across the event window (on stated ETAs): {pl.get('result')}"
         if margin is not None:
             plan_txt += f", {abs(margin):.1f} days {'margin' if margin >= 0 else 'late'}"
         elif pl.get("result") == "MISS":
             plan_txt += ", not ready inside the horizon"
         srcs = m["sources"]
-        L.append(f"- {m['label']} ({m['name']}, {m['start_dtg']}): {m['band']}, {pct(m.get('p_assessed', m['p_ready']))} across interval; {pct(m['p_ready'])} at start. "
+        L.append(f"- {mission_display(m)} ({m['name']}, {m['start_dtg']}): {m['band']}, {pct(m.get('p_assessed', m['p_ready']))} across interval; {pct(m['p_ready'])} at start. "
                  f"{plan_txt}. {cite(srcs)}")
         if m.get("moved_note"):
             L.append(f"  Mission date {m['moved_note']}.")
@@ -50,7 +51,7 @@ def build_brief(fc: dict, ship_id: str, ranking: dict | None, contradictions: li
             L.append(f"  Interval checks: {m['interval_p_ready'] * 100:.0f}%, sampled every six hours plus known boundaries; not a continuous guarantee.")
         for issue in m.get('coverage_issues', []):
             L.append(f'  INSUFFICIENT EVIDENCE: {issue}')
-        ctx_missions.append({"label": m["label"], "p_ready": m["p_ready"], 'p_assessed': m.get('p_assessed'), "band": m["band"], "planned": pl.get("result"), "margin_days": margin})
+        ctx_missions.append({"label": m["label"], "codename": m.get("codename", ""), "p_ready": m["p_ready"], 'p_assessed': m.get('p_assessed'), "band": m["band"], "planned": pl.get("result"), "margin_days": margin})
     L += ["", "NEXT DOMINO"]
     for m in fc["missions"]:
         if m["ship_id"] != ship_id or not m["next_domino"]:
@@ -59,17 +60,19 @@ def build_brief(fc: dict, ship_id: str, ranking: dict | None, contradictions: li
         srcs = []
         for it in g.get("items", []):
             srcs += it.get("sources", [])
-        L.append(f"- {m['label']}: {g['label']} (P ok {g['p_ok'] * 100:.0f}%; making it certain adds {g['uplift'] * 100:.0f} pts). {cite(srcs)}")
+        L.append(f"- {mission_display(m)}: {g['label']} (P ok {g['p_ok'] * 100:.0f}%; making it certain adds {g['uplift'] * 100:.0f} pts). {cite(srcs)}")
         for ch in (m["planned"] or {}).get("chain", [])[:3]:
             for w in ch["why"][:3]:
                 L.append(f"    {w.strip()}")
     if ranking and ranking.get("candidates"):
         L += ["", "RANKED FIXES (for decision)"]
         for c in ranking["candidates"][:3]:
-            eff = "; ".join(f"{x['label']} {x['p_before'] * 100:.0f}%->{x['p_after'] * 100:.0f}%" for x in c["missions"] if x["ship_id"] == ship_id)
+            eff = "; ".join(f"{mission_display(x)} {x['p_before'] * 100:.0f}%->{x['p_after'] * 100:.0f}%" for x in c["missions"] if x["ship_id"] == ship_id)
             donor = "; ".join(f"{s}: missions {v['mission_p_delta'] * 100:+.1f} pts, capability {v['capability_delta'] * 100:+.1f} pts"
                               for s, v in c["donor_effects"].items()) or "no donor cost"
             L.append(f"- #{c['rank']} {c['title']}. {eff}. Donor: {donor}.")
+    elif ranking and ranking.get("note"):
+        L += ["", "RANKED FIXES (for decision)", f"- {ranking['note']}"]
     if decisions:
         L += ["", "DECISIONS LOGGED"]
         for d in decisions:

@@ -30,7 +30,8 @@ test('source replacement refreshes the live workspace without restarting', async
     await expect(page.locator('.mission-row').first()).toContainText('Across event interval');
     await page.getByRole('button', { name: 'Readiness brief', exact: true }).click();
     await page.getByRole('button', { name: 'Generate brief' }).click();
-    await expect(page.locator('.brief-document')).toContainText('sampled event interval');
+    // The brief includes the cold fix ranking; same allowance as the fix comparison screen.
+    await expect(page.locator('.brief-document')).toContainText('sampled event interval', { timeout: 45000 });
     // A malformed candidate must keep the active revision and tell the presenter.
     await writeFile(file, 'not a valid CSV export', 'utf8');
     await page.getByRole('button', { name: 'Evidence & feed', exact: true }).click();

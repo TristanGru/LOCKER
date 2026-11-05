@@ -70,8 +70,9 @@
         },
         {
           "type": "training_scheduled",
-          "date": "21 NOV",
-          "span": "CIC air defense team trainer due before COMPTUEX; scheduled 21 NOV.",
+          "event": "SEASHIELD (COMPTUEX)",
+          "date": "10 NOV",
+          "span": "CIC air defense team trainer due before SEASHIELD (COMPTUEX); scheduled 10 NOV.",
           "hedged": false
         }
       ]

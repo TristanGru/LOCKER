@@ -58,7 +58,7 @@ part_arrival_days_by_regime:                         # assumed (placeholder medi
   PROCUREMENT: {dist: lognormal, median: 135, sigma: 0.7, tail_beyond_days: 365}
   REJECTED:    {action: re_requisition, add_days: 3}
 transit_days_conus_default: 5                        # sourced (snippet): ADC 1114
-program_office_release_days: {min: 2, max: 5}        # assumed
+program_office_release_days: {min: 2, max: 5}        # assumed; fallback when a wholesale record states no release_lead_days
 expedite_effect: {regime_shift: "one regime faster if wholesale on hand > 0, else none"}  # assumed
 
 cross_deck_days:                                     # assumed

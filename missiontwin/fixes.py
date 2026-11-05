@@ -4,6 +4,10 @@ Search order follows the Gridley case (spec 05): wholesale, program office, then
 Every candidate is evaluated on the SAME random draws (common random numbers, ranking_runs each) so close
 fixes don't swap order from noise. Ranking: net squadron missions in green, then own-ship uplift in P(ready),
 then lower donor cost, then fewer actions. The captain approves, rejects or edits; nothing auto-applies.
+
+Only options that help are offered: a candidate must add a squadron event in green or raise the ship's own interval
+readiness on one of its events by at least MIN_GAIN, and a package is dropped when a smaller package of its own steps does as well.
+Steps that provably cannot change the forecast are not generated.
 """
 from __future__ import annotations
 
@@ -14,8 +18,13 @@ import json
 import time
 
 from .domain import SHIP_IDS, SHIPS, SYSTEMS, WATCHSTATIONS, COMPONENT_TO_SYSTEM, band, format_dtg, dt_of, parts_index
-from .engine import INF, Scenario, apply_fix, build_world, first_common_port, forecast, inport_place, pval
+from .engine import INF, Scenario, apply_fix, build_world, first_common_port, forecast, inport_place, mission_display, pval
 from .validation import validate_world
+
+
+# Smallest improvement in one of the ship's own events (interval probability) worth asking a human to approve.
+# One point: below the whole-percent precision the UI and brief display, and above common-random-number noise.
+MIN_GAIN = 0.01
 
 
 def _fid(steps: list) -> str:
@@ -79,9 +88,11 @@ def _single_steps(world, fc: dict, ship_id: str) -> list[dict]:
                                  "receiver": ship_id, "item_key": item.key},
                                 f"Pull NIIN {niin} from {w['holder_name']}", gid,
                                 f"{w['holder']} on hand {w['on_hand_qty']}" + ("; ISEA engineering validation required" if w["requires_engineering_validation"] else ""))
-                    add({"kind": "expedite", "receiver": ship_id, "item_key": item.key, "doc_number": item.doc_number},
-                        f"Expedite requisition {item.doc_number} (OTS/GDSC)", gid,
-                        "Ledger: one regime faster only if wholesale has stock.")
+                    # Expedite moves one regime faster only when wholesale has stock; otherwise apply_fix is a no-op.
+                    if sum(w["on_hand_qty"] for w in world.wholesale.get(niin, []) if w["holder"] in ("NAVSUP_WSS", "DLA")) > 0:
+                        add({"kind": "expedite", "receiver": ship_id, "item_key": item.key, "doc_number": item.doc_number},
+                            f"Expedite requisition {item.doc_number} (OTS/GDSC)", gid,
+                            "Ledger: one regime faster because wholesale has stock.")
             elif g["kind"] == "team":
                 ws = g["gate_id"].split(":")[1]
                 for d in SHIP_IDS:
@@ -96,7 +107,7 @@ def _single_steps(world, fc: dict, ship_id: str) -> list[dict]:
                         continue
                     add({"kind": "crew_loan", "member_id": h.member_id, "donor": d, "receiver": ship_id, "ws": ws,
                          "return_day": round(mobj.end + 0.5, 3)},
-                        f"Cross-deck {h.rate} {h.member_id} ({ws}) from {SHIPS[d]['name']} through {m['label']}", gid,
+                        f"Cross-deck {h.rate} {h.member_id} ({ws}) from {SHIPS[d]['name']} through {mission_display(m)}", gid,
                         f"{d} has {len(world.ships[d].holders.get(ws, []))} qualified on {ws}; available from {format_dtg(dt_of(max(t0, world.cursor)))}.")
             elif g["kind"] == "training":
                 t = next((x for x in sw.trainings if f"training:{x['id']}" == g["gate_id"]), None)
@@ -109,7 +120,10 @@ def _single_steps(world, fc: dict, ship_id: str) -> list[dict]:
                             day = x
                             break
                         x += 1
-                    if day is not None and (t["refresh"] is None or t["refresh"] > day):
+                    # A refresh already scheduled before the expiry leaves no lapse; moving it earlier (same success
+                    # draw) cannot change the gate, so only offer a refresh that closes or shortens a lapse.
+                    gap = t["refresh"] is None or t["refresh"] > t["expires"]
+                    if day is not None and gap and (t["refresh"] is None or t["refresh"] > day):
                         add({"kind": "schedule_training", "ship": ship_id, "requirement_id": t["id"], "day": round(day, 2)},
                             f"Run {t['name']} in port {format_dtg(dt_of(day))}", gid, "Training refresh must happen in port before the mission.")
         # schedule shift (only if no overlap with this ship's other missions)
@@ -117,7 +131,7 @@ def _single_steps(world, fc: dict, ship_id: str) -> list[dict]:
             later = [x for x in sw.missions if x.start > mobj.start and x.event_id != mobj.event_id]
             if all(mobj.end + days < x.start for x in later):
                 add({"kind": "shift_mission", "event_id": mobj.event_id, "days": days},
-                    f"Ask ISIC to shift {m['label']} {days} days later", f"{m['event_id']}|schedule",
+                    f"Ask ISIC to shift {mission_display(m)} {days} days later", f"{m['event_id']}|schedule",
                     "Requires ISIC/TYCOM approval; schedule shows no conflict with this ship's later events.")
     return out
 
@@ -182,16 +196,39 @@ def rank_fixes(scn: Scenario, ship_id: str, runs: int | None = None) -> dict:
             if abs(dm) > 0.0005 or abs(dc) > 0.0005:
                 donor[s] = {"mission_p_delta": round(dm, 4), "capability_delta": round(dc, 4)}
         donor_cost = sum(min(0.0, v["mission_p_delta"]) + min(0.0, v["capability_delta"]) for v in donor.values())
-        missions = [{"event_id": m["event_id"], "label": m["label"], "ship_id": m["ship_id"], "p_before": base_mp[m["event_id"]],
+        missions = [{"event_id": m["event_id"], "label": m["label"], "codename": m.get("codename", ""), "ship_id": m["ship_id"], "p_before": base_mp[m["event_id"]],
                      "p_after": m['p_assessed'], 'start_p_after': m['p_ready'], "band_after": m["band"], "planned": m["planned"]} for m in fc["missions"]]
         results.append({**p, "net_green": green - base_green, "green_after": green, "own_uplift": round(own_uplift, 4),
                         "donor_effects": donor, "donor_cost": round(donor_cost, 4), "missions": missions,
                         "score": [green - base_green, round(own_uplift, 3), round(donor_cost, 3), -len(p["steps"])]})
+    evaluated = len(results)
+    results, pruned = _prune(results, ship_id)
     results.sort(key=lambda r: (r["net_green"], round(r["own_uplift"], 3), round(r["donor_cost"], 3), -len(r["steps"])), reverse=True)
     for i, r in enumerate(results, 1):
         r["rank"] = i
-    return {"ship_id": ship_id, "runs_per_candidate": runs, "seed": seed, "cursor": base["cursor"], "baseline": base_mp,
-            "baseline_green": base_green, "candidates": results, "elapsed_s": round(time.time() - t0, 2),
-            "rule": "interval readiness: net squadron events green, receiver improvement, donor cost, then fewer actions",
-            'assessment_basis': 'event_interval',
-            "common_random_numbers": True}
+    out = {"ship_id": ship_id, "runs_per_candidate": runs, "seed": seed, "cursor": base["cursor"], "baseline": base_mp,
+           "baseline_green": base_green, "candidates": results, "elapsed_s": round(time.time() - t0, 2),
+           "rule": "interval readiness: net squadron events green, receiver improvement, donor cost, then fewer actions",
+           'assessment_basis': 'event_interval', "common_random_numbers": True,
+           "evaluated": evaluated, "pruned": pruned, "min_gain": MIN_GAIN}
+    if not results:
+        out["note"] = (f"None of the {evaluated} options evaluated raises a {ship_id} event's interval readiness by "
+                       f"{MIN_GAIN * 100:.0f} point or more, or adds an event in green." if evaluated else
+                       f"No option is available for {ship_id}'s current blockers.")
+    return out
+
+
+def _prune(results: list[dict], ship_id: str) -> tuple[list[dict], dict]:
+    """Keep options a human should weigh: drop those that do not help, then packages whose extra steps add nothing."""
+    def best_gain(r):  # largest improvement on any one of this ship's events (a summed uplift double-counts prerequisites)
+        return max((m["p_after"] - m["p_before"] for m in r["missions"] if m["ship_id"] == ship_id), default=0.0)
+
+    helpful = [r for r in results if r["net_green"] > 0 or best_gain(r) >= MIN_GAIN]
+    step_sets = {id(r): {json.dumps(s, sort_keys=True) for s in r["steps"]} for r in helpful}
+
+    def covers(q, r):  # q is a strict sub-package of r and is at least as good on every ranking criterion
+        return (step_sets[id(q)] < step_sets[id(r)] and q["net_green"] >= r["net_green"]
+                and q["own_uplift"] >= r["own_uplift"] - MIN_GAIN and q["donor_cost"] >= r["donor_cost"] - MIN_GAIN)
+
+    kept = [r for r in helpful if not any(covers(q, r) for q in helpful)]
+    return kept, {"no_gain": len(results) - len(helpful), "redundant_steps": len(helpful) - len(kept)}

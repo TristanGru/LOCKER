@@ -99,6 +99,8 @@ SHIPS = {
 SHIP_IDS = list(SHIPS)
 SQUADRON = "DESRON 99"
 TYCOM = "CNSL"
+# Schedule employment codes where the ship is pierside; any other code (UNDERWAY, ...) is at sea.
+INPORT_CODES = ("UPK", "INPORT", "AVAIL", "HOLUPK", "RFS")
 
 
 def hull_key(ship_id: str) -> str:
@@ -289,7 +291,8 @@ DEFAULT_PARAMS: dict = {
         "REJECTED": {"re_requisition_add_days": 3, "then": "DUE_IN"},
     }, "tag": "assumed", "source": "placeholder medians from research notes; not statistics"},
     "transit_days_conus_default": {"value": 5, "tag": "sourced", "source": "DLA ADC 1114 (snippet)"},
-    "program_office_release_days": {"value": {"min": 2, "max": 5}, "tag": "assumed", "source": "no public source"},
+    "program_office_release_days": {"value": {"min": 2, "max": 5}, "tag": "assumed",
+                                    "source": "no public source; used when a program office wholesale record states no release_lead_days"},
     "engineering_validation_days": {"value": {"min": 1, "max": 3}, "tag": "assumed", "source": "Gridley case implies ISEA validation step; duration assumed"},
     "expedite_effect": {"value": "one regime faster if wholesale on hand > 0, else none", "tag": "assumed", "source": "no public source"},
     "cross_deck_days": {"value": {"same_port": 1, "in_company": {"min": 1, "max": 3}, "different_ports_conus": {"min": 2, "max": 5}},

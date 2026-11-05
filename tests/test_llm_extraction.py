@@ -6,7 +6,25 @@ import pytest
 
 from missiontwin.domain import parse_ts
 from missiontwin.evaluate import evaluate_extraction, expected_fact, run_evaluation
-from missiontwin.llm import LLMClient, extract_facts, redact
+from missiontwin.llm import LLMClient, extract_facts, redact, rules_extract
+
+
+@pytest.mark.parametrize("line,eic", [
+    ("CIWS: PMS check last week not completed (lost). Will reschedule.", "CIWS"),
+    ("SPY-1D: PMS check last week not completed (lost).", "SPY1D"),
+    ("GUN5: PMS check on Tuesday not completed (lost).", "GUN5"),
+    ("MK 15 CIWS: PMS check last week not completed (lost).", "CIWS"),
+])
+def test_lost_pms_rule_reads_any_system_as_written(line, eic):
+    assert [(f["type"], f["value"]) for f in rules_extract(line)] == [("pms_lost", eic)]
+
+
+def test_lost_pms_on_unknown_system_is_flagged_not_dropped(baseline, tmp_path):
+    offline = LLMClient(base_url="", cache_dir=tmp_path)
+    facts, method = extract_facts(offline, "report.pdf", "KESSLER", "WIDGET: PMS check last week not completed (lost).", 1,
+                                  parse_ts("2026-11-06T01:00:00Z"), baseline.name_index)
+    assert method == "rules" and len(facts) == 1
+    assert facts[0].status == "NEEDS_REVIEW" and "not found in mission tree" in facts[0].reason
 
 
 def client_for(payload, tmp_path, model="fixture-model"):

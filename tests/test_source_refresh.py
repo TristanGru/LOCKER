@@ -281,13 +281,51 @@ def test_invalid_profile_tree_and_event_cycle_rejected(workspace):
     assert state.scenario.version == 0
 
 
+def lapse_trainer_mid_mission(root):
+    """CIC trainer expires 20 NOV, inside Mission A (16-22 NOV), with no refresh scheduled."""
+    def alter(rows):
+        for row in rows:
+            if row['requirement_id'].startswith('TRQ-AW-07'):
+                row['scheduled_refresh'] = ''
+        return rows
+    change_csv(root, 'KESSLER/training_readiness.csv', alter)
+
+
+def test_trainer_refresh_scheduled_underway_is_rejected(workspace):
+    root, state, client = workspace
+    def alter(rows):
+        for row in rows:
+            if row['requirement_id'].startswith('TRQ-AW-07'):
+                row['scheduled_refresh'] = '2026-11-21'  # inside Mission A's underway block, 16-22 NOV
+        return rows
+    change_csv(root, 'KESSLER/training_readiness.csv', alter)
+    response = refresh(client, state)
+    assert response.status_code == 422 and 'underway block SCH-KESSLER-05' in response.text
+    assert state.scenario.version == 0
+    # Loaded directly, the record makes the ship's evidence insufficient instead of silently counting.
+    assert any('team trainers run in port' in reason for reason in load_baseline(root).coverage()['KESSLER'])
+
+
+def test_canonical_trainer_refresh_is_in_port_and_missions_are_assessable(workspace):
+    _, _, client = workspace
+    missions = {m['event_id']: m for m in client.get('/api/forecast').json()['missions']}
+    for event_id in ('EVT-KESSLER-01', 'EVT-KESSLER-02'):
+        assert missions[event_id]['p_assessed'] > .5, event_id
+        assert missions[event_id]['planned']['result'] == 'MAKE', event_id
+
+
 def test_interval_only_blocker_drives_headline_graph_and_options(workspace):
-    _, state, client = workspace
+    root, state, client = workspace
+    lapse_trainer_mid_mission(root)
+    assert refresh(client, state).status_code == 200
     fc = client.get('/api/forecast').json()
     mission = fc['missions'][0]
     assert mission['p_ready'] > .8 and mission['p_assessed'] == 0
     assert mission['band'] == 'RED'
     assert mission['next_domino'].startswith('training:')
+    # The planned case judges the same window, so it cannot claim MAKE while the assessment is zero.
+    assert mission['planned']['result'] == 'MISS'
+    assert any(c['gate_id'].startswith('training:') for c in mission['planned']['chain'])
     graph = client.get('/api/graph/KESSLER', params={'event_id': mission['event_id']}).json()
     assert next(n for n in graph['nodes'] if n['kind'] == 'mission')['p'] == mission['p_assessed']
     assert any(any(s['kind'] == 'schedule_training' for s in c['steps']) for c in client.get('/api/fixes/KESSLER').json()['candidates'])

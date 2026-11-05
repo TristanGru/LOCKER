@@ -526,7 +526,7 @@ export default function Workspace() {
                       <th>Start</th>
                       <th>Interval status / start odds</th>
                       <th>Interval checks*</th>
-                      <th>Planned at start only</th>
+                      <th>Planned across event window</th>
                       <th />
                     </tr>
                   </thead>
@@ -972,7 +972,7 @@ function MissionRow({
           </span>
         </div>
         <p className="planned-case">
-          Planned at start only: <strong>{mission.planned?.result}</strong>
+          Planned across event window: <strong>{mission.planned?.result}</strong>
           {mission.planned?.margin_days != null &&
             ` / ${Math.abs(mission.planned.margin_days).toFixed(1)} days ${mission.planned.margin_days < 0 ? "late" : "margin"}`}
         </p>

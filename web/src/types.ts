@@ -29,6 +29,7 @@ export interface Mission {
   event_id: string;
   ship_id: string;
   label: string;
+  codename?: string;
   name: string;
   start: string;
   end: string;
@@ -186,6 +187,7 @@ export interface Fix {
   missions: {
     event_id: string;
     label: string;
+    codename?: string;
     ship_id: string;
     p_before: number;
     p_after: number;
@@ -193,6 +195,8 @@ export interface Fix {
 }
 export interface Ranking {
   warning?: string;
+  /** Why no option is offered, when every evaluated option was pruned. */
+  note?: string;
   candidates: Fix[];
   runs_per_candidate: number;
   rule: string;

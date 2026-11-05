@@ -79,3 +79,32 @@ def test_approved_fix_is_what_the_forecast_shows(baseline, log_path):
     fc = forecast(build_world(s), runs=1000, detail=False)
     for m in top["missions"]:
         assert abs(mission(fc, m['event_id'])['p_assessed'] - m['p_after']) < 0.02
+
+
+def test_fix_options_all_help_and_carry_no_redundant_steps(baseline, log_path):
+    """Every offered option helps by at least MIN_GAIN, and no package is matched by a smaller package of its own steps."""
+    import json
+    from missiontwin.fixes import MIN_GAIN
+    for played in (1, 4):
+        s = Scenario(baseline, log_path=log_path)
+        for _ in range(played):
+            s.apply("play_event", {})
+        r = rank_fixes(s, "KESSLER", runs=1000)
+        assert r["candidates"] and r["evaluated"] == len(r["candidates"]) + sum(r["pruned"].values())
+        steps = {c["fix_id"]: {json.dumps(x, sort_keys=True) for x in c["steps"]} for c in r["candidates"]}
+        for c in r["candidates"]:
+            gain = max(m["p_after"] - m["p_before"] for m in c["missions"] if m["ship_id"] == "KESSLER")
+            assert c["net_green"] > 0 or gain >= MIN_GAIN, c["title"]
+            for q in r["candidates"]:
+                if steps[q["fix_id"]] < steps[c["fix_id"]]:
+                    assert (q["net_green"] < c["net_green"] or q["own_uplift"] < c["own_uplift"] - MIN_GAIN
+                            or q["donor_cost"] < c["donor_cost"] - MIN_GAIN), (q["title"], c["title"])
+
+
+def test_no_op_steps_are_not_offered_and_empty_ranking_explains_why(baseline, log_path):
+    """At reset the CIC trainer is already refreshed in port before it lapses and wholesale has no pump stock."""
+    s = Scenario(baseline, log_path=log_path)
+    r = rank_fixes(s, "KESSLER", runs=1000)
+    kinds = {x["kind"] for c in r["candidates"] for x in c["steps"]}
+    assert not kinds & {"expedite", "schedule_training"}
+    assert r["candidates"] == [] and "1 point" in r["note"]

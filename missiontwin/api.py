@@ -547,7 +547,10 @@ def create_app(state: AppState | None = None) -> FastAPI:
         _ship(body.ship_id)
         with s.lock:
             fc = s.fc(detail=False)
-            ctx = {"ship_id": body.ship_id, "scenario_now": fc["cursor"], "events": [m["event_id"] for m in fc["missions"]],
+            # Names let a request such as "shift SEASHIELD two days" resolve to an event id.
+            ctx = {"ship_id": body.ship_id, "scenario_now": fc["cursor"],
+                   "events": [{"event_id": m["event_id"], "codename": m.get("codename", ""), "label": m["label"], "name": m["name"]}
+                              for m in fc["missions"]],
                    "ships": s.baseline.profile.ship_ids, "open_requisitions": [it.doc_number for it in s.world().ships[body.ship_id].items if it.doc_number]}
             act, src, badge = nl_to_action(s.client, body.text, ctx)
             return {"action": ActionAdapter.dump_python(act, mode="json") if act is not None else None, "source": src, "badge": badge,

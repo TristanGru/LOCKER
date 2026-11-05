@@ -34,7 +34,7 @@ The canonical synthetic dataset is checked in at `data/synthetic/`. There is no 
 
 ## Connected captain UI
 
-The default route now uses Sakie's layout with a top-level ship selector, DDG-only cutaway/interior viewer, and named missions (TIDEWATCH, SEASHIELD, DEEP LANTERN and IRON HORIZON). Its data comes from the Python backend, not the browser mock. **Sources / controls** exposes source refresh and undo.
+The default route now uses Sakie's layout with a top-level ship selector, DDG-only cutaway/interior viewer, and named missions (TIDEWATCH, SEASHIELD, DEEP LANTERN and IRON HORIZON, read from each event's `codename` in `squadron/events_missions.json`). Its data comes from the Python backend, not the browser mock. **Sources / controls** exposes source refresh and undo.
 
 The previous advanced workspace is retained at **`/?legacy=1`** for the full assumption editor, report-fact review and structured preview/apply workflow. The walkthrough below describes that advanced workspace where screen names differ. See [UI integration status and remaining merge work](docs/UI_INTEGRATION.md).
 
@@ -60,7 +60,7 @@ Copy-Item data/synthetic data/demo-refresh -Recurse
 1. Play the first event (casualty).
 2. In `data/demo-refresh/KESSLER/requisition_status.csv`, change `BB 2026-11-05` to `BB 2026-11-12` in the pump requisition's `status_history`.
 3. Open **Evidence & feed → Refresh sources**, review the confirmation, and confirm.
-4. The revision changes and the supply evidence and start-time readiness change without restart. Reopen the dependency chain, compare options, and generate a new brief. Interval risk may remain zero because training is an independent blocker; this is expected, not a failed refresh.
+4. The revision changes and the supply evidence and start-time readiness change without restart. Reopen the dependency chain, compare options, and generate a new brief. Interval readiness moves with the supply change; the CIC trainer refresh is scheduled in port (10 NOV), so training is not an independent blocker. A training refresh dated inside an underway block is rejected at refresh.
 5. Refresh again without editing: it is an idempotent no-op. Remove a required source and refresh: the candidate is rejected, the prior snapshot remains active, and a failure banner appears.
 
 Existing hypothetical decisions block activation of changed sources. The explicit **Reset exercise when activating changed sources** checkbox permits replacement with a clean scenario. Without overlays, compatible event playback is retained. See [source contracts and adapter details](docs/SOURCES.md).

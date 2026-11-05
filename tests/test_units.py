@@ -64,6 +64,15 @@ def test_planned_case_exact(baseline, log_path):
     assert pc["EVT-KESSLER-01"]["result"] == "MISS"
 
 
+def test_planned_case_requires_prerequisite_to_finish_first(baseline, log_path):
+    s = Scenario(baseline, log_path=log_path)
+    assert planned_case(build_world(s))["EVT-KESSLER-02"]["result"] == "MAKE"
+    s.apply("action", {"type": "shift_mission", "event_id": "EVT-KESSLER-01", "days": 40})
+    planned_b = planned_case(build_world(s))["EVT-KESSLER-02"]
+    assert planned_b["result"] == "MISS"
+    assert any(c["gate_id"] == "prereq:EVT-KESSLER-01" for c in planned_b["chain"])
+
+
 def test_same_seed_identical(baseline, log_path):
     s = Scenario(baseline, log_path=log_path)
     s.apply("play_event", {})

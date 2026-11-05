@@ -392,7 +392,7 @@ class Gen:
                      "Fleet Forces schedule data via Jupiter (inferred)", BASE_AS_OF, 7)
 
         events = [
-            {"event_id": "EVT-KESSLER-01", "label": "Mission A", "ship_id": "KESSLER", "name": "Group Sail / SWATT air defense serial",
+            {"event_id": "EVT-KESSLER-01", "label": "Mission A", "codename": "TIDEWATCH", "ship_id": "KESSLER", "name": "Group Sail / SWATT air defense serial",
              "ofrp_phase": "INTEGRATED", "start": "2026-11-13T12:00:00Z", "end": "2026-11-19T20:00:00Z",
              "mission_areas": ["AW", "MOB", "CCC"],
              "required_systems": [{"eic": "SPY1D", "min_status_score": 0.8}, {"eic": "CIWS", "min_status_score": 0.6},
@@ -402,7 +402,7 @@ class Gen:
              "prerequisite_events": [], "prerequisite_certs": ["CERT-KESSLER-AW"], "prerequisite_avail": "",
              "consequence_if_missed": "Ship cannot complete SWATT AW serial; COMPTUEX entry at risk",
              "schedule_block_id": "SCH-KESSLER-07", "provenance": "proposed (prerequisites inferred from event name)"},
-            {"event_id": "EVT-KESSLER-02", "label": "Mission B", "ship_id": "KESSLER", "name": "COMPTUEX",
+            {"event_id": "EVT-KESSLER-02", "label": "Mission B", "codename": "SEASHIELD", "ship_id": "KESSLER", "name": "COMPTUEX",
              "ofrp_phase": "INTEGRATED", "start": "2026-11-25T12:00:00Z", "end": "2026-12-05T20:00:00Z",
              "mission_areas": ["AW", "ASW", "SUW", "MOB", "CCC"],
              "required_systems": [{"eic": "SPY1D", "min_status_score": 0.8}, {"eic": "SQQ89", "min_status_score": 0.6},
@@ -412,7 +412,7 @@ class Gen:
              "prerequisite_events": ["EVT-KESSLER-01"], "prerequisite_certs": ["CERT-KESSLER-AW", "CERT-KESSLER-ASW", "CERT-KESSLER-SUW"],
              "prerequisite_avail": "", "consequence_if_missed": "Deployment certification delayed",
              "schedule_block_id": "SCH-KESSLER-08", "provenance": "proposed"},
-            {"event_id": "EVT-VARNELL-01", "label": "Mission C", "ship_id": "VARNELL", "name": "Basic Phase ASW certification event",
+            {"event_id": "EVT-VARNELL-01", "label": "Mission C", "codename": "DEEP LANTERN", "ship_id": "VARNELL", "name": "Basic Phase ASW certification event",
              "ofrp_phase": "BASIC", "start": "2026-11-18T12:00:00Z", "end": "2026-11-21T20:00:00Z",
              "mission_areas": ["ASW", "CCC"],
              "required_systems": [{"eic": "SQQ89", "min_status_score": 0.6}, {"eic": "LAN", "min_status_score": 0.6},
@@ -421,7 +421,7 @@ class Gen:
              "prerequisite_events": [], "prerequisite_certs": [], "prerequisite_avail": "AV-VARNELL-26-02",
              "consequence_if_missed": "ASW certification slips; Basic Phase extends",
              "schedule_block_id": "SCH-VARNELL-05", "provenance": "proposed (prerequisites inferred from event name)"},
-            {"event_id": "EVT-ASHBY-01", "label": "Mission D", "ship_id": "ASHBY", "name": "Sustainment exercise",
+            {"event_id": "EVT-ASHBY-01", "label": "Mission D", "codename": "IRON HORIZON", "ship_id": "ASHBY", "name": "Sustainment exercise",
              "ofrp_phase": "SUSTAINMENT", "start": "2026-11-22T12:00:00Z", "end": "2026-11-28T20:00:00Z",
              "mission_areas": ["AW", "SUW", "MOB"],
              "required_systems": [{"eic": "SPY1D", "min_status_score": 0.8}, {"eic": "GUN5", "min_status_score": 0.6},
@@ -486,7 +486,8 @@ class Gen:
                 for j in range(n_req):
                     rid = f"TRQ-{area}-{7 + j:02d} (SYNTH)"
                     if s == "KESSLER" and area == "AW" and j == 0:
-                        last, per, refresh, name, team = date(2026, 8, 22), 90, "2026-11-21", "CIC air defense team trainer", "CIC AIR DEFENSE TEAM 1"
+                        # Refresh in port (Norfolk upkeep under both the original and revised schedules), before Group Sail.
+                        last, per, refresh, name, team = date(2026, 8, 22), 90, "2026-11-10", "CIC air defense team trainer", "CIC AIR DEFENSE TEAM 1"
                     else:
                         last = date(2026, 9, 1) + timedelta(days=R.randint(0, 55))
                         per, refresh = R.choice([90, 120, 180]), ""
@@ -727,10 +728,10 @@ class Gen:
              [{"nsn": pump["nsn"], "doc": "V9910163080001", "pd": "02", "niin": "019990001"}], ("FTS", "NSWC TECH REP"),
              [("INITIAL", "041200Z NOV 26", "121200Z NOV 26",
                "COOLING WATER PUMP SEIZED DURING LIGHT-OFF. SPY-1D DEGRADED TO\nSINGLE ARRAY FACE OPERATION. AW MISSION MAJOR DEGRADATION.",
-               "1. SHIP AVAILABLE TO RECEIVE PARTS AND ASSIST NORFOLK 05-15 NOV.\n2. UNDERWAY GROUP SAIL 16 NOV."),
+               "1. SHIP AVAILABLE TO RECEIVE PARTS AND ASSIST NORFOLK 05-15 NOV.\n2. UNDERWAY FOR TIDEWATCH (GROUP SAIL) 16 NOV."),
               ("UPDATE", "051000Z NOV 26", "221200Z NOV 26",
                "SUPPLY STATUS BC LONG DELAY. ESD 15 DEC 26 PLUS 5 DAYS CONUS TRANSIT\nPLUS 2 DAYS INSTALL. ETR REVISED.",
-               "1. SHIP AVAILABLE TO RECEIVE PARTS AND ASSIST NORFOLK 05-15 NOV.\n2. UNDERWAY GROUP SAIL 16 NOV.")], ["AW"]),
+               "1. SHIP AVAILABLE TO RECEIVE PARTS AND ASSIST NORFOLK 05-15 NOV.\n2. UNDERWAY FOR TIDEWATCH (GROUP SAIL) 16 NOV.")], ["AW"]),
             ("VARNELL", "DDG992-26-008", "008", 2, "SQQ89-PROC", "SWITCH, ETHERNET, SQQ-89 PROCESSING", sw["apl"], j8["jcn"],
              [{"nsn": sw["nsn"], "doc": d8, "pd": "03", "niin": "019990044"}], ("FTS", "NSWC ISEA"),
              [("INITIAL", "301500Z OCT 26", "081200Z NOV 26", "SQQ-89 PROCESSING SEGMENT DEGRADED. ETHERNET SWITCH FAULT.",
@@ -1037,7 +1038,7 @@ class Gen:
         from reportlab.lib.pagesizes import letter
         from reportlab.pdfgen import canvas
         K = {
-            -3: {"OPERATIONS": ["Inport upkeep continues. Group Sail underway 16 NOV per schedule."],
+            -3: {"OPERATIONS": ["Inport upkeep continues. TIDEWATCH (Group Sail) underway 16 NOV per schedule."],
                  "COMBAT SYSTEMS (LT Brandt)": ["SPY-1D: all four array faces up. No casualties."],
                  "ENGINEERING (LCDR Osei)": ["All GTMs up. CASREP 016 chilled water compressor, part BA, ESD 06 NOV."],
                  "SUPPLY": ["CASREP 015 nav radar magnetron received 31 OCT. CASREP 015 corrected."]},
@@ -1047,20 +1048,20 @@ class Gen:
             -1: {"OPERATIONS": ["Inport upkeep continues."],
                  "COMBAT SYSTEMS (LT Brandt)": ["SPY-1D: No. 2 cooling water pump vibration within limits."],
                  "ENGINEERING (LCDR Osei)": ["All GTMs up."]},
-            0: {"OPERATIONS": ["Group Sail planning conference 0900 Thursday. No change to underway date received."],
+            0: {"OPERATIONS": ["TIDEWATCH (Group Sail) planning conference 0900 Thursday. No change to underway date received."],
                 "COMBAT SYSTEMS (LT Brandt)": ["SPY-1D: single array face ops since 1200Z on the 4th. CASREP 017 (CAT 3) submitted.",
                                                "Cooling pump NIIN 01-999-0001 on order, supply status BB, ESD 05 NOV.",
                                                "CIWS: PMS check last week not completed (lost). Will reschedule."],
                 "ENGINEERING (LCDR Osei)": ["All GTMs up. No. 2 SSDG lube oil leak, contained, 2-Kilo submitted."]},
-            1: {"OPERATIONS": ["Group Sail planning conference held. No change to underway date received."],
+            1: {"OPERATIONS": ["TIDEWATCH (Group Sail) planning conference held. No change to underway date received."],
                 "COMBAT SYSTEMS (LT Brandt)": ["SPY-1D: single array face ops continue. CASREP 017 UPDATE sent, ETR 22 NOV.",
                                                "Cooling pump NIIN 01-999-0001 on order, supply now showing long delay (BC), ESD 15 DEC.",
                                                "FC1 Ramos believes the NSWC tech rep visit may slip to 12 NOV due to travel."],
                 "SUPPLY": ["Expedite requested on CASREP 017 pump via OTS."],
                 "ADMIN / TRAINING": ["FC1 Ramos detaches 10 NOV on PRD orders.",
                                      "FC2 Lin departs TAD to school 10 NOV, returns 24 NOV.",
-                                     "CIC air defense team trainer due before COMPTUEX; scheduled 21 NOV."]},
-            2: {"OPERATIONS": ["Awaiting COMDESRON guidance on Group Sail dates."],
+                                     "CIC air defense team trainer due before SEASHIELD (COMPTUEX); scheduled 10 NOV."]},
+            2: {"OPERATIONS": ["Awaiting COMDESRON guidance on TIDEWATCH dates."],
                 "COMBAT SYSTEMS (LT Brandt)": ["SPY-1D: single array face ops continue. CASREP 017 open."],
                 "ENGINEERING (LCDR Osei)": ["All GTMs up. No. 2 SSDG repaired by ship's force."]},
         }
@@ -1072,7 +1073,7 @@ class Gen:
             -1: {"MAINTENANCE": ["CMAV completion forecast 11 NOV."],
                  "COMBAT SYSTEMS": ["Switches expected 05-06 NOV from WSS."]},
             0: {"MAINTENANCE": ["CMAV completion forecast 11 NOV."],
-                "TRAINING": ["ASW certification event planned 18 NOV."]},
+                "TRAINING": ["DEEP LANTERN (ASW certification event) planned 18 NOV."]},
             1: {"MAINTENANCE": ["CMAV completion forecast 11 NOV."],
                 "COMBAT SYSTEMS": ["ISEA reviewing whether both switch requisitions are needed."]},
             2: {"MAINTENANCE": ["CMAV completion forecast 11 NOV."]},
@@ -1209,7 +1210,7 @@ class Gen:
             {"event_id": "E3", "known_at": "2026-11-06T01:00:00Z", "title": "Sailors detach: 2 of 3 SPY-qualified FCs leave 10 NOV",
              "kind": "personnel", "ship_id": "KESSLER",
              "refs": ["KESSLER/daily_reports/daily_status_KESSLER_20261105.pdf", "KESSLER/nec_billets.csv#B-CF-014"]},
-            {"event_id": "E4", "known_at": "2026-11-07T15:00:00Z", "title": "Schedule shift 071500Z: Group Sail moves earlier to 13 NOV",
+            {"event_id": "E4", "known_at": "2026-11-07T15:00:00Z", "title": "Schedule shift 071500Z: TIDEWATCH (Group Sail) moves earlier to 13 NOV",
              "kind": "schedule", "ship_id": "KESSLER",
              "refs": ["KESSLER/schedule_30day.csv#SCH-KESSLER-07", "KESSLER/logreq/KESSLER_071500Z_NOV_26.txt",
                       "KESSLER/daily_reports/daily_status_KESSLER_20261106.pdf"]},
@@ -1256,12 +1257,12 @@ def expected_from_line(ship: str, line: str) -> list[dict]:
         out.append({"type": "assist_eta", "date": m.group(1), "span": line, "hedged": True})
     if m := re.search(r"Expedite requested on CASREP (\d{3})", line):
         out.append({"type": "expedite_requested", "casrep_serial": m.group(1), "span": line, "hedged": False})
-    if m := re.search(r"(CIWS|SPY-1D): PMS check .* not completed \(lost\)", line):
-        out.append({"type": "pms_lost", "system": {"CIWS": "CIWS", "SPY-1D": "SPY1D"}[m.group(1)], "span": line, "hedged": False})
+    if m := re.search(r"\b([A-Z][A-Z0-9-]*(?: [A-Z0-9-]+)?): PMS check .* not completed \(lost\)", line):
+        out.append({"type": "pms_lost", "system": re.sub(r"[^A-Z0-9]", "", m.group(1).upper()), "span": line, "hedged": False})
     if m := re.search(r"CASREP (\d{3}) \(CAT (\d)\) submitted", line):
         out.append({"type": "casrep_reported", "casrep_serial": m.group(1), "category": int(m.group(2)), "span": line, "hedged": False})
-    if m := re.search(r"trainer due before COMPTUEX; scheduled (\d{2} [A-Z]{3})", line):
-        out.append({"type": "training_scheduled", "date": m.group(1), "span": line, "hedged": False})
+    if m := re.search(r"trainer due before (.+?); scheduled (\d{2} [A-Z]{3})", line):
+        out.append({"type": "training_scheduled", "event": m.group(1), "date": m.group(2), "span": line, "hedged": False})
     return out
 
 

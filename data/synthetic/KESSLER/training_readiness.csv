@@ -1,5 +1,5 @@
 ship_id,mission_area,requirement_id,requirement_name,team,last_completed,periodicity_days,expires,scheduled_refresh,tfom_value,as_of,provenance
-KESSLER,AW,TRQ-AW-07 (SYNTH),CIC air defense team trainer,CIC AIR DEFENSE TEAM 1,2026-08-22,90,2026-11-20,2026-11-21,0.91,2026-11-04T06:00:00Z,proposed
+KESSLER,AW,TRQ-AW-07 (SYNTH),CIC air defense team trainer,CIC AIR DEFENSE TEAM 1,2026-08-22,90,2026-11-20,2026-11-10,0.91,2026-11-04T06:00:00Z,proposed
 KESSLER,AW,TRQ-AW-08 (SYNTH),Air Warfare team trainer 2,AW TEAM 2,2026-09-26,90,2026-12-25,,0.85,2026-11-04T06:00:00Z,proposed
 KESSLER,ASW,TRQ-ASW-07 (SYNTH),Anti-Submarine Warfare team trainer 1,ASW TEAM 1,2026-10-13,90,2027-01-11,,0.81,2026-11-04T06:00:00Z,proposed
 KESSLER,ASW,TRQ-ASW-08 (SYNTH),Anti-Submarine Warfare team trainer 2,ASW TEAM 2,2026-09-22,120,2027-01-20,,0.86,2026-11-04T06:00:00Z,proposed

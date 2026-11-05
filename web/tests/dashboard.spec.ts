@@ -39,8 +39,9 @@ test.beforeEach(async ({ page, request }) => {
       : route.abort(),
   );
   await page.goto('/?legacy=1');
+  // With the CIC trainer refreshed in port, Mission A is green at reset; Mission B (COMPTUEX) is lowest.
   await expect(
-    page.getByRole("heading", { name: "Mission A needs attention." }),
+    page.getByRole("heading", { name: "Mission B needs attention." }),
   ).toBeVisible();
 });
 
@@ -50,8 +51,9 @@ test("mission overview opens highlighted source and changes ship", async ({
   await expect(page.locator(".mission-row")).toHaveCount(2);
   await expect(page.getByLabel('Readiness over time')).toBeVisible();
   await expect(page.locator('.readiness-timeline path').last()).toHaveAttribute('d', /^M/);
+  // Rows are ordered lowest interval readiness first: Mission B (COMPTUEX) leads at reset.
   await expect(page.locator(".mission-row").first()).toContainText(
-    "12 days out",
+    "21 days out",
   );
   await page
     .getByRole("button", { name: "EVT-KESSLER-01", exact: true })

@@ -30,6 +30,8 @@ def expected_fact(raw: dict, ship_id: str, name_index: dict) -> dict:
         f["value"] = f["casrep_serial"]
     elif f["type"] == "pms_lost":
         f["value"] = f["system"]
+    elif f["type"] == "training_scheduled":
+        f["value"] = f["event"]  # the event named in the report, as written; ingest resolves it to an event
     return f
 
 

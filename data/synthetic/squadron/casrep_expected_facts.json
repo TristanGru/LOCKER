@@ -166,7 +166,7 @@
         },
         {
           "type": "casrep_narrative",
-          "span": "RMKS/1. SHIP AVAILABLE TO RECEIVE PARTS AND ASSIST NORFOLK 05-15 NOV.\n2. UNDERWAY GROUP SAIL 16 NOV.//",
+          "span": "RMKS/1. SHIP AVAILABLE TO RECEIVE PARTS AND ASSIST NORFOLK 05-15 NOV.\n2. UNDERWAY FOR TIDEWATCH (GROUP SAIL) 16 NOV.//",
           "hedged": false
         }
       ]
@@ -210,7 +210,7 @@
         },
         {
           "type": "casrep_narrative",
-          "span": "RMKS/1. SHIP AVAILABLE TO RECEIVE PARTS AND ASSIST NORFOLK 05-15 NOV.\n2. UNDERWAY GROUP SAIL 16 NOV.//",
+          "span": "RMKS/1. SHIP AVAILABLE TO RECEIVE PARTS AND ASSIST NORFOLK 05-15 NOV.\n2. UNDERWAY FOR TIDEWATCH (GROUP SAIL) 16 NOV.//",
           "hedged": false
         }
       ]

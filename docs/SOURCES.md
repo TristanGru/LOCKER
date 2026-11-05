@@ -20,7 +20,7 @@ Start from `data/synthetic/` or its generator; replacing a root directory alone 
 
 - `squadron/mission_equipment_tree.json`: hierarchy of mission areas/tasks/functional areas/systems/components/parts; required qualifications; critical flags; weights that sum to one per mission area. Equipment IDs are explicit joins, not fuzzy name matching.
 - Optional `squadron/dataset_profile.json`: unit registry, exercise clock, mapping version, watchstations, visual mappings.
-- `squadron/events_missions.json`: event identities, intervals, requirements, and acyclic prerequisites.
+- `squadron/events_missions.json`: event identities, intervals, requirements, and acyclic prerequisites. The optional `codename` (unique per event, e.g. `TIDEWATCH`) is the name the UI, briefs, fix titles and prerequisite labels show; `label` is the fallback. Daily reports may name an event by codename or name ("trainer due before SEASHIELD (COMPTUEX)"); ingest resolves that reference against this file and checks the reported date against TORIS.
 - `squadron/scenario_feed.json`: ordered exercise injections with unique IDs and knowledge timestamps.
 - `squadron/assumptions.yaml`: supported calculation parameters, values, and provenance. It is the runtime authority for bands, status-score values, duration distributions, and sample counts. The mission tree controls dependency weights and its critical-child cap; its status-score/band descriptions are not another override layer.
 - `squadron/data_catalog.json`: source metadata and extract freshness used by source health. Keep the catalog in sync with exports; catalog counts are not a completeness attestation for a real connector.

@@ -19,7 +19,7 @@ from pathlib import Path
 import yaml
 
 from . import BANNER
-from .domain import (ALL_EICS, DATA_DIR, MONTHS, SCENARIO_NOW, SHIP_IDS, SHIPS, STATUS_SCORE, UTC, date_dt, hull_key,
+from .domain import (ALL_EICS, DATA_DIR, INPORT_CODES, MONTHS, SCENARIO_NOW, SHIP_IDS, SHIPS, STATUS_SCORE, UTC, date_dt, hull_key,
                      parse_date, parse_dtg, parse_ts, mission_tree_json)
 from .llm import LLMClient, build_name_index, extract_facts, surname_of
 from .models import Contradiction, ExtractedFact, IngestIssue, SourceRef
@@ -516,6 +516,23 @@ def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) ->
         for row in b.r(ship, 'quals.csv'):
             if row['member_id'] not in members or row['watchstation_code'] not in b.profile.watchstations:
                 b.issues.append(IngestIssue(file=row['_src'].file, loc=row['_src'].loc, reason='Unresolved qualification identity', kind='validation'))
+        # Team trainers run in port. A refresh dated inside an underway block cannot happen, so the record is
+        # rejected (ship UNKNOWN, refresh 422) instead of silently counted. Every schedule revision in force
+        # from the time the training record is known is checked.
+        revisions = sorted({row['_known'] for row in b.r(ship, 'schedule_30day.csv')})
+        for row in b.r(ship, 'training_readiness.csv'):
+            refresh = str(row.get('scheduled_refresh') or '')[:10]
+            if not refresh:
+                continue
+            times = [row['_known']] + [t for t in revisions if t > row['_known']]
+            conflict = next((block for t in times for block in b.view(t).schedule(ship)
+                             if block['employment_code'] not in INPORT_CODES
+                             and str(block['start_date'])[:10] <= refresh <= str(block['end_date'])[:10]), None)
+            if conflict:
+                event = f" ({conflict['event_id']})" if conflict.get('event_id') else ''
+                b.issues.append(IngestIssue(file=row['_src'].file, loc=row['_src'].loc, kind='validation',
+                                            reason=f"{row['requirement_id']} refresh {refresh} falls in underway block "
+                                                   f"{conflict['block_id']}{event}; team trainers run in port"))
         for row in b.r(ship, 'csmp.csv'):
             required = {v for v in (row.get('req_doc_numbers') or '').split(';') if v}
             if row['job_state'] == 'OPEN_AWAITING_PARTS' and (not required or not required <= docs):
@@ -680,9 +697,42 @@ class View:
             return ("corroborates", "CASREP message on file") if any(c["casrep_id"].endswith(serial) for c in self.casreps(ship)) \
                 else ("new_information", "No CASREP message on file yet")
         if f.type == "training_scheduled":
-            tr = [t for t in self.rows(ship, "training_readiness.csv") if t.get("scheduled_refresh")]
-            return ("corroborates", "TORIS shows the refresh scheduled") if tr else ("new_information", "No refresh scheduled in TORIS")
+            return self._corroborate_training(f)
         return "n/a", ""
+
+    def event_named(self, ship: str, ref: str | None) -> dict | None:
+        """Resolve an event as a report names it (e.g. 'SEASHIELD (COMPTUEX)'): codename first, then name, then label."""
+        text = (ref or "").upper()
+        events = [e for e in self.b.events if e["ship_id"] == ship]
+        for key in ("codename", "name", "label"):
+            hits = [e for e in events if e.get(key) and re.search(r"\b" + re.escape(e[key].strip().upper()) + r"\b", text)]
+            if len(hits) == 1:
+                return hits[0]
+        return None
+
+    def _corroborate_training(self, f: ExtractedFact) -> tuple[str, str]:
+        ship = f.ship_id
+        scheduled = [t for t in self.rows(ship, "training_readiness.csv") if t.get("scheduled_refresh")]
+        rows = [t for t in scheduled if str(t.get("requirement_name") or "").lower() in f.span.lower()] or scheduled
+        if not rows:
+            return "new_information", "No refresh scheduled in TORIS"
+        refresh = lambda t: datetime.fromisoformat(str(t["scheduled_refresh"])[:10]).date()
+        day_mon = lambda d: f"{d.day:02d} {MONTHS[d.month - 1]}"
+        reported = fact_date(f.date, f.known_at or self.now).date()
+        event = self.event_named(ship, f.value)
+        unresolved = f"; '{f.value}' is not an event in the event plan" if f.value and event is None else ""
+        match = next((t for t in rows if refresh(t) == reported), None)
+        if match is None:
+            shown = ", ".join(f"{t['requirement_id']} {day_mon(refresh(t))}" for t in rows)
+            return "contradicts", f"TORIS shows refresh {shown}; report says {f.date}{unresolved}"
+        if event is not None:
+            name = event.get("codename") or event["label"]
+            block = next((b for b in self.schedule(ship) if b.get("event_id") == event["event_id"]), None)
+            start = datetime.fromisoformat(str(block["start_date"])[:10]).date() if block else event["start"].date()
+            if reported >= start:
+                return "contradicts", f"TORIS refresh {f.date} is not before {name} starts {day_mon(start)}"
+            return "corroborates", f"TORIS shows {match['requirement_id']} refresh {f.date}, before {name} ({event['event_id']})"
+        return "corroborates", f"TORIS shows {match['requirement_id']} refresh {f.date}{unresolved}"
 
     def facts_with_corroboration(self, ship: str | None = None) -> list[ExtractedFact]:
         out = []

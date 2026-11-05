@@ -75,6 +75,12 @@ def validate_events(events, profile):
                 raise ValueError('Event references unknown watchstation or invalid headcount')
         if not set(event.get('prerequisite_events', [])) <= ids:
             raise ValueError('Event has missing prerequisite')
+        if 'codename' in event and (not isinstance(event['codename'], str) or not event['codename'].strip()):
+            raise ValueError(f'{event["event_id"]}: codename must be a nonempty string when present')
+    # Reports and requests refer to events by codename, so one codename must identify one event.
+    codenames = [e['codename'].strip().upper() for e in events if e.get('codename')]
+    if len(set(codenames)) != len(codenames):
+        raise ValueError('Event codenames must be unique')
     by_id = {e['event_id']: e for e in events}
     visited, active = set(), set()
     def visit(eid):

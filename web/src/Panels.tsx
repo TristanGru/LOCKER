@@ -76,7 +76,7 @@ export function FixesPanel({
         <div className="empty-state">
           <ListChecks size={28} />
           <h2>No fix candidates for this state</h2>
-          <p>{ranking.warning || 'Advance the scenario or inspect the current requirements.'}</p>
+          <p>{ranking.warning || ranking.note || 'Advance the scenario or inspect the current requirements.'}</p>
         </div>
       ) : (
         <div className="comparison-layout">

@@ -123,10 +123,10 @@ export function Fixes() {
             ))}
 
           {fixesQ.data && pending.length === 0 && (
-            <EmptyState icon={ShieldCheck} title={decided.length ? 'Every fix has a decision' : `No fixes needed for ${mission?.code ?? 'this mission'}`} className="glass">
+            <EmptyState icon={ShieldCheck} title={decided.length ? 'Every fix has a decision' : fixesQ.data.note ? `No fix found that helps ${mission?.code ?? 'this mission'}` : `No fixes needed for ${mission?.code ?? 'this mission'}`} className="glass">
               {decided.length
                 ? 'All recommended fixes for this mission were approved or rejected. New ones appear if the picture changes.'
-                : 'Nothing linked to this mission is pulling its odds down enough to fix right now.'}
+                : fixesQ.data.note ?? 'Nothing linked to this mission is pulling its odds down enough to fix right now.'}
             </EmptyState>
           )}
 

@@ -26,7 +26,8 @@ function sourceAge(d:any, refs:any[]):number {
   const times=refs.map(ref=>d.sources.sources.find((s:any)=>ref.file.startsWith(s.file.replace(/\/$/,'')))?.as_of).map((x:string)=>Date.parse(x)).filter(Number.isFinite);
   return times.length ? Math.max(0,(Date.parse(d.state.cursor)-Math.min(...times))/3600000) : NaN;
 }
-const code = (m: any) => ({'EVT-KESSLER-01':'TIDEWATCH','EVT-KESSLER-02':'SEASHIELD','EVT-VARNELL-01':'DEEP LANTERN','EVT-ASHBY-01':'IRON HORIZON'}[m.event_id] || m.label);
+// Mission names come from the event plan (events_missions.json codename); the label is the fallback.
+const code = (m: any) => m?.codename || m?.label;
 const sourceId = (s: any) => 'src:' + encodeURIComponent(JSON.stringify(s));
 const sources = (rows: any[] = []) => rows.map(sourceId);
 const missionRows = (d: any, ship = selectedShip): T.Mission[] => d.forecast.missions.filter((m: any) => m.ship_id === ship).map((m: any) => ({
@@ -96,7 +97,7 @@ async function getFixes(missionId:string):Promise<T.FixesPayload> {
   const fixes=ranking.candidates.map((f:any):T.Fix=>{const m=f.missions.find((x:any)=>x.event_id===missionId) || f.missions.find((x:any)=>x.ship_id===selectedShip);return {id:f.fix_id,missionId:m.event_id,rank:f.rank,title:f.title,action:f.title,rationale:f.why.join('; ')+' Donor effects: '+JSON.stringify(f.donor_effects),owner:'Human review required',effort:'Medium',confidence:m.p_after,targets:f.gates,recordIds:[],oddsBefore:m.p_before,oddsAfter:m.p_after,otherMissions:f.missions.filter((x:any)=>x.event_id!==m.event_id).map((x:any)=>({missionId:x.event_id,code:x.ship_id+' / '+code(d.forecast.missions.find((r:any)=>r.event_id===x.event_id)),before:x.p_before,after:x.p_after})),externalApproval:'Exercise only. Interval comparison; review donor consequences.',decision:'pending'};});
   if(ranking.warning) throw new ApiError(422,ranking.warning,'COVERAGE');
   fixes.forEach((fix:T.Fix)=>shownFixes.set(fix.id,{fix,version:d.state.version}));
-  return {missionId,fixes,decided:[]};
+  return {missionId,fixes,decided:[],note:ranking.note};
 }
 const event=(e:any,i:number):T.DemoEvent=>({id:e.event_id,seq:i+1,type:({casrep:'CASREP',supply:'SUPPLY',personnel:'PERSONNEL',schedule:'SCHEDULE'} as any)[e.kind] || 'SCHEDULE',title:e.title,summary:e.title,recordId:e.refs[0]?sourceId({file:e.refs[0].split('#')[0]}):'',arrivedAt:e.played?e.known_at:undefined});
 export const api = {

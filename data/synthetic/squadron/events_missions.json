@@ -4,6 +4,7 @@
     {
       "event_id": "EVT-KESSLER-01",
       "label": "Mission A",
+      "codename": "TIDEWATCH",
       "ship_id": "KESSLER",
       "name": "Group Sail / SWATT air defense serial",
       "ofrp_phase": "INTEGRATED",
@@ -54,6 +55,7 @@
     {
       "event_id": "EVT-KESSLER-02",
       "label": "Mission B",
+      "codename": "SEASHIELD",
       "ship_id": "KESSLER",
       "name": "COMPTUEX",
       "ofrp_phase": "INTEGRATED",
@@ -118,6 +120,7 @@
     {
       "event_id": "EVT-VARNELL-01",
       "label": "Mission C",
+      "codename": "DEEP LANTERN",
       "ship_id": "VARNELL",
       "name": "Basic Phase ASW certification event",
       "ofrp_phase": "BASIC",
@@ -157,6 +160,7 @@
     {
       "event_id": "EVT-ASHBY-01",
       "label": "Mission D",
+      "codename": "IRON HORIZON",
       "ship_id": "ASHBY",
       "name": "Sustainment exercise",
       "ofrp_phase": "SUSTAINMENT",
