@@ -24,7 +24,11 @@ def mission_packet(state, body):
                  'fields': {'excerpt': e.excerpt, 'known_at': e.known_at, 'hedged': e.hedged,
                             'superseded': e.superseded,
                             'parser_annotations': json.dumps(e.fact_annotations)}, 'as_of': e.known_at}
-                for e in domain.corpus[:300]]
+                for e in domain.corpus]
+    kinds = {e.id: e.kind for e in domain.corpus}
+    for row in evidence:
+        row['text'] = row['fields']['excerpt']
+        row['record_type'] = kinds[row['id']]
     supports = {e['id']: {**e, 'identity': identity, 'values': e['fields'], 'input_ids': [],
                           'lineage': 'recorded_fields'} for e in evidence}
     for claim in domain.claims:

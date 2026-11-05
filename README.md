@@ -203,7 +203,7 @@ flowchart TD
 | Local semantic search | Rank eligible records with bundled MiniLM embeddings in a browser worker, alongside exact/lexical matching. | Require a cloud vector database or replace backend numerical queries. |
 | LLM | Write a structured, cited explanation using the supplied supports and recent turns. | Approve transfers, mutate the graph's engine state, run what-ifs or issue orders. |
 | Validation and rendering | Check support IDs and structured output; insert exact numbers, dates, identifiers and status values from backend supports. | Prove every causal interpretation is correct merely because citations are valid. |
-| Deterministic fallback | Render a bounded summary from backend-authored facts with citations and a visible fallback reason. | Answer arbitrary questions as fluently or flexibly as a functioning LLM. |
+| Deterministic fallback | Route supported questions to versioned templates over eligible records, complete-set backend counts and existing assessments, with citations and a visible reason. | Infer arbitrary causal explanations, run unrestricted joins or replace a general-purpose LLM. |
 
 Semantic search is enabled by default, but requires bundled model assets. When assets or inference are unavailable, standard record search remains usable. **RAG still operates without semantic embeddings.** In the captured live request, the UI reported standard record search. See [local search setup and asset bundling](docs/OVERVIEW_ASSISTANT.md#local-minilm--transformersjs).
 
@@ -229,7 +229,7 @@ The live answer and retained source detail were both checked against the running
 | --- | --- | --- |
 | **Live LLM** | A configured provider returned an answer accepted by the application's validation. | Inspect citations, evidence class and qualifications. |
 | **Cached LLM** | A previously generated answer was found in the cache and validated for reuse. | Do not describe it as a new provider call. |
-| **Deterministic fallback** | The backend rendered facts without a successful fresh LLM answer. | Read the reason; expect a shorter, less question-specific summary. |
+| **Deterministic fallback** | The backend selected a question-specific cited template without a successful model answer. | Check resolved scope, population definition and any explicit limitations or clarification. |
 
 Fallback covers offline/unconfigured generation, context-budget limits, provider rejection/unavailability, timeout, privacy-guard failures and invalid answers/citations. Invalid model output receives at most one correction attempt before fallback. Ordinary provider failure does not need a malformed-answer retry. Unsupported action requests are explicitly refused or redirected to the appropriate workflow rather than executed.
 
@@ -243,6 +243,20 @@ $env:LOCKER_DAVEY_LIVE = '0'
 ```
 
 Open `http://127.0.0.1:8011/#/missions`, sign in and submit a summary. A cache miss yields **Deterministic fallback** with citations; a valid cache hit can still yield **Cached LLM**. For a strictly repeatable no-cache/invalid-provider demonstration, run the isolated [assistant regression tests](tests/test_overview_chat.py): they exercise offline citations and invalid-output correction followed by fallback without calling a real provider. Stop the extra server with Ctrl+C. Do not use Reset demo merely to test generation failure.
+
+### Deterministic questions (no model required)
+
+Ask Davy now selects templates for summaries, modeled status explanations/lists, exact record lookups, maintenance and supply details, complete-set counts, existing dependencies, source quotations and data freshness. Try:
+
+- `How many open jobs?` — counts all eligible selected-unit/focus maintenance rows, not retrieved top-k snippets. Open means `OPEN`, `OPEN_AWAITING_PARTS`, `IN_WORK` or `DEFERRED`.
+- `Which repairs are awaiting parts?` — filters recorded `job_state`; verified JCN links may show corresponding requisitions.
+- `Show JCN <identifier>` or `What is requisition <document-number>?` — exact lookup, never substitution with a nearby identifier.
+- `What is wrong with the HF transceiver?` — relevant recorded maintenance, not a claim of total communications failure.
+- `What data is missing?`, `Explain this dependency`, or `Show the supporting records`.
+
+Check **Deterministic only (bypass model and cached LLM)** to explicitly avoid both provider requests and model-cache answers. Default mode still permits validated cached/live generation before deterministic fallback. Local semantic inference may still run; missing assets fall back to lexical search. Mission/Dominoes now use the same searchable-text worker contract, with question-ranked bounded candidates rather than a fixed first-300 population.
+
+Unknown/ambiguous requests receive clarification rather than an unrelated summary. Supply ESD remains an estimate, not guaranteed delivery or repair completion. Training/certification templates expose recorded dates but do not infer complete event-window qualification rules. Cross-mission comparisons, undefined late/negative filters and arbitrary before/after snapshot comparisons are explicitly unavailable, not fabricated. See the [deterministic retrieval/template plan and delivery record](docs/ASK_DAVY_DETERMINISTIC_RAG_IMPLEMENTATION_PLAN.md).
 
 ### Enable live Ask Davy
 
