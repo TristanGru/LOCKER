@@ -9,6 +9,7 @@ import { Panel } from '../components/ui/Panel';
 import { EmptyState, ErrorState, PendingSkeleton, Skeleton } from '../components/ui/States';
 import clsx from '../lib/clsx';
 import { useStore } from '../state/store';
+import { lastUnit } from '../state/lastUnit';
 import { useApi } from '../state/useApi';
 import { STATUS } from '../theme/status';
 import { OverviewAssistantPanel } from '../components/overview-assistant/OverviewAssistantPanel';
@@ -34,8 +35,6 @@ const COUNT_CARDS: { status: Status; title: string; desc: string }[] = [
 
 type Domain = ShipPayload['kind'];
 
-/** The last unit viewed on each tab, so moving between Ship and Shore returns to where you were. */
-const lastUnit: Partial<Record<Domain, string>> = {};
 
 export function ShipOverview({ domain }: { domain: Domain }) {
   // Refetches whenever a demo event, approval or reset bumps the store version.
