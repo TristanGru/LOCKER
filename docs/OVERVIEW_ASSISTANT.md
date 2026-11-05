@@ -1,6 +1,8 @@
 # Ship and Shore Overview chat
 
-Ask Davy now generates **natural-language summaries with inline citations** and supports bounded follow-up conversations. It remains read-only synthetic decision support, not an operational readiness authority.
+Ask Davy generates **natural-language summaries with inline citations** and supports bounded follow-up conversations across Ship, Shore, Mission and Dominoes. It also routes deterministic questions to cited, versioned templates over captured records, structured queries and existing assessments. It remains read-only synthetic decision support, not an operational readiness authority.
+
+See [deterministic retrieval/template delivery and limits](ASK_DAVY_DETERMINISTIC_RAG_IMPLEMENTATION_PLAN.md). **Deterministic only** bypasses both model cache and provider calls. Default mode preserves cache/live/fallback order. Supported deterministic questions include summaries, status explanations/lists, exact IDs, maintenance/supply details, complete-set counts, modeled dependencies, source quotations and freshness. Arbitrary cross-mission/history queries require clarification; training/certification output reports recorded dates without claiming full event-window applicability.
 
 Implementation/design reference: [conversational summaries and citations plan](OVERVIEW_CHAT_CITATIONS_PLAN.md).
 
@@ -48,13 +50,13 @@ Ready-system share is a count-based overview metric, not mission success probabi
 - Conversations are stored in server memory only: up to 32 sessions, 20 user/assistant exchanges each, a 30-minute idle expiry and a global memory budget.
 - A browser session cookie (`HttpOnly`, `SameSite=Strict`) scopes conversation ownership. Only opaque conversation IDs are kept in browser session storage to restore the panel.
 - Recent user/assistant turns supply conversational context, not additional evidence. Each answer retrieves eligible supports again and checks state before returning.
-- Host/origin/fetch-site checks protect chat routes. This local prototype is not authenticated multi-user deployment.
+- Signed-in account identity plus the browser chat cookie scope conversation ownership. Server-side unit permissions and host/origin/fetch-site checks protect chat routes. Demo username-only authentication is not production identity assurance.
 - No raw chat/prompt logging is enabled by the chat service. Requests to a configured cloud model do transmit the selected redacted context; local key storage does not make that traffic local.
 - Restart loses in-memory conversations. Deleted/expired sessions are not recreated under their old IDs.
 
 ## Generation endpoint and `.env`
 
-Keep `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY` and `MISSIONTWIN_DEMO_MODE=0` in repository-root local `.env`. Do not overwrite an existing configuration, use `VITE_*` secrets, commit keys or paste them into chat. `.env` is Git-ignored; OneDrive may still sync it, so use a non-synced checkout for strict local-only secret storage.
+Keep `LLM_BASE_URL`, `LLM_MODEL` and `LLM_API_KEY` in repository-root local `.env`. Shared assistant override `LOCKER_DAVEY_LIVE=1` permits configured assistant generation independently of offline ingestion; `0` permits cache/fallback only; absent inherits the application's live/demo state. `MISSIONTWIN_DEMO_MODE=0` can enable unrelated application LLM workflows and is not required solely for chat. Do not overwrite an existing configuration, use `VITE_*` secrets, commit keys or paste them into chat. `.env` is Git-ignored; OneDrive may still sync it, so use a non-synced checkout for strict local-only secret storage.
 
 The Python backend alone contacts the provider. The client supports explicit provider adaptations from `max_tokens` to `max_completion_tokens`, and omits temperature when the model requires its default. It does not drop output validation.
 
@@ -65,7 +67,7 @@ npm --prefix web run build
 .\.venv\Scripts\python.exe -m uvicorn missiontwin.api:app --host 127.0.0.1 --port 8000
 ```
 
-The `missiontwin.demo` launcher intentionally forces offline behavior. Process environment overrides `.env`; restart the backend after configuration changes. Live mode can also enable existing document extraction. Use approved synthetic data and an approved endpoint.
+The `missiontwin.demo` launcher forces offline application behavior; the explicit assistant live override remains separate. Process environment overrides `.env`; restart the backend after configuration changes. Live mode can also enable existing document extraction. Use approved synthetic data and an approved endpoint.
 
 Live, cached and template responses are visibly distinct. Safe fallback categories distinguish offline/context limits, invalid answers/citations, timeout, provider rejection/unavailability and privacy-guard failures. There is no token streaming: the answer is displayed only after validation.
 
@@ -95,11 +97,18 @@ Embeddings rank a bounded eligible-record subset, not a whole-table numerical po
 - `GET /api/overview-assistant/conversations/{id}`: restore messages and report stale state.
 - `POST /api/overview-assistant/conversations/{id}/messages`: answer a bounded question with validated prose/citations.
 - `DELETE /api/overview-assistant/conversations/{id}`: clear that conversation.
+- `POST /api/overview-assistant/conversations/{id}/candidates`: retrieve bounded question-ranked eligible worker candidates with candidate-population identity; no generation.
+- Message requests accept `response_policy: auto | deterministic_only`; request idempotency includes policy, candidate IDs and packet identity.
+- Deterministic replies retain `method: template` and add intent/template/query/scope/coverage/referent metadata and supported follow-up suggestions.
 - Existing overview brief/evidence/status endpoints remain compatible.
 
 Main files: `missiontwin/overview_chat.py`, `missiontwin/overview.py`, `web/src/captain/components/overview-assistant/OverviewChat.tsx` and `OverviewAssistantPanel.tsx`.
 
 ## Verification
+
+Deterministic-template implementation checks: **321 backend tests passed**, **21 isolated browser tests passed**, frontend typecheck and production build passed. The routing inventory includes 110 canonical/paraphrase cases; this is automated coverage, not an independent human factuality score. Browser tests exercise actual Mission/Dominoes embeddings and distinct deterministic repair/count answers with calculation citations. See the linked delivery record for bounded remaining work.
+
+Historical release checks (not the current release totals):
 
 Local release checks after integrating `origin/main` at `4f39192`: **160 backend tests passed**, frontend typecheck/build passed, and **19 isolated browser tests passed**, including automatic local-search enablement, missing-model fallback, classification-banner spacing and print hiding. The latest main dashboard layout/styles/adapter are retained; the only edit to its existing Ship/Shore Overview screen is the Ask Davy import and mount. Opt-in live evaluation completed ship and shore summaries plus one follow-up each: all four returned `llm` responses with resolvable citation maps (roughly 14–31 seconds in that run). Model lineage was correctly labeled partial. One shore explanation was manually inspected for reported-versus-modeled qualifiers; this limited review is not a general factuality guarantee or operational certification. Hosted CI was not exercised locally.
 

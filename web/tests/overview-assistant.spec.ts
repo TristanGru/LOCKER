@@ -1,5 +1,28 @@
 import { test, expect } from '@playwright/test';
 
+for(const route of ['missions','dominoes']) {
+  test(`deterministic ${route} answers distinct intents and embeds actual mission records`,async({page})=>{
+    test.setTimeout(180000);
+    await page.goto('/#/'+route);
+    await page.getByRole('button',{name:'Open overview assistant',exact:true}).click();
+    const panel=page.getByRole('region',{name:'Overview assistant'});
+    await expect(panel.getByRole('button',{name:'New conversation'})).toBeEnabled();
+    await panel.getByLabel('Deterministic only (bypass model and cached LLM)').check();
+    await panel.getByLabel('Ask about this unit').fill('What is wrong with the HF transceiver?');
+    await panel.getByRole('button',{name:'Send',exact:true}).click();
+    await expect(panel.getByLabel('Assistant message')).toHaveCount(1,{timeout:90000});
+    await expect(panel.getByText('Local evidence search + exact record matching.',{exact:true})).toBeVisible();
+    await expect(panel.getByLabel('Assistant message')).toContainText('HF');
+    await panel.getByLabel('Ask about this unit').fill('How many open jobs?');
+    await panel.getByRole('button',{name:'Send',exact:true}).click();
+    await expect(panel.getByLabel('Assistant message')).toHaveCount(2,{timeout:90000});
+    await expect(panel.getByLabel('Assistant message').last()).toContainText('not mission blockers');
+    await panel.getByRole('button',{name:'Citation 1',exact:true}).last().click();
+    await panel.getByText('Calculation and filters',{exact:true}).click();
+    await expect(panel.getByLabel('Citation evidence')).toContainText('contributing_keys');
+  });
+}
+
 async function open(page:any) {
   await page.getByRole('button',{name:'Open overview assistant',exact:true}).click();
   const panel=page.getByRole('region',{name:'Overview assistant'});

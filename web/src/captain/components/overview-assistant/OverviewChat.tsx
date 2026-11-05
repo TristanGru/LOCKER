@@ -4,7 +4,7 @@ import type { DaveyAnswer } from '../../api/types';
 
 type Support = { id: string; title?: string; file?: string; loc?: string; kind: string; basis?: string; lineage?: string; stale?: boolean; as_of?: string; identity: any; values: Record<string, unknown>; input_references?: any[]; input_evidence?: Support[]; model_inputs?: any[]; calculation?: any };
 type Citation = { number: number; support_id: string; support: Support };
-type Message = { id: string; role: 'user'|'assistant'; text: string; method?: string; fallback_reason?: string; answer_status?: string; identity?: any; sections?: { heading: string; sentences: { text: string; citations: number[] }[] }[]; citations?: Citation[] };
+type Message = { id: string; role: 'user'|'assistant'; text: string; method?: string; fallback_reason?: string; answer_status?: string; intent?: string; suggested_questions?: string[]; identity?: any; sections?: { heading: string; sentences: { text: string; citations: number[] }[] }[]; citations?: Citation[] };
 type Session = { id: string; packet_id: string; identity: any; messages: Message[]; stale?: boolean; busy: boolean };
 async function request(path: string, body?: unknown, method?: string, signal?: AbortSignal) {
   const response = await fetch('/api/overview-assistant/' + path, { method: method || (body === undefined ? 'GET' : 'POST'), headers: {'Content-Type':'application/json'}, credentials: 'same-origin', body: body === undefined ? undefined : JSON.stringify(body), signal });
@@ -39,6 +39,7 @@ export function OverviewChat({filter,domain,view='overview',eventId=null,nodeId=
   const lastRequestId=useRef<string|null>(null);
   const [citation,setCitation] = useState<Citation|null>(null);
   const [semantic,setSemantic] = useState(true);
+  const [deterministic,setDeterministic] = useState(false);
   const [mode,setMode] = useState('Local evidence search is enabled automatically');
   const abort = useRef<AbortController|null>(null);
   const worker = useRef<Worker|null>(null);
@@ -109,12 +110,13 @@ export function OverviewChat({filter,domain,view='overview',eventId=null,nodeId=
         try {
           worker.current ||= new Worker(new URL('../../workers/overview-embed.worker.ts',import.meta.url),{type:'module'});
           const w=worker.current;
+          const candidates=await request(`conversations/${session.id}/candidates`,{packet_id:session.packet_id,question:text},undefined,signal);
           semanticIds=await new Promise<string[]>((resolve,reject)=>{
             const timer=setTimeout(()=>{w.terminate();worker.current=null;reject(new Error('Embedding timeout'));},60000);
             signal.addEventListener('abort',()=>{clearTimeout(timer);reject(new Error('Canceled'));},{once:true});
             w.onerror=()=>{clearTimeout(timer);reject(new Error('Worker unavailable'));};
             w.onmessage=e=>{if(e.data.id!==seq)return;clearTimeout(timer);e.data.error?reject(new Error(e.data.error)):resolve(e.data.ids);};
-            w.postMessage({id:seq,packetId:packet.packet_id,question:text,records:packet.evidence.slice(0,300)});
+            w.postMessage({id:seq,packetId:candidates.candidate_id,question:text,records:candidates.records});
           });
           setMode('Local evidence search + exact record matching');
         } catch {
@@ -124,7 +126,7 @@ export function OverviewChat({filter,domain,view='overview',eventId=null,nodeId=
         }
       }
       if(signal.aborted || scope!==active.current)return;
-      const result=await request(`conversations/${session.id}/messages`,{packet_id:session.packet_id,question:text,semantic_ids:semanticIds,request_id:lastRequestId.current},undefined,signal);
+      const result=await request(`conversations/${session.id}/messages`,{packet_id:session.packet_id,question:text,semantic_ids:semanticIds,request_id:lastRequestId.current,response_policy:deterministic?'deterministic_only':'auto'},undefined,signal);
       if(scope===active.current && seq===serial.current)setSession(result);
     } catch(e) {if(!signal.aborted && scope===active.current)setError(String(e));}
     finally {if(scope===active.current && seq===serial.current)setBusy(false);}
@@ -142,16 +144,17 @@ export function OverviewChat({filter,domain,view='overview',eventId=null,nodeId=
         {session?.messages.map(message=><article key={message.id} aria-label={message.role==='user'?'Your message':'Assistant message'} className={`space-y-2 rounded-xl border p-3 ${message.role==='user'?'ml-6 bg-ink/5':'mr-1'}`}>
           <p className="text-xs font-bold">{message.role==='user'?'You':`Davy · ${message.method==='template'?'Deterministic fallback':message.method==='cache'?'Cached LLM':'Live LLM'}${message.answer_status ? ' · '+message.answer_status.replaceAll('_',' ') : ''}`}</p>
           {message.role==='user'?<p className="whitespace-pre-wrap">{message.text}</p>:message.sections?.map((section,i)=><div key={i}><h3 className="mb-1 text-sm font-semibold">{section.heading}</h3><p className="text-sm leading-relaxed">{section.sentences.map((sentence,j)=><span key={j}>{sentence.text}{' '}{sentence.citations.map(n=><button id={`citation-${message.id}-${n}`} key={n} aria-label={`Citation ${n}`}  className="mx-0.5 font-semibold text-accent underline" onClick={e=>{sourceButton.current=e.currentTarget.id;setCitation(message.citations!.find(c=>c.number===n)!);}}>[{n}]</button>)}{' '}</span>)}</p></div>)}
-          {message.fallback_reason && <p className="text-xs text-ink-muted">Fallback reason: {message.fallback_reason.replaceAll('_',' ')}. These are verified template facts, not generated prose.</p>}
+          {message.fallback_reason && <p className="text-xs text-ink-muted">Fallback reason: {message.fallback_reason.replaceAll('_',' ')}. Retrieved records and backend calculations; no LLM-written prose.</p>}
         </article>)}
       </div>
-      <div className="flex flex-wrap gap-2">{[view==='overview'?'Summarize this '+(domain==='installation'?'installation':'ship'):view==='missions'?'Summarize this mission':'Explain this dependency','Explain the leading concern',view==='overview'?'Which linked ships or shore capabilities are affected?':'What evidence supports this mission assessment?','Show the supporting records'].map(prompt=><button key={prompt} className="rounded-full border px-2 py-1 text-xs" disabled={busy||!session||session.stale||session.busy} onClick={()=>void send(prompt)}>{prompt}</button>)}</div>
+      <div className="flex flex-wrap gap-2">{Array.from(new Set([...(session?.messages.filter(m=>m.role==='assistant').at(-1)?.suggested_questions ?? []),view==='overview'?'Summarize this '+(domain==='installation'?'installation':'ship'):view==='missions'?'Summarize this mission':'Explain this dependency','Explain the leading concern',view==='overview'?'Which linked ships or shore capabilities are affected?':'What evidence supports this mission assessment?','Show the supporting records'])).map(prompt=><button key={prompt} className="rounded-full border px-2 py-1 text-xs" disabled={busy||!session||session.stale||session.busy} onClick={()=>void send(prompt)}>{prompt}</button>)}</div>
     </>}
     {(busy||session?.busy) && <p role="status">Preparing a grounded response… No unvalidated text is streamed.</p>}
     {error && <div role="alert"><p className="text-sm">{error}</p><button className="underline" disabled={busy} onClick={()=>lastQuestion?void send(lastQuestion,true):void initialize()}>Retry</button></div>}
     <form onSubmit={e=>{e.preventDefault();void send();}} className="space-y-2"><textarea aria-label="Ask about this unit" rows={2} maxLength={1500} value={question} onChange={e=>setQuestion(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send();}}} className="w-full resize-y rounded border bg-abyss-800 p-2" placeholder="Ask a follow-up… Enter sends, Shift+Enter adds a line"/><div className="flex gap-2"><button className="rounded border px-4 py-2" disabled={busy||!session||session.stale||session.busy||!question.trim()}>Send</button>{busy&&<button type="button" className="rounded border px-3" onClick={cancel}>Cancel response</button>}</div></form>
     <p className="text-xs text-ink-muted">{capability}.</p>
     <p className="text-xs text-ink-muted" role="status">{mode}.</p>
+    <label className="block text-xs"><input type="checkbox" checked={deterministic} disabled={busy||session?.busy} onChange={e=>{setDeterministic(e.target.checked);lastRequestId.current=null;}}/> Deterministic only (bypass model and cached LLM)</label>
     <details><summary className="cursor-pointer text-xs">Advanced search settings</summary><label className="mt-2 block text-xs"><input type="checkbox" checked={semantic} onChange={e=>{setSemantic(e.target.checked);setMode(e.target.checked?'Local evidence search is enabled automatically':'Using standard record search');}}/> Use local semantic search</label><p className="mt-1 text-xs text-ink-muted">MiniLM runs locally through Transformers.js. Search falls back automatically if unavailable. Selected redacted context may be sent to your configured generation endpoint.</p></details>
     {packet&&<details><summary className="cursor-pointer text-sm">Loaded sources · {packet.evidence.length} eligible records</summary>{packet.evidence.slice(0,300).map((e:any)=><details key={e.id} className="border-b py-2"><summary>{e.file} · {e.loc}</summary><pre className="whitespace-pre-wrap break-all text-xs">{JSON.stringify(e.fields,null,2)}</pre></details>)}</details>}
     {packet&&<details><summary>Uncertainty and data limitations</summary><ul className="list-disc pl-5">{packet.warnings.map((w:string)=><li key={w} className="text-xs">{w}</li>)}</ul></details>}
