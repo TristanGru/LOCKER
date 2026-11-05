@@ -19,7 +19,11 @@ type Run = ScenarioResult & { hint?: string; note?: string };
 
 /** Two changes are the same if they touch the same thing (a sailor is the same person on every mission). */
 const changeKey = (c: ScenarioChange) =>
-  c.kind === 'removePerson' ? `person:${c.node.includes('|prereq:') ? 'shore:' : ''}${c.node.split('|member:')[1]}` : c.kind === 'shiftMission' ? `shift:${c.mission}` : `${c.kind}:${c.node}`;
+  c.kind === 'removePerson' ? `person:${c.node.includes('|prereq:') ? 'shore:' : ''}${c.node.split('|member:')[1]}` : c.kind === 'shiftMission'
+      ? `shift:${c.mission}`
+      : c.kind === 'casrep'
+        ? `casrep:${c.node.includes('|prereq:') ? 'shore:' : ''}${c.node.split('|system:')[1]?.split('|')[0] ?? c.node}`
+        : `${c.kind}:${c.node}`;
 
 const KINDS: { kind: Kind; label: string; icon: typeof Package; hint: string }[] = [
   { kind: 'delayPart', label: 'Delay a part', icon: Package, hint: 'Push a part delivery back' },
@@ -47,7 +51,8 @@ export function WhatIf() {
   const missions = missionsQ.data ? [...missionsQ.data.missions].sort((a, b) => a.daysOut - b.daysOut) : [];
   const options = useMemo(() => optionsFor(kind, nodes, missions), [kind, nodes, missions]);
   const targetId = options.some((o) => o.id === target) ? target : options[0]?.id ?? '';
-  const labelOf = (id: string) => nodes.find((n) => n.id === id)?.label ?? missions.find((m) => m.id === id)?.code ?? id;
+  // Plain names in scenario lists and results: drop requirement thresholds like ">= 0.8" from equipment labels.
+  const labelOf = (id: string) => nodes.find((n) => n.id === id)?.label.replace(/\s*(>=|≥)\s*[\d.]+\s*$/, '') ?? missions.find((m) => m.id === id)?.code ?? id;
 
   function draft(): ScenarioChange | null {
     if (!targetId) return null;
@@ -431,8 +436,22 @@ function optionsFor(kind: Kind, nodes: GraphNode[], missions: Mission[]) {
       }
       return [...seen.values()].sort((a, b) => Number(a.label.startsWith('Pier')) - Number(b.label.startsWith('Pier')) || a.label.localeCompare(b.label));
     }
-    case 'casrep':
-      return nodes.filter((n) => n.kind === 'equipment' && n.id.includes('|system:')).sort(byStatus).map((n) => ({ id: n.id, label: tag(n) }));
+    case 'casrep': {
+      // One entry per system (it appears once per mission that needs it), named plainly with the missions that need it.
+      const bySystem = new Map<string, GraphNode[]>();
+      for (const n of [...nodes].sort(byStatus)) {
+        if (n.kind !== 'equipment' || !n.id.includes('|system:')) continue;
+        const key = (n.id.includes('|prereq:') ? 'shore:' : '') + n.id.split('|system:')[1].split('|')[0];
+        bySystem.set(key, [...(bySystem.get(key) ?? []), n]);
+      }
+      const code = (id: string) => missions.find((m) => m.id === id)?.code ?? id;
+      return [...bySystem.values()].map((list) => {
+        const n = list[0]; // sorted worst status first
+        const name = n.label.replace(/\s*(>=|≥)\s*[\d.]+\s*$/, '');
+        const needed = [...new Set(list.flatMap((x) => x.missions).map(code))];
+        return { id: n.id, label: `${name}${n.status !== 'ready' ? ` (${STATUS[n.status].label})` : ''}${needed.length ? ` · needed by ${needed.join(', ')}` : ''}` };
+      });
+    }
     case 'shiftMission':
       return missions.map((m) => ({ id: m.id, label: `${m.code} (D+${m.daysOut}, ${pct(m.odds)})` }));
   }

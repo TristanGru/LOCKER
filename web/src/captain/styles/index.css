@@ -435,3 +435,42 @@
   border: 0.8pt solid #7a7f86;
   padding: 4pt 7pt;
 }
+
+/* ---- Masthead radar (components/layout/Logo.tsx): 4 s sweep; contacts flare as the beam passes, then decay ---- */
+.radar-sweep {
+  transform-box: view-box;
+  transform-origin: 20px 20px;
+  animation: radar-spin 4s linear infinite;
+}
+.radar-blip {
+  opacity: 0.12;
+  animation: radar-blip 4s linear infinite;
+}
+@keyframes radar-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes radar-blip {
+  0% {
+    opacity: 1;
+  }
+  6% {
+    opacity: 0.95;
+  }
+  70% {
+    opacity: 0.2;
+  }
+  100% {
+    opacity: 0.12;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .radar-sweep,
+  .radar-blip {
+    animation: none;
+  }
+  .radar-blip {
+    opacity: 0.9;
+  }
+}

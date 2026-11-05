@@ -26,7 +26,8 @@ export function DetailPanel() {
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: '100%', opacity: 0.4 }}
           transition={{ type: 'spring', stiffness: 320, damping: 34 }}
-          className="absolute inset-y-0 right-0 z-30 flex w-[32rem] max-w-[92vw] flex-col border-l border-line-strong bg-abyss-850/95 shadow-[-30px_0_60px_-30px_rgba(0,0,0,0.9)] backdrop-blur-xl"
+          style={{ top: 'var(--chrome-top, 0px)', bottom: 'var(--chrome-bottom, 0px)' }}
+          className="fixed right-0 z-40 flex w-[32rem] max-w-[92vw] flex-col border-l border-line-strong bg-abyss-850/95 shadow-[-30px_0_60px_-30px_rgba(0,0,0,0.9)] backdrop-blur-xl"
         >
           <div className="flex items-center gap-2 border-b border-line px-4 py-3">
             {canGoBack && (
