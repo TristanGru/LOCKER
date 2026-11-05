@@ -24,6 +24,8 @@ jobs:
       - run: npx playwright install --with-deps chromium
         working-directory: web
       - run: python -m pytest -q
+      - name: Bundle pinned local MiniLM and WASM assets
+        run: python scripts/bundle_overview_embeddings.py
       - run: python scripts/check_demo.py
       - uses: actions/upload-artifact@v4
         if: failure()

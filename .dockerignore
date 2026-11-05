@@ -1,0 +1,13 @@
+.git/
+.venv/
+**/__pycache__/
+.pytest_cache/
+web/node_modules/
+web/dist/
+.env
+.env.*
+!.env.example
+*.tar
+*.tar.zst
+.tmp/
+zarf-package-*.tar.zst

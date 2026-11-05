@@ -34,7 +34,7 @@ export function DepartmentCard({
     >
       <header className="flex items-center justify-between gap-3 px-4 pb-2 pt-4">
         <h3 className="text-base font-bold text-ink">{dept.name}</h3>
-        <span className={clsx('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-sm font-bold', worst.border, worst.bg, worst.text)}>
+        <span className={clsx('inline-flex items-center gap-1.5 rounded-sm border px-2.5 py-1 text-sm font-bold', worst.border, worst.bg, worst.text)}>
           <WorstIcon className="h-4 w-4" aria-hidden />
           <span className="num">
             {dept.ready}/{dept.total}

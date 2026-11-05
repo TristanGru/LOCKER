@@ -71,7 +71,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     () => ({ ship, changeShip, version, bump, stopped, setStopped, panel, canGoBack, openNode, openRecord, backPanel, closePanel, focus, setFocus, cascade, setCascade }),
     [ship, changeShip, version, bump, stopped, panel, canGoBack, openNode, openRecord, backPanel, closePanel, focus, cascade],
   );
-  return <Ctx.Provider value={value}><div key={ship} className="h-full">{children}</div></Ctx.Provider>;
+  return <Ctx.Provider value={value}><div key={ship} className="h-full min-h-0 print:h-auto">{children}</div></Ctx.Provider>;
 }
 
 export function useStore(): StoreValue {

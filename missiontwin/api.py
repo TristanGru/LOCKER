@@ -8,6 +8,7 @@ import os
 import copy
 import json
 import threading
+import uuid
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -16,15 +17,18 @@ from fastapi.staticfiles import StaticFiles
 
 from . import BANNER, auth
 from .brief import build_brief
+from .davey import DaveyService
+from .davey_models import DaveyAskBody
 from .domain import DATA_DIR, ROOT, format_dtg, iso, local_label
 from .engine import CACHE_STATS, Scenario, build_world, domino_graph, forecast, pval
 from .fixes import rank_fixes
 from .ingest import find_contradictions, load_baseline, read_pdf_pages
 from .llm import LLMClient, llm_brief, nl_to_action
-from .models import ACTION_TYPES, ActionAdapter, BriefBody, ChangeBody, FixDecisionBody, LoginBody, ParseBody, VersionBody, RefreshBody, CaptainPreviewBody, action_schema
+from .models import ACTION_TYPES, ActionAdapter, BriefBody, ChangeBody, FixDecisionBody, FixUndoBody, LoginBody, ParseBody, VersionBody, RefreshBody, CaptainPreviewBody, action_schema
 from .visualization import registry
 from .normalize import NORMALIZED_ROOT, REFERENCE_ROOT, normalize
 from .sources import load_snapshot, source_health, utc_now
+from .overview import OverviewRequest, packet as overview_packet, answer as overview_answer, projection as overview_projection
 
 
 class AppState:
@@ -39,6 +43,8 @@ class AppState:
         self.scenario = Scenario(self.baseline, log_path=log_path)
         self.rankings: dict = {}
         self.initial_forecast = None
+        self.davey_epoch = uuid.uuid4().hex
+        self.davey = DaveyService(self)
 
     def sources(self):
         result = source_health(self.baseline, self.data_dir, self.adapter, self.last_success, self.last_attempt)
@@ -89,6 +95,7 @@ class AppState:
             candidate = None
             self.rankings.clear()
             self.initial_forecast = None
+            self.davey.clear_corpus()
             self.last_success = attempt['at']
             attempt['status'] = 'loaded'
             self.scenario._log({'op': 'source_refresh', 'source_revision': self.baseline.source_revision,
@@ -149,7 +156,7 @@ class AppState:
 SECURITY_HEADERS = {
     'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer',
     'Cross-Origin-Opener-Policy': 'same-origin',
-    'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
+    'Content-Security-Policy': "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
                                "font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; "
                                "base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
 }
@@ -264,6 +271,74 @@ def create_app(state: AppState | None = None) -> FastAPI:
         """The sign-in choices shown on the login screen: usernames and roles only (there is no password yet)."""
         return [{k: a[k] for k in ('username', 'role', 'title', 'detail')} for a in auth.accounts(S().baseline.profile).values()]
 
+    from .overview_chat import register_chat
+    register_chat(app, S)
+
+    from urllib.parse import urlsplit
+    overview_slots = threading.BoundedSemaphore(2)
+
+    @app.get('/api/overview-assistant/status')
+    def overview_status():
+        s = S()
+        return {'mode': 'live-capable' if s.client.configured else 'offline',
+                'model': s.client.model, 'generation': 'grounded_summaries_and_chat',
+                'embedding_model': 'Xenova/all-MiniLM-L6-v2', 'embedding_runtime': 'Transformers.js 3.8.1 / CPU WASM',
+                'local_assets_bundled': (ROOT / 'web/dist/models/overview-manifest.json').is_file(),
+                'vector_storage': 'browser_memory', 'fallback': 'structured_and_lexical'}
+
+    @app.get('/api/overview-assistant/evidence/{evidence_id}')
+    def overview_evidence(evidence_id: str, unit_id: str, base_version: int,
+                          source_revision: str, packet_id: str, focus: str | None = None,
+                          status_filter: str = 'all'):
+        s = S()
+        body = OverviewRequest(unit_id=unit_id, base_version=base_version, source_revision=source_revision,
+                               packet_id=packet_id, focus=focus, status_filter=status_filter)
+        with s.lock:
+            _ship(unit_id)
+            s.check_version(base_version)
+            if source_revision != s.baseline.source_revision:
+                raise HTTPException(409, 'Source revision changed')
+            data = overview_packet(s, body, s.fc(), registry(s.baseline.profile))
+            if packet_id != data['packet_id']:
+                raise HTTPException(409, 'Evidence context changed; regenerate')
+            source = next((e for e in data['evidence'] if e['id'] == evidence_id), None)
+            if source is None:
+                raise HTTPException(404, 'Evidence is not in this eligible packet')
+            return {'identity': data['identity'], 'evidence': source}
+
+    @app.post('/api/overview-assistant/brief')
+    def overview_brief(body: OverviewRequest, request: Request):
+        if urlsplit('http://' + request.headers.get('host', '')).hostname not in {'127.0.0.1', 'localhost', '::1', 'testserver'}:
+            raise HTTPException(403, 'Overview assistant is local-only')
+        origin = request.headers.get('origin')
+        if origin and urlsplit(origin).netloc != request.headers.get('host'):
+            raise HTTPException(403, 'Same-origin requests only')
+        s = S()
+        with s.lock:
+            _ship(body.unit_id)
+            s.check_version(body.base_version)
+            if body.source_revision != s.baseline.source_revision:
+                raise HTTPException(409, 'Source revision changed')
+            data = overview_packet(s, body, s.fc(), registry(s.baseline.profile))
+            if body.packet_id and body.packet_id != data['packet_id']:
+                raise HTTPException(409, 'Overview context changed; regenerate')
+            client = copy.copy(s.client)
+            client.sent_prompts = []  # Do not retain overview prompts on the shared client.
+            from .llm import redact
+            body = body.model_copy(update={'question': redact(body.question, body.unit_id, s.baseline.name_index)[0]})
+        if overview_slots.acquire(blocking=False):
+            try:
+                explanation = overview_answer(client, data, body)
+            finally:
+                overview_slots.release()
+        else:
+            explanation = overview_answer(client, data, body.model_copy(update={'explain': False}))
+            explanation['note'] = 'Model capacity busy; showing verified template facts.'
+        with s.lock:
+            if data['identity']['digest'] != s.scenario.digest() or data['identity']['version'] != s.scenario.version or data['identity']['source_revision'] != s.baseline.source_revision:
+                raise HTTPException(409, 'Overview changed during generation; regenerate')
+        return {**data, 'answer': explanation}
+
     def _ship(ship_id):
         if ship_id not in S().baseline.profile.ships:
             raise HTTPException(422, 'Unknown ship identity')
@@ -307,7 +382,17 @@ def create_app(state: AppState | None = None) -> FastAPI:
         s = S()
         with s.lock:
             return {'version': s.scenario.version, 'cursor': iso(s.scenario.cursor_dt()), 'source_revision': s.baseline.source_revision,
-                    'source_health_at': s.last_attempt['at']}
+                    'source_health_at': s.last_attempt['at'], 'epoch': s.davey_epoch,
+                    'scenario_digest': s.scenario.digest()}
+
+    @app.post("/api/davey/ask")
+    def ask_davey(body: DaveyAskBody):
+        auth.allow_unit(body.ship_id)
+        return S().davey.ask(body)
+
+    @app.get("/api/davey/answers/{answer_id}/evidence/{evidence_id}")
+    def davey_evidence(answer_id: str, evidence_id: str):
+        return S().davey.evidence(answer_id, evidence_id)
 
     @app.get("/api/state")
     def state_():
@@ -411,7 +496,13 @@ def create_app(state: AppState | None = None) -> FastAPI:
                         raise HTTPException(422, 'Event is not assigned to the selected ship')
                     action = {'type': 'shift_mission', 'event_id': event_id, 'days': change.get('days')}
                 elif kind == 'removePerson':
-                    action.update(type='remove_person', member_id=node.split('member:')[-1], from_time=iso(candidate.cursor_dt()))
+                    # Pier-support sailors (node path ...|prereq:<shore event>|team:...) belong to the shore unit, not the ship.
+                    unit = body.ship_id
+                    if '|prereq:' in node:
+                        pre = node.split('|prereq:')[1].split('|')[0]
+                        unit = next((e['ship_id'] for e in s.baseline.events if e['event_id'] == pre), unit)
+                    auth.allow_unit(unit)
+                    action.update(ship_id=unit, type='remove_person', member_id=node.split('member:')[-1], from_time=iso(candidate.cursor_dt()))
                 elif kind == 'delayPart':
                     item = next((i for i in world.ships[body.ship_id].items if node.endswith('|' + i.key) and i.doc_number), None)
                     if item is None: raise HTTPException(422, 'This node has no linked active requisition to delay')
@@ -650,6 +741,19 @@ def create_app(state: AppState | None = None) -> FastAPI:
         with s.lock:
             s.check_version(body.base_version)
             return _decide(s, body.fix_id, body.decision, body.approval_delay_days, body.note)
+
+    @app.post("/api/fixes/undo")
+    def undo_fix_decision(body: FixUndoBody):
+        s = S()
+        with s.lock:
+            s.check_version(body.base_version)
+            mine = [c for c in s.scenario.changes if c["kind"] == "fix_decision" and c["payload"].get("fix", {}).get("fix_id") == body.fix_id]
+            if not mine:
+                raise HTTPException(404, f"no decision recorded for fix {body.fix_id}")
+            if not auth.is_fleet() and mine[-1].get("actor") != auth.username():
+                raise auth.Denied("You can only undo your own decisions; fleet staff can undo any decision.")
+            c = s.scenario.withdraw(mine[-1]["seq"], actor=auth.username())
+            return {"undone": c, "version": s.scenario.version}
 
     @app.post("/api/undo")
     def undo(body: VersionBody):

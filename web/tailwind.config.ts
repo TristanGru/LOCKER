@@ -3,8 +3,13 @@ import type { Config } from 'tailwindcss';
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
+    // Institutional look: square corners (2px), no frosted glass. Status dots keep "full".
+    borderRadius: { none: "0", sm: "1px", DEFAULT: "2px", md: "2px", lg: "2px", xl: "2px", "2xl": "3px", "3xl": "3px", full: "9999px" },
+    backdropBlur: { none: "0", sm: "0", DEFAULT: "0", md: "0", lg: "0", xl: "0", "2xl": "0", "3xl": "0" },
     extend: {
       colors: {
+        masthead: 'rgb(var(--masthead) / <alpha-value>)',
+        banner: 'rgb(var(--banner) / <alpha-value>)',
         abyss: {
           950: 'rgb(var(--abyss-950) / <alpha-value>)',
           900: 'rgb(var(--abyss-900) / <alpha-value>)',
@@ -33,13 +38,14 @@ export default {
         stale: { DEFAULT: 'rgb(var(--stale) / <alpha-value>)', soft: 'rgb(var(--stale) / 0.14)' },
       },
       fontFamily: {
-        sans: ['Inter', 'IBM Plex Sans', 'Segoe UI', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'Consolas', 'ui-monospace', 'monospace'],
+        // Public Sans is the U.S. government typeface (USWDS); Plex Mono for figures and record IDs.
+        sans: ['"Public Sans"', '"Segoe UI"', 'Arial', 'system-ui', 'sans-serif'],
+        mono: ['"IBM Plex Mono"', 'Consolas', 'ui-monospace', 'monospace'],
       },
       boxShadow: {
         glass: 'var(--shadow-glass)',
-        focus: '0 0 0 1px rgba(34,211,238,0.7), 0 0 24px -4px rgba(34,211,238,0.5)',
-        risk: '0 0 0 1px rgba(251,77,93,0.7), 0 0 28px -4px rgba(251,77,93,0.6)',
+        focus: '0 0 0 2px rgb(var(--accent))',
+        risk: '0 0 0 2px rgb(var(--risk))',
       },
       keyframes: {
         sweep: {

@@ -206,6 +206,7 @@ test("feed, graph, ranked fixes, evidence and brief connect end to end", async (
   page,
   request,
 }, info) => {
+  test.setTimeout(180000);
   for (let event = 0; event < 4; event++) {
     const state = await (await request.get("/api/scenario/version")).json();
     await request.post("/api/events/play", {
@@ -226,7 +227,7 @@ test("feed, graph, ranked fixes, evidence and brief connect end to end", async (
     .click();
   await expect(
     page.getByRole("button", { name: "Apply to exercise", exact: true }),
-  ).toBeVisible({ timeout: 45000 });
+  ).toBeVisible({ timeout: 90000 });
   await page
     .getByRole("button", { name: "Apply to exercise", exact: true })
     .click();

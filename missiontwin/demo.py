@@ -1,4 +1,4 @@
-"""One-command local/offline demo launcher, after installing dependencies."""
+"""One-command local demo launcher, offline by default after installing dependencies."""
 import argparse
 import os
 from pathlib import Path
@@ -36,9 +36,13 @@ def main():
     print('Ranking fix options for every unit...', flush=True)
     for unit in state.baseline.profile.ship_ids:
         state.ranking(unit)
-    print(f'LOCKER offline demo: http://127.0.0.1:{args.port} | source {state.baseline.source_revision}', flush=True)
-    print('Exercise-only decisions. No real source writes or external model calls.', flush=True)
-    uvicorn.run(create_app(state), host='127.0.0.1', port=args.port)
+    live_davey = os.environ.get('LOCKER_DAVEY_LIVE') == '1'
+    mode = 'Ask Davey live after submit' if live_davey else 'offline'
+    print(f'LOCKER demo ({mode}): http://0.0.0.0:{args.port} | source {state.baseline.source_revision}', flush=True)
+    print('Exercise-only decisions. No real source writes. ' +
+          ('Ask Davey can call the configured model after a submitted question.' if live_davey else 'No external model calls.'),
+          flush=True)
+    uvicorn.run(create_app(state), host='0.0.0.0', port=args.port)
 
 
 if __name__ == '__main__':

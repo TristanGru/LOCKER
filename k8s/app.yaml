@@ -1,0 +1,71 @@
+# No Namespace object here: Zarf creates the namespace from the
+# `namespace:` field in zarf.yaml. Defining it again can collide with
+# the Helm release Zarf generates from these manifests.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locker
+  namespace: locker
+  labels:
+    app: locker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: locker
+  template:
+    metadata:
+      labels:
+        app: locker
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: locker
+          # Zarf rewrites this to its in-cluster registry at deploy time.
+          # Package templates are NOT applied to manifest files, so keep this
+          # tag in sync with `--set VERSION=` by hand.
+          image: zarf.internal/locker:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          # TCP probes work without knowing your app's routes.
+          # Swap to httpGet on a /health endpoint if you have one.
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: locker
+  namespace: locker
+spec:
+  selector:
+    app: locker
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+  type: ClusterIP

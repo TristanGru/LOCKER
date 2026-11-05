@@ -24,6 +24,8 @@ export interface SourceRecord {
   stale: boolean;
   summary: string;
   fields: Record<string, string>;
+  /** The cited part of the source: one CSV row as column/value pairs, or the cited line(s) of a document. */
+  excerpt?: { kind: 'row'; pairs: [string, string][] } | { kind: 'lines'; lines: { n: number; text: string; hit: boolean }[] };
 }
 
 export interface Contradiction {
@@ -41,6 +43,19 @@ export interface FeedFreshness {
   asOf: string;
   ageHours: number;
   stale: boolean;
+  /** Unit the feed belongs to (ship or installation id), or 'squadron' for squadron-wide files. */
+  unit?: string;
+  unitName?: string;
+  system?: string;
+  file?: string;
+  status?: string;
+  usage?: string;
+  steward?: string;
+  refresh?: string;
+  thresholdDays?: number;
+  records?: number;
+  rejected?: number;
+  explanation?: string;
 }
 
 export interface Freshness {
@@ -125,6 +140,114 @@ export interface GraphPayload {
   generatedAt: string;
 }
 
+/** Ask Davey output is scoped to one immutable exercise state. */
+export interface DaveyIdentity {
+  epoch: string;
+  source_revision: string;
+  scenario_version: number;
+  scenario_digest: string;
+  exercise_cursor: string;
+  source_health_at: string;
+}
+
+export interface DaveyEvidence {
+  id: string;
+  ship_id: string;
+  source_revision: string;
+  file: string;
+  loc: string;
+  excerpt: string;
+  known_at: string;
+  kind: string;
+  record_key: string;
+  hedged: boolean;
+  superseded: boolean;
+  fact_annotations: {type:string;status:'VERIFIED'|'UNCONFIRMED'|'NEEDS_REVIEW';corroboration:string;hedged:boolean}[];
+}
+
+export interface DaveyClaim {
+  id: string;
+  event_id: string;
+  kind: 'mission' | 'gate';
+  label: string;
+  p_assessed?: number | null;
+  p_ready_at_start?: number | null;
+  p_ok?: number | null;
+  uplift?: number | null;
+  band?: string;
+  start?: string;
+  end?: string;
+  next_domino?: string | null;
+}
+
+export interface DaveyWarning {
+  kind: 'forecasted' | 'emerging';
+  title: string;
+  explanation: string;
+  event_id: string;
+  claim_ids: string[];
+  evidence_ids: string[];
+  verification: string;
+  trace_node_id: string | null;
+}
+
+export interface DaveyProposedNode {
+  id: string;
+  kind: 'support_team' | 'organization' | 'part' | 'repair_task' | 'equipment';
+  label: string;
+  why: string;
+  evidence_ids: string[];
+  verification: string;
+  tentative: true;
+}
+
+export interface DaveyProposedLink {
+  id: string;
+  dependent_id: string;
+  dependency_id: string;
+  relation: 'requires' | 'supported_by' | 'may_depend_on';
+  why: string;
+  evidence_ids: string[];
+  tentative: true;
+}
+
+export interface DaveyAnswer {
+  answer_id: string;
+  request_id: string;
+  identity: DaveyIdentity;
+  ship_id: string;
+  event_id: string;
+  requested_event_id: string | null;
+  node_id: string | null;
+  question: string;
+  answer: string;
+  answer_claim_ids: string[];
+  answer_evidence_ids: string[];
+  forecast_claims: DaveyClaim[];
+  warnings: DaveyWarning[];
+  proposed_nodes: DaveyProposedNode[];
+  proposed_links: DaveyProposedLink[];
+  evidence: DaveyEvidence[];
+  coverage: { searched: number; returned: number; truncated: boolean; mode: string; scope: string;
+    coverage_issues: string[]; stale_linked_files: string[]; last_refresh_status: string };
+  generation: { mode: 'llm' | 'cache' | 'fallback'; label: string; generated_at: string; reason: string };
+}
+
+export interface DaveyAskRequest {
+  question: string;
+  ship_id: string;
+  event_id: string | null;
+  node_id: string | null;
+  expected_version: number;
+  expected_source_revision: string;
+  expected_epoch: string;
+  expected_scenario_digest: string;
+  expected_cursor: string;
+  expected_source_health_at: string;
+  request_id: string;
+  previous_answer_id: string | null;
+}
+
 export interface NodeLink {
   id: string;
   kind: NodeKind;
@@ -166,6 +289,12 @@ export interface ShipSystem {
   sourceIds: string[];
   isNextDomino: boolean;
   dominoVia: string | null; // the part or sailor behind it, when the domino is not the system itself
+  /** Worst requirement probability behind the status (NaN when evidence is insufficient). */
+  p?: number;
+  /** Events that require this system, with that event's requirement odds. */
+  missions?: { id: string; code: string; p: number }[];
+  /** The items (parts, casualties, work orders) that drive the requirement, worst first. */
+  evidence?: { title: string; detail: string; p: number }[];
 }
 
 export interface ShipDepartment {
@@ -277,6 +406,8 @@ export interface FixesPayload {
   missionId: string;
   fixes: Fix[];
   decided: Fix[];
+  /** Options shown earlier that an approved fix made unnecessary (no longer raise the odds). */
+  superseded: Fix[];
   /** Backend explanation when every evaluated option was pruned. */
   note?: string;
 }
@@ -375,6 +506,44 @@ export interface Brief {
   status: Status;
   sections: BriefSection[];
   citations: SourceRecord[];
+  /** Structured detail for the printed brief (every mission of the unit, its requirements, ranked fixes). */
+  detail?: BriefDetail;
+}
+
+export interface BriefDetail {
+  asOf: string;
+  seed?: number;
+  runs?: number;
+  missions: {
+    id: string;
+    code: string;
+    name: string;
+    startDtg: string;
+    startLocal: string;
+    endDtg: string | null;
+    pInterval: number;
+    pStart: number;
+    status: Status;
+    consequence: string;
+    nextDomino: string | null;
+    requirements: {
+      label: string;
+      kind: string;
+      p: number;
+      /** Points the event's odds would gain if this requirement were made certain. */
+      gain: number;
+      drivers: { title: string; detail: string; source: string | null }[];
+    }[];
+    metCount: number;
+  }[];
+  fixes: {
+    rank: number;
+    title: string;
+    why: string[];
+    steps: string[];
+    effects: { code: string; before: number; after: number }[];
+    others: string;
+  }[];
 }
 
 export type LogType =
