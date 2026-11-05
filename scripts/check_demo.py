@@ -28,6 +28,7 @@ def main():
         shutil.copytree(ROOT / 'data/synthetic', data)
         env = {**os.environ, 'MISSIONTWIN_DATA': str(data), 'MISSIONTWIN_ADAPTER': 'directory',
                'MISSIONTWIN_ACTIVITY_LOG': str(scratch / 'activity.jsonl'), 'MISSIONTWIN_DEMO_MODE': '1',
+               'LOCKER_DAVEY_LIVE': '0',
                'LOCKER_URL': f'http://127.0.0.1:{port}', 'LOCKER_TEST_DATA': str(data)}
         log = scratch / 'server.log'
         with log.open('w', encoding='utf-8') as output:
@@ -46,8 +47,20 @@ def main():
                 if process.poll() is not None or time.monotonic() > deadline:
                     raise RuntimeError('Isolated API failed readiness:\n' + log.read_text(encoding='utf-8'))
                 time.sleep(.5)
+            # The demo launcher evaluates a forecast before opening the browser.
+            # Prewarm the isolated API too so cold graph imports do not consume a
+            # browser assertion's deadline on the first page load.
+            try:
+                with urllib.request.urlopen(env['LOCKER_URL'] + '/api/dashboard', timeout=90) as response:
+                    if response.status != 200:
+                        raise RuntimeError(f'Initial dashboard returned HTTP {response.status}')
+            except (urllib.error.URLError, TimeoutError) as error:
+                raise RuntimeError('Isolated API failed initial dashboard:\n' + log.read_text(encoding='utf-8')) from error
             print(f'Acceptance API: {env["LOCKER_URL"]} (temporary sources and activity log)', flush=True)
-            subprocess.run([npm, 'run', 'test:e2e'], cwd=ROOT / 'web', env=env, check=True)
+            browser = [npm, 'run', 'test:e2e']
+            if len(sys.argv) > 1:
+                browser.extend(['--', *sys.argv[1:]])
+            subprocess.run(browser, cwd=ROOT / 'web', env=env, check=True)
         finally:
             process.terminate()
             try:

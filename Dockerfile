@@ -1,22 +1,37 @@
-# One container (R6): node builds web/, python serves API + built UI on :8000.
-FROM node:22-slim AS web
-WORKDIR /web
-COPY web/package.json web/package-lock.json* ./
-RUN npm ci --no-audit --no-fund || npm install --no-audit --no-fund
-COPY web/ ./
-RUN npm run build
+# ---------- Stage 1: build the frontend ----------
+FROM node:22-bookworm-slim AS frontend
 
-FROM python:3.12-slim
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 MISSIONTWIN_DEMO_MODE=1
+WORKDIR /build/web
+
+# Copy lockfiles first so npm ci is cached unless deps change
+COPY web/package*.json ./
+RUN npm ci
+
+COPY web/ ./
+RUN npm run typecheck && npm run build
+
+
+# ---------- Stage 2: Python runtime ----------
+FROM python:3.13-slim-bookworm
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-COPY missiontwin/ missiontwin/
-COPY data/ data/
-COPY data_sources/ data_sources/
-COPY cache/ cache/
-COPY --from=web /web/dist web/dist
-RUN useradd -r -u 10001 app && mkdir -p logs && chown -R app /app/logs
-USER 10001
+
+# Non-root user: UDS / hardened clusters commonly reject root containers
+RUN groupadd --gid 1000 app && useradd --uid 1000 --gid 1000 --create-home app
+
+COPY requirements.txt requirements-demo.txt ./
+RUN pip install -r requirements-demo.txt
+
+COPY --chown=1000:1000 . .
+COPY --chown=1000:1000 --from=frontend /build/web/dist ./web/dist
+
+USER 1000
+
 EXPOSE 8000
-CMD ["uvicorn", "missiontwin.api:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+
+# launcher must bind 0.0.0.0, not 127.0.0.1
+CMD ["python", "-m", "missiontwin.demo", "--no-build"]

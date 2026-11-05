@@ -14,7 +14,7 @@ export function Header() {
   const ashore = snapshot?.state.ships.find((s: any) => s.ship_id === ship)?.kind === 'installation';
 
   useEffect(() => {
-    if (data) { setStopped(data.stopped); if (!data.missions.some(m=>m.id===focus)) setFocus(data.missions[0]?.id || 'all'); }
+    if (data) { setStopped(data.stopped); if (focus !== 'all' && !data.missions.some(m=>m.id===focus)) setFocus(data.missions[0]?.id || 'all'); }
   }, [data, setStopped, focus, setFocus]);
 
   return (

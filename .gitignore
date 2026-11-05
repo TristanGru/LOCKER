@@ -34,3 +34,6 @@ Thumbs.db
 # Downloaded reference documents (public, large; not redistributed)
 primary_docs/
 Data Source Docs/
+
+*.tar
+*.tar.zst

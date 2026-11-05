@@ -8,6 +8,7 @@ import os
 import copy
 import json
 import threading
+import uuid
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
@@ -16,6 +17,8 @@ from fastapi.staticfiles import StaticFiles
 
 from . import BANNER
 from .brief import build_brief
+from .davey import DaveyService
+from .davey_models import DaveyAskBody
 from .domain import (DATA_DIR, DEFAULT_PARAMS, EDITABLE_NUMERIC, ROOT, SCENARIO_NOW, SHIP_IDS, SHIPS, SYSTEMS, WATCHSTATIONS,
                      COMPONENT_TO_SYSTEM, format_dtg, iso, local_label)
 from .engine import CACHE_STATS, Scenario, build_world, domino_graph, forecast, pval
@@ -40,6 +43,8 @@ class AppState:
         self.scenario = Scenario(self.baseline, log_path=log_path)
         self.rankings: dict = {}
         self.initial_forecast = None
+        self.davey_epoch = uuid.uuid4().hex
+        self.davey = DaveyService(self)
 
     def sources(self):
         result = source_health(self.baseline, self.data_dir, self.adapter, self.last_success, self.last_attempt)
@@ -90,6 +95,7 @@ class AppState:
             candidate = None
             self.rankings.clear()
             self.initial_forecast = None
+            self.davey.clear_corpus()
             self.last_success = attempt['at']
             attempt['status'] = 'loaded'
             self.scenario._log({'op': 'source_refresh', 'source_revision': self.baseline.source_revision,
@@ -213,7 +219,16 @@ def create_app(state: AppState | None = None) -> FastAPI:
         s = S()
         with s.lock:
             return {'version': s.scenario.version, 'cursor': iso(s.scenario.cursor_dt()), 'source_revision': s.baseline.source_revision,
-                    'source_health_at': s.last_attempt['at']}
+                    'source_health_at': s.last_attempt['at'], 'epoch': s.davey_epoch,
+                    'scenario_digest': s.scenario.digest()}
+
+    @app.post("/api/davey/ask")
+    def ask_davey(body: DaveyAskBody):
+        return S().davey.ask(body)
+
+    @app.get("/api/davey/answers/{answer_id}/evidence/{evidence_id}")
+    def davey_evidence(answer_id: str, evidence_id: str):
+        return S().davey.evidence(answer_id, evidence_id)
 
     @app.get("/api/state")
     def state_():

@@ -1,7 +1,8 @@
 import { ReactFlowProvider } from '@xyflow/react';
 import { Clock, Crosshair, Filter, GitCompareArrows, Layers, Network } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../api/api';
+import type { DaveyProposedLink, DaveyProposedNode } from '../api/types';
 import { DominoGraph } from '../components/graph/DominoGraph';
 import { TimelineStrip } from '../components/graph/TimelineStrip';
 import { EmptyState, ErrorState, Loading } from '../components/ui/States';
@@ -9,16 +10,25 @@ import { MissionTabs } from '../components/ui/MissionTabs';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import clsx from '../lib/clsx';
 import { useStore } from '../state/store';
+import { useDavey } from '../state/davey';
 import { useApi } from '../state/useApi';
+
+const NO_PROPOSED_NODES: DaveyProposedNode[] = [];
+const NO_PROPOSED_LINKS: DaveyProposedLink[] = [];
 
 export function Dominoes() {
   const { focus, setFocus, panel, openNode, closePanel, cascade } = useStore();
+  const davey = useDavey();
   const { data, error, loading, reload } = useApi(() => api.getGraph(focus), [focus]);
   // Mission list for the selector, independent of the focused graph.
   const { data: all } = useApi(() => api.getMissions());
   const missions = all?.missions ?? data?.missions ?? [];
-  const selectedId = panel?.kind === 'node' ? panel.id : null;
+  const activeSuggestions = Boolean(davey.graph.answer && (focus === 'all' || focus === davey.graph.answer.event_id));
+  const proposedNodes = activeSuggestions ? davey.graph.proposedNodes : NO_PROPOSED_NODES;
+  const proposedLinks = activeSuggestions ? davey.graph.proposedLinks : NO_PROPOSED_LINKS;
+  const selectedId = panel?.kind === 'node' ? panel.id : activeSuggestions ? davey.traceNodeId : null;
   const [showAll, setShowAll] = useState(false);
+  useEffect(()=>{if(proposedNodes.length>0||proposedLinks.length>0)setShowAll(true);},[proposedNodes.length,proposedLinks.length]);
 
   return (
     <div className="flex h-full flex-col gap-4 p-6">
@@ -51,10 +61,14 @@ export function Dominoes() {
               graph={data}
               showAll={showAll}
               selectedId={selectedId}
-              onSelect={openNode}
-              onClear={closePanel}
+              onSelect={id=>{davey.closeDrawer();davey.clearTrace();openNode(id);}}
+              onClear={()=>{closePanel();davey.clearTrace();davey.selectGraphSuggestion(null);}}
               onExpand={() => setShowAll(true)}
               cascade={cascade}
+              proposedNodes={proposedNodes}
+              proposedLinks={proposedLinks}
+              reviewed={davey.graph.reviewed}
+              onProposedSelect={davey.selectGraphSuggestion}
             />
           </ReactFlowProvider>
         )}

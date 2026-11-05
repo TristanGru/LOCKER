@@ -15,6 +15,24 @@ export async function backend(path: string, body?: unknown): Promise<any> {
   if (!r.ok) throw new ApiError(r.status, typeof d.detail === 'string' ? d.detail : JSON.stringify(d.detail || d), r.status === 409 ? 'STALE_VERSION' : 'VALIDATION');
   return d;
 }
+
+export async function daveyIdentity(): Promise<T.DaveyIdentity> {
+  const state = await backend('scenario/version');
+  return {epoch:state.epoch, source_revision:state.source_revision, scenario_version:state.version,
+    scenario_digest:state.scenario_digest, exercise_cursor:state.cursor, source_health_at:state.source_health_at};
+}
+
+export async function askDavey(body:T.DaveyAskRequest, signal?:AbortSignal):Promise<T.DaveyAnswer> {
+  const response=await fetch('/api/davey/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal});
+  const data=await response.json();
+  if(!response.ok)throw new ApiError(response.status,typeof data.detail==='string'?data.detail:JSON.stringify(data.detail || data),response.status===409?'STALE_VERSION':'VALIDATION');
+  return data as T.DaveyAnswer;
+}
+
+export async function daveyEvidence(answerId:string,evidenceId:string):Promise<T.DaveyEvidence> {
+  const data=await backend(`davey/answers/${encodeURIComponent(answerId)}/evidence/${encodeURIComponent(evidenceId)}`);
+  return data.evidence as T.DaveyEvidence;
+}
 export async function dashboard(): Promise<any> {
   const d = await backend('dashboard');
   configureBands(d.forecast.bands);

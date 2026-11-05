@@ -24,8 +24,8 @@ interface Toast {
 export function Fixes() {
   const { focus, setFocus, stopped, bump, setCascade } = useStore();
   const navigate = useNavigate();
-  const missionId = focus === 'all' ? 'M1' : focus;
   const missionsQ = useApi(() => api.getMissions());
+  const missionId = focus === 'all' ? missionsQ.data?.missions[0]?.id ?? 'all' : focus;
   const fixesQ = useApi(() => api.getFixes(missionId), [missionId]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);

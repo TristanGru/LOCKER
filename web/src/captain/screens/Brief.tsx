@@ -15,8 +15,8 @@ import { STATUS, fmtAge, pct } from '../theme/status';
 
 export function Brief() {
   const { focus, setFocus } = useStore();
-  const missionId = focus === 'all' ? 'M1' : focus;
   const missionsQ = useApi(() => api.getMissions());
+  const missionId = focus === 'all' ? missionsQ.data?.missions[0]?.id ?? 'all' : focus;
   const briefQ = useApi(() => api.getBrief(missionId), [missionId]);
   const [printing, setPrinting] = useState(false);
   const missions = missionsQ.data ? [...missionsQ.data.missions].sort((a, b) => a.daysOut - b.daysOut) : [];

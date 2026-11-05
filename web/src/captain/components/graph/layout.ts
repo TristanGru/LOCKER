@@ -1,7 +1,7 @@
 import dagre from '@dagrejs/dagre';
 import type { GraphEdge, GraphNode, NodeKind, Status } from '../../api/types';
 
-export type LayoutKind = NodeKind | 'summary' | 'fold';
+export type LayoutKind = NodeKind | 'summary' | 'fold' | 'proposed';
 
 export const NODE_SIZE: Record<LayoutKind, { w: number; h: number }> = {
   mission: { w: 320, h: 172 },
@@ -10,9 +10,10 @@ export const NODE_SIZE: Record<LayoutKind, { w: number; h: number }> = {
   person: { w: 270, h: 104 },
   summary: { w: 300, h: 128 }, // healthy equipment folded under a mission
   fold: { w: 270, h: 92 }, // healthy parts / sailors folded under equipment
+  proposed: { w: 280, h: 128 },
 };
 
-const KIND_ORDER: Record<LayoutKind, number> = { mission: 0, equipment: 1, summary: 1.5, part: 2, person: 3, fold: 4 };
+const KIND_ORDER: Record<LayoutKind, number> = { mission: 0, equipment: 1, summary: 1.5, part: 2, person: 3, proposed: 3.5, fold: 4 };
 const STATUS_ORDER: Record<Status, number> = { unknown: -1, risk: 0, watch: 1, ready: 2 };
 
 export interface LayoutItem {

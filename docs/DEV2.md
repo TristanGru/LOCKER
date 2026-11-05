@@ -9,11 +9,12 @@ Copy `.env.example` to `.env` in the repository root, only if `.env` does not al
 | `LLM_BASE_URL` | Your provider's OpenAI-compatible API base, typically ending in `/v1` |
 | `LLM_MODEL` | The exact model identifier accepted by that endpoint |
 | `LLM_API_KEY` | Your API key, if the endpoint requires one |
-| `MISSIONTWIN_DEMO_MODE` | `0` while generating responses; `1` for offline replay |
+| `MISSIONTWIN_DEMO_MODE` | `0` while generating legacy extraction responses; `1` for offline replay |
+| `LOCKER_DAVEY_LIVE` | `1` permits Ask Davey to call the configured model after a submitted question, even while legacy jobs are offline |
 
 The app and CLI load `.env` automatically. Process environment variables take precedence. `.env` is ignored by Git.
-The endpoint must support `/chat/completions`, JSON-object response format, `temperature: 0`, and `max_tokens`.
-No provider is preselected and no live-model results are bundled.
+Legacy extraction needs `/chat/completions`, JSON-object response format, `temperature: 0`, and `max_tokens`.
+Ask Davey uses strict JSON-schema output and a separate live switch; see the [Ask Davey setup](../README.md#ask-davey-prototype). The example configuration selects OpenAI for Davey. No live-model results are bundled.
 
 ## Prepare and verify the offline demo
 

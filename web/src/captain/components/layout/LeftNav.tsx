@@ -10,7 +10,6 @@ import {
   RotateCcw,
   ScrollText,
   Ship,
-  WifiOff,
   Wrench,
   type LucideIcon,
 } from 'lucide-react';
@@ -140,9 +139,9 @@ export function LeftNav() {
           <RotateCcw className={clsx('h-4 w-4', resetting && 'animate-spin')} aria-hidden />
           <span className={collapsed ? 'sr-only' : undefined}>{confirmReset ? 'Click again to reset' : 'Reset demo'}</span>
         </button>
-        <div className={clsx('flex items-center gap-2 text-sm text-ink-muted', collapsed && 'justify-center')} title="Offline · demo data · fictional">
-          <WifiOff className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          <span className={collapsed ? 'sr-only' : undefined}>Offline · demo data · fictional</span>
+        <div className={clsx('flex items-center gap-2 text-sm text-ink-muted', collapsed && 'justify-center')} title="Synthetic exercise · local demo">
+          <FlaskConical className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          <span className={collapsed ? 'sr-only' : undefined}>Synthetic exercise · local demo</span>
         </div>
       </div>
     </nav>
