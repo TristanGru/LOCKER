@@ -3,7 +3,7 @@
 Search order follows the Gridley case (spec 05): wholesale, program office, then sister ships.
 Every candidate is evaluated on the SAME random draws (common random numbers, ranking_runs each) so close
 fixes don't swap order from noise. Ranking: net squadron missions in green, then own-ship uplift in P(ready),
-then lower donor cost, then fewer actions. The captain approves, rejects or edits; nothing auto-applies.
+then lower donor cost, then fewer actions, then no cannibalization. The captain approves, rejects or edits; nothing auto-applies.
 
 Only options that help are offered: a candidate must add a squadron event in green or raise the ship's own interval
 readiness on one of its events by at least MIN_GAIN, and a package is dropped when a smaller package of its own steps does as well.
@@ -230,12 +230,14 @@ def rank_fixes(scn: Scenario, ship_id: str, runs: int | None = None) -> dict:
                         "score": [green - base_green, round(own_uplift, 3), round(donor_cost, 3), -len(p["steps"])]})
     evaluated = len(results)
     results, pruned = _prune(results, ship_id)
-    results.sort(key=lambda r: (r["net_green"], round(r["own_uplift"], 3), round(r["donor_cost"], 3), -len(r["steps"])), reverse=True)
+    # Last tie-break: of otherwise equal options, prefer the one that does not cannibalize (double work, GAO).
+    results.sort(key=lambda r: (r["net_green"], round(r["own_uplift"], 3), round(r["donor_cost"], 3), -len(r["steps"]),
+                                -sum(s.get("source_kind") == "cannibalize" for s in r["steps"])), reverse=True)
     for i, r in enumerate(results, 1):
         r["rank"] = i
     out = {"ship_id": ship_id, "runs_per_candidate": runs, "seed": seed, "cursor": base["cursor"], "baseline": base_mp,
            "baseline_green": base_green, "candidates": results, "elapsed_s": round(time.time() - t0, 2),
-           "rule": "interval readiness: net squadron events green, receiver improvement, donor cost, then fewer actions",
+           "rule": "interval readiness: net squadron events green, receiver improvement, donor cost, then fewer actions, then no cannibalization",
            'assessment_basis': 'event_interval', "common_random_numbers": True,
            "evaluated": evaluated, "pruned": pruned, "min_gain": MIN_GAIN}
     if not results:

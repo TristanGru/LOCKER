@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { Anchor, ArrowRight, Building2, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { Mission, Status } from '../../api/types';
 import clsx from '../../lib/clsx';
@@ -20,17 +20,21 @@ const ACTION: Record<Status, { label: string; to: string; solid: boolean }> = {
 export function MissionRow({ mission: m, index }: { mission: Mission; index: number }) {
   const meta = STATUS[m.status];
   const navigate = useNavigate();
-  const { setFocus, openNode } = useStore();
+  const { ship, changeShip, setFocus, openNode } = useStore();
   const date = new Date(m.date);
   const delta = m.baselineDelta;
   const action = ACTION[m.status];
   const emphasized = m.status === 'risk';
   const when = date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 
+  // The other screens follow the selected unit, so opening another unit's event selects that unit first.
+  const select = () => { if (m.unitId !== ship) changeShip(m.unitId); };
   const go = () => {
+    select();
     setFocus(m.id);
     navigate(action.to);
   };
+  const UnitIcon = m.unitKind === 'installation' ? Building2 : Anchor;
 
   return (
     <motion.article
@@ -45,7 +49,13 @@ export function MissionRow({ mission: m, index }: { mission: Mission; index: num
       style={{ boxShadow: `inset 4px 0 0 0 ${meta.hex}` }}
     >
       <div className="min-w-0">
-        <StatusBadge status={m.status} size={emphasized ? 'md' : 'sm'} />
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <StatusBadge status={m.status} size={emphasized ? 'md' : 'sm'} />
+          <span className="inline-flex min-w-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted">
+            <UnitIcon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            <span className="truncate">{m.unitName}</span>
+          </span>
+        </div>
         <h2 className={clsx('mt-2 font-extrabold leading-none tracking-wide text-ink', emphasized ? 'text-[1.85rem]' : 'text-[1.45rem]')}>{m.code}</h2>
         <p className="mt-1 truncate text-sm text-ink-muted" title={m.name}>
           {m.name}
@@ -82,7 +92,7 @@ export function MissionRow({ mission: m, index }: { mission: Mission; index: num
       <div className="min-w-0">
         <div className="label-caps">Next domino</div>
         {m.nextDominoId ? (
-          <button type="button" onClick={() => openNode(m.nextDominoId!)} className="mt-1 block max-w-full text-left">
+          <button type="button" onClick={() => { select(); openNode(m.nextDominoId!); }} className="mt-1 block max-w-full text-left">
             <span className={clsx('block font-bold leading-tight text-ink hover:text-accent', emphasized ? 'text-xl' : 'text-lg')}>{m.nextDominoLabel}</span>
             {m.nextDominoReason && <span className={clsx('mt-1 block text-sm leading-snug text-ink-muted', emphasized ? 'line-clamp-3' : 'line-clamp-2')}>{m.nextDominoReason}</span>}
           </button>
@@ -96,7 +106,7 @@ export function MissionRow({ mission: m, index }: { mission: Mission; index: num
             type="button"
             onClick={go}
             className={clsx(
-              'inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition',
+              'inline-flex items-center gap-1.5 rounded-sm px-4 py-2 text-sm font-bold transition',
               action.solid ? 'bg-accent text-[color:var(--on-accent)] hover:brightness-110' : 'border border-line-strong text-ink hover:border-ink-muted hover:bg-ink/[0.06]',
             )}
           >

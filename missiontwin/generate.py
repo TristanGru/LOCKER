@@ -544,12 +544,12 @@ class Gen:
             return SHIPS[ship]["dodaac"] + julian(dt) + serial
 
         def job(ship, wc, eic, noun, status, state, discovered: date, prio, ta, mh, remarks, j=None, dtg="", cid="", reqs="",
-                deferred="", reason="", as_of=BASE_AS_OF, apl=None, when="2"):
+                deferred="", reason="", as_of=BASE_AS_OF, apl=None, when="2", location=None):
             uic = SHIPS[ship]["uic"]
             jn = jsn(ship, wc, j)
             row = {"jcn": uic + wc + jn, "ship_id": ship, "uic": uic, "work_center": wc, "jsn": jn, "eic": eic,
                    "apl": apl or f"APL-PH-{R.randint(100000, 999999)}", "equipment_noun": noun,
-                   "location": f"{R.randint(1, 4):02d}-{R.randint(10, 400):03d}-{R.randint(0, 2)}-{R.choice('EMQL')}",
+                   "location": location or f"{R.randint(1, 4):02d}-{R.randint(10, 400):03d}-{R.randint(0, 2)}-{R.choice('EMQL')}",
                    "date_discovered": discovered.isoformat(), "when_discovered_code": when, "status_code": status,
                    "job_state": state, "deferral_reason_code": reason, "date_deferred": deferred, "priority": prio,
                    "type_avail": ta, "est_man_hours": mh, "casrep_dtg": dtg, "casrep_id": cid, "req_doc_numbers": reqs,
@@ -679,6 +679,35 @@ class Gen:
                         (drq + timedelta(days=R.randint(20, 60))).isoformat(), drq, [(f"{t.isoformat()}T10:00:00Z", code, esd or None)],
                         sos=R.choice(["NAVSUP WSS", "DLA", "DLA", "VENDOR"]),
                         sor="RSUPPLY")
+
+        # ---- starting conditions (spec 02 section 6). Casualties already open before the feed starts, so each ship
+        # opens the exercise with a mix of ready, watch and at-risk systems. Every value is fixed here: no random draw
+        # is taken, so the filler data above and every generator after this one are unchanged.
+        def standing(ship, wc, jsn_, eic, noun, status, state, discovered, remarks, location, niin=None, serial="", history=(),
+                     deferred="", reason=""):
+            row = job(ship, wc, eic, noun, status, state, discovered, "2", 4, 12, remarks, j=jsn_, deferred=deferred, reason=reason,
+                      apl=PARTS[niin]["apl"] if niin else "APL-PH-000951", location=location, when="2")
+            if niin:
+                doc = docnum(ship, discovered, serial)
+                row["req_doc_numbers"] = doc
+                req(ship, doc, row["jcn"], "", niin, PARTS[niin]["nomenclature"], PARTS[niin]["nsn"], "03", "999", discovered,
+                    list(history))
+            return row
+        # KESSLER: HF transceiver No. 2 is down and its replacement is backordered. SEASHIELD needs exterior comms.
+        standing(K, "CE01", "0901", "COMMS-HF", "TRANSCEIVER, HF NO. 2", "2", "OPEN_AWAITING_PARTS", date(2026, 10, 30),
+                 "AWAITING NIIN 019990501. NO. 1 HF CARRIES ALL CIRCUITS.", "03-120-2-E", "019990501", "0091",
+                 [("2026-10-30T15:00:00Z", "BA", "2026-11-06"), ("2026-11-03T10:00:00Z", "BB", "2026-11-14")])
+        # KESSLER: SSM launcher rail damaged and deferred to the next maintenance period. No scheduled event needs it.
+        standing(K, "CF02", "0902", "SSM-LCH", "SSM LAUNCHER CANISTER RAIL", "2", "DEFERRED", date(2026, 9, 14),
+                 "RAIL DEFORMED. LAUNCHER NOT LOAD-CAPABLE. DEFERRED TO NEXT CMAV.", "01-310-1-M", deferred="2026-09-18", reason="2")
+        # VARNELL: CIWS mount stripped down for the maintenance availability. No scheduled event needs it.
+        standing(V, "CF02", "0901", "CIWS-MT", "CIWS MOUNT, SERVO DRIVE", "2", "IN_WORK", date(2026, 10, 19),
+                 "MOUNT DISASSEMBLED FOR CMAV OVERHAUL. NOT OPERABLE UNTIL REASSEMBLY AND TEST.", "01-040-0-M")
+        # ASHBY: gun mount hydraulic pump failed; the replacement is backordered and IRON HORIZON needs the gun.
+        standing(A, "CF02", "0901", "GUN5-HYD", "PUMP, HYDRAULIC, GUN MOUNT", "2", "OPEN_AWAITING_PARTS", date(2026, 10, 27),
+                 "PUMP FAILED ON PMS TEST. MOUNT CANNOT TRAIN OR ELEVATE. AWAITING NIIN 019990101.", "01-060-1-M", "019990101", "0092",
+                 [("2026-10-27T13:00:00Z", "BA", "2026-11-03"), ("2026-11-02T09:00:00Z", "BB", "2026-11-12")])
+
         for s in SHIP_IDS:
             self.jobs[s].sort(key=lambda r: r["jcn"])
             self.write_csv(self.sdir(s), "csmp.csv", self.jobs[s])

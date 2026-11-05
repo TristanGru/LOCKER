@@ -44,6 +44,8 @@ PARTS = {
     '019998003': ('3810-01-999-8003', 'HOIST ASSEMBLY, PORTAL CRANE'),
     '019998004': ('4320-01-999-8004', 'PUMP, FUEL TRANSFER, PIER'),
     '019998005': ('5895-01-999-8005', 'CONTROLLER, ACCESS GATE'),
+    '019998006': ('5945-01-999-8006', 'RELAY, PROTECTIVE, TRANSFORMER BANK'),
+    '019998007': ('2530-01-999-8007', 'CONTROLLER, BRAKE, TRAILER'),
 }
 SHIP_BERTHS = {'KESSLER': 'SP12', 'VARNELL': 'SP10', 'ASHBY': 'SP11'}  # ship_positions.csv pier assignments
 
@@ -101,7 +103,8 @@ def shore_profile() -> dict:
                     _comp('WATER-PUMP', 'Booster pumps', False, [_part('019998002', 2, 1)])], .5)]),
             _area('MOBL', 'Mobile Support', ['NSAHR'], [
                 _system('MSUB', 'Mobile substation', True, 'MS01', [('5110', 1)], [
-                    _comp('MSUB-XF', 'Mobile transformer', True, [_part(XFMR, 1, 1)])], .7),
+                    _comp('MSUB-XF', 'Mobile transformer', True, [_part(XFMR, 1, 1)]),
+                    _comp('MSUB-TRL', 'Trailer and running gear', False)], .7),
                 _system('LGATE', 'Activity access', False, 'SE02', [('5150', 1)], [
                     _comp('LGATE-CTRL', 'Gate controllers', False, [_part('019998005', 1, 1)]),
                     _comp('LGATE-ROAD', 'Primary access road', False)], .3)]),
@@ -274,11 +277,27 @@ def _requisition(gen):
             'as_of': OUTAGE_AT, 'provenance': 'proposed'}
 
 
-def _job(jcn, eic, noun, wc, jsn, discovered, status, state, docs, remarks, as_of):
-    return {'jcn': jcn, 'ship_id': 'NSNORFOLK', 'uic': '99201', 'work_center': wc, 'jsn': jsn, 'eic': eic, 'apl': '', 'equipment_noun': noun, 'location': 'NAVAL STATION NORFOLK (MOCK)',
+def _job(jcn, eic, noun, wc, jsn, discovered, status, state, docs, remarks, as_of, unit='NSNORFOLK', verifier='M-2001'):
+    info = INSTALLATIONS[unit]
+    return {'jcn': jcn, 'ship_id': unit, 'uic': info['uic'], 'work_center': wc, 'jsn': jsn, 'eic': eic, 'apl': '', 'equipment_noun': noun, 'location': info['name'],
             'date_discovered': discovered, 'when_discovered_code': 'A', 'status_code': status, 'job_state': state, 'deferral_reason_code': '', 'date_deferred': '', 'priority': '2',
-            'type_avail': 4, 'est_man_hours': 40, 'casrep_dtg': '', 'casrep_id': '', 'req_doc_numbers': docs, 'remarks': remarks, 'lead_wc': wc, 'verifier': 'M-2001',
+            'type_avail': 4, 'est_man_hours': 40, 'casrep_dtg': '', 'casrep_id': '', 'req_doc_numbers': docs, 'remarks': remarks, 'lead_wc': wc, 'verifier': verifier,
             'co_deferral_signed': False, 'system_of_record': 'Facility work order system (proposed)', 'as_of': as_of, 'provenance': 'proposed'}
+
+
+def _standing_requisition(unit, doc, jcn, niin, requested, history):
+    """An open facility requisition that predates the feed. history: (time, status, esd), oldest first."""
+    t, code, esd = history[-1]
+    return {'doc_number': doc, 'ship_id': unit, 'dodaac': INSTALLATIONS[unit]['dodaac'], 'jcn': jcn, 'casrep_id': '', 'nsn': PARTS[niin][0], 'niin': niin,
+            'nomenclature': PARTS[niin][1], 'qty': 1, 'unit_of_issue': 'EA', 'priority_designator': '03', 'issue_priority_group': '1', 'rdd': '999', 'nors': True,
+            'date_requisitioned': requested, 'status_code': code, 'status_date': t[:10], 'esd': esd, 'delay_regime': {'BA': 'NEAR', 'BB': 'DUE_IN'}[code],
+            'status_history': ';'.join(f'{a} {b} {c}' for a, b, c in history), 'source_of_supply': 'NAVSUP WSS', 'tcn': '', 'expedite_flag': False,
+            'system_of_record': 'NOSS (proposed)', 'as_of': t, 'provenance': 'proposed'}
+
+
+# Starting conditions: facility casualties already open before the feed starts (spec 21). Values are fixed, not drawn.
+RELAY_JCN, RELAY_DOC = '99201SP110004', 'N9920163060002'
+BRAKE_JCN, BRAKE_DOC = '99202MS010002', 'N9920263070001'
 
 
 def _stock(unit, niin, allowance, on_hand, eligible):
@@ -304,9 +323,14 @@ def _harborpt_files(gen):
     folder = gen.sdir('NSNORFOLK')
     gen.write_csv(folder, 'csmp.csv', [
         _job('99201UT010003', 'WATER-PUMP', 'Booster pump bearing noise', 'UT01', '0003', '2026-10-20', '1', 'DEFERRED', '', 'Deferred to next maintenance window', AS_OF),
+        _job(RELAY_JCN, 'SP11-XFMR', 'Pier 11 transformer bank protective relay', 'SP11', '0004', '2026-11-02', '2', 'OPEN_AWAITING_PARTS', RELAY_DOC,
+             'Relay failed its trip test; bank stays de-energized until a replacement relay is installed and tested', AS_OF),
         _job(OUTAGE_JCN, 'SP12-XFMR', 'Pier 12 transformer failure', 'SP12', '0007', '2026-11-08', '2', 'OPEN_AWAITING_PARTS', OUTAGE_DOC,
              'Bank cannot carry pier load; replacement transformer required', OUTAGE_AT)])
-    gen.write_csv(folder, 'requisition_status.csv', [_requisition(gen)])
+    gen.write_csv(folder, 'requisition_status.csv', [
+        _standing_requisition('NSNORFOLK', RELAY_DOC, RELAY_JCN, '019998006', '2026-11-02',
+                              [('2026-11-02T14:00:00Z', 'BA', '2026-11-06'), ('2026-11-03T16:00:00Z', 'BB', '2026-11-09')]),
+        _requisition(gen)])
     gen.write_csv(folder, 'onboard_allowance_cosal.csv', [_stock('NSNORFOLK', '019998002', 1, 1, False), _stock('NSNORFOLK', '019998005', 1, 1, False), _stock('NSNORFOLK', XFMR, 1, 0, False)])
     gen.write_csv(folder, 'sked_schedule.csv', [_sked('NSNORFOLK', 'CR01', 'Portal crane hoist', 'CRANE-HOIST', 'CR-M1', '2026-10-19', 'LOST'),
                                                 _sked('NSNORFOLK', 'SP12', 'Pier 12 transformer bank', 'SP12-XFMR', 'SP-M1', '2026-10-26', 'ACCOMPLISHED')])
@@ -327,8 +351,11 @@ def _harborpt_files(gen):
 
 def _lafayette_files(gen):
     folder = gen.sdir('NSAHR')
-    gen.write_csv(folder, 'csmp.csv', [])
-    gen.write_csv(folder, 'requisition_status.csv', [])
+    gen.write_csv(folder, 'csmp.csv', [
+        _job(BRAKE_JCN, 'MSUB-TRL', 'Mobile substation trailer brake controller', 'MS01', '0002', '2026-11-03', '2', 'OPEN_AWAITING_PARTS', BRAKE_DOC,
+             'Brake controller failed road inspection; the trailer cannot be towed to a site until the controller is replaced', AS_OF, unit='NSAHR', verifier='M-2101')])
+    gen.write_csv(folder, 'requisition_status.csv', [
+        _standing_requisition('NSAHR', BRAKE_DOC, BRAKE_JCN, '019998007', '2026-11-03', [('2026-11-03T15:00:00Z', 'BB', '2026-11-07')])])
     gen.write_csv(folder, 'onboard_allowance_cosal.csv', [_stock('NSAHR', XFMR, 1, 1, True), _stock('NSAHR', '019998005', 1, 1, False)])
     gen.write_csv(folder, 'sked_schedule.csv', [_sked('NSAHR', 'MS01', 'Mobile transformer', 'MSUB-XF', 'MS-M1', '2026-10-26', 'ACCOMPLISHED') | {'assigned_to': 'M-2102', 'recorded_by_pin': 'M-2101'}])
     gen.write_csv(folder, 'sked_loep.csv', [{'ship_id': 'NSAHR', 'uic': '99202', 'hull': 'NAV-202', 'tycom': 'CNIC (notional)', 'force_rev': '1-27', 'report_date': '2026-10-01',
@@ -346,7 +373,10 @@ def _shared_stock(gen):
         {'niin': XFMR, 'nsn': PARTS[XFMR][0], 'nomenclature': PARTS[XFMR][1], 'holder': 'NAVSUP_WSS', 'holder_name': 'NAVSUP WSS', 'location': 'MECHANICSBURG PA', 'on_hand_qty': 0, 'due_in_qty': 1,
          'due_in_date': '2026-12-10', 'release_lead_days': 1, 'transit_days_conus': 5, 'transit_days_oconus': 15, 'requires_engineering_validation': 'false', 'as_of': AS_OF, 'provenance': 'placeholder'},
         {'niin': XFMR, 'nsn': PARTS[XFMR][0], 'nomenclature': PARTS[XFMR][1], 'holder': 'PROGRAM_OFFICE', 'holder_name': 'Facilities engineering reserve (notional)', 'location': 'PORT HUENEME CA', 'on_hand_qty': 1, 'due_in_qty': 0,
-         'due_in_date': '', 'release_lead_days': 3, 'transit_days_conus': 6, 'transit_days_oconus': 15, 'requires_engineering_validation': 'true', 'as_of': AS_OF, 'provenance': 'placeholder'}])
+         'due_in_date': '', 'release_lead_days': 3, 'transit_days_conus': 6, 'transit_days_oconus': 15, 'requires_engineering_validation': 'true', 'as_of': AS_OF, 'provenance': 'placeholder'},
+        *({'niin': niin, 'nsn': PARTS[niin][0], 'nomenclature': PARTS[niin][1], 'holder': 'NAVSUP_WSS', 'holder_name': 'NAVSUP WSS', 'location': 'MECHANICSBURG PA', 'on_hand_qty': 1,
+           'due_in_qty': 2, 'due_in_date': due, 'release_lead_days': 1, 'transit_days_conus': 5, 'transit_days_oconus': 15, 'requires_engineering_validation': 'false',
+           'as_of': AS_OF, 'provenance': 'placeholder'} for niin, due in (('019998006', '2026-11-12'), ('019998007', '2026-11-10')))])
     _append_csv(squadron / 'fleet_onboard_stock.csv', 'fleet_onboard_stock.csv', [
         {'niin': XFMR, 'ship_id': 'NSAHR', 'uic': '99202', 'storeroom_on_hand': 1, 'storeroom_allowance': 1, 'installed_qty': 1, 'installed_system_eic': 'MSUB-XF', 'cross_deck_eligible': 'true',
          'cannibalize_eligible': 'true', 'donor_cost_note': 'Pulling the installed unit takes the regional mobile substation out of service', 'as_of': AS_OF, 'provenance': 'placeholder'}])

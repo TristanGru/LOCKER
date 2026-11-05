@@ -45,7 +45,7 @@ export function EventCard({ event, latest }: { event: DemoEvent; latest: boolean
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="num rounded bg-ink/[0.08] px-1.5 py-0.5 font-bold text-ink-muted">#{event.seq}</span>
             <span className="font-semibold uppercase tracking-[0.14em] text-ink-dim">{meta.source}</span>
-            {latest && <span className="rounded-full bg-accent/15 px-2 py-0.5 font-bold uppercase tracking-wider text-accent">Just in</span>}
+            {latest && <span className="rounded-sm bg-accent/15 px-2 py-0.5 font-bold uppercase tracking-wider text-accent">Just in</span>}
             <span className="num ml-auto text-ink-dim">{time}</span>
           </div>
           <h3 className="mt-1 text-lg font-semibold leading-snug text-ink">{event.title}</h3>

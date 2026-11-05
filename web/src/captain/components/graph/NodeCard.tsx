@@ -15,6 +15,8 @@ export interface CardData extends Record<string, unknown> {
   node: GraphNode;
   selected: boolean;
   dimmed: boolean;
+  /** Shown only to connect a filter match to its mission: drawn faded. */
+  context?: boolean;
   /** Seconds to wait before showing a status change (cascade). */
   delay: number;
   missionCodes: Record<string, string>;
@@ -61,7 +63,7 @@ function useDominoNode(node: GraphNode, delay: number) {
 }
 
 export const NodeCard = memo(function NodeCard({ data }: NodeProps<CardNode>) {
-  const { selected, dimmed, delay, missionCodes } = data;
+  const { selected, dimmed, context, delay, missionCodes } = data;
   const { shown: node, controls } = useDominoNode(data.node, delay);
   const shown = node.status;
   const meta = STATUS[shown];
@@ -73,7 +75,7 @@ export const NodeCard = memo(function NodeCard({ data }: NodeProps<CardNode>) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: dimmed ? 0.3 : 1, scale: 1 }}
+      animate={{ opacity: dimmed ? 0.3 : context ? 0.5 : 1, scale: 1 }}
       transition={{ delay: delay, duration: 0.45, ease: [0.22, 1, 0.36, 1], opacity: { delay: dimmed ? 0 : delay, duration: 0.35 } }}
       style={{ width: w, height: h }}
       className="relative"
@@ -85,7 +87,7 @@ export const NodeCard = memo(function NodeCard({ data }: NodeProps<CardNode>) {
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute -top-4 left-4 z-10 flex items-center gap-1.5 rounded-full border border-risk bg-risk/15 px-2.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-[0.14em] text-risk shadow-[0_0_18px_-4px_rgba(251,77,93,0.9)]"
+          className="absolute -top-4 left-4 z-10 flex items-center gap-1.5 rounded-sm border border-risk bg-risk/15 px-2.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-[0.14em] text-risk"
         >
           <Crosshair className="h-3.5 w-3.5" strokeWidth={2.6} aria-hidden />
           Next domino
@@ -102,7 +104,7 @@ export const NodeCard = memo(function NodeCard({ data }: NodeProps<CardNode>) {
           'group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-abyss-800/90 backdrop-blur-md transition-[border-color,box-shadow] duration-500',
           selected ? 'border-accent shadow-focus' : meta.border,
           isDomino && !selected && 'animate-pulseRing border-risk',
-          !selected && !isDomino && shown === 'risk' && 'shadow-[0_0_26px_-10px_rgba(251,77,93,0.8)]',
+          !selected && !isDomino && shown === 'risk' && '',
         )}
       >
         {/* status rail */}
@@ -136,7 +138,7 @@ export const NodeCard = memo(function NodeCard({ data }: NodeProps<CardNode>) {
               <div className="mt-auto flex items-center gap-2 pt-1.5">
                 <span className={clsx('num text-sm font-bold', meta.text)}>{node.metric}</span>
                 {node.contradictionCount > 0 && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-watch/50 bg-watch-soft px-1.5 py-0.5 text-[0.68rem] font-semibold text-watch" title="Sources disagree">
+                  <span className="inline-flex items-center gap-1 rounded-sm border border-watch/50 bg-watch-soft px-1.5 py-0.5 text-[0.68rem] font-semibold text-watch" title="Sources disagree">
                     <GitCompareArrows className="h-3 w-3" aria-hidden /> {node.contradictionCount} conflict
                   </span>
                 )}

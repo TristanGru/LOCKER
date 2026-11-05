@@ -69,6 +69,23 @@ test('MiniLM is enabled by default and runs locally without external requests',a
   expect(external).toEqual([]);
 });
 
+test('Ask Davy respects main marking banners, theme and print layout',async({page})=>{
+  await page.goto('/');
+  await expect(page.getByRole('note',{name:'Marking: unclassified, synthetic exercise data'})).toBeVisible();
+  await open(page);
+  const dialog=page.getByRole('dialog',{name:'Ask Davy'});
+  const top=await page.getByRole('note',{name:'Marking: unclassified, synthetic exercise data'}).boundingBox();
+  const bounds=await dialog.boundingBox();
+  expect(bounds!.y).toBeGreaterThan(top!.y+top!.height);
+  const launcher=page.getByRole('button',{name:'Minimize overview assistant',exact:true});
+  const button=await launcher.boundingBox();
+  const chromeBottom=await page.evaluate(()=>Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--chrome-bottom')));
+  expect(button!.y+button!.height).toBeLessThanOrEqual(1000-chromeBottom);
+  await page.emulateMedia({media:'print'});
+  await expect(dialog).toBeHidden();
+  await expect(launcher).toBeHidden();
+});
+
 test('missing local model falls back automatically without user setup',async({page})=>{
   await page.route('**/models/overview-manifest.json',route=>route.abort());
   await page.goto('/#/shore');

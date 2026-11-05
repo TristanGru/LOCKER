@@ -139,7 +139,7 @@ function Stage({ ship, onOpen, onFail }: { ship: ShipPayload; onOpen: (id: strin
       {cut && !inside && <CutPanel cut={cut} scene={sceneRef} onOpen={onOpen} />}
       {inside && (
         <div className="absolute bottom-4 left-4 right-4 z-30 flex justify-center" role="status">
-          <div className="on-stage pointer-events-auto max-w-[36rem] rounded-[14px] border border-[rgba(140,180,220,.26)] bg-[rgba(6,11,20,.92)] px-4 py-3">
+          <div className="on-stage pointer-events-auto max-w-[36rem] rounded border border-[rgba(140,180,220,.26)] bg-[rgba(6,11,20,.92)] px-4 py-3">
             <div className="text-[15px] font-semibold text-ink">{inside}</div>
             <p className="mt-1 text-[13px] leading-snug text-ink-muted">Drag to look around. W A S D or the arrow keys walk. Hold Shift to move faster.</p>
             <div className="mt-2">
@@ -308,7 +308,7 @@ function ChoiceRow({ selected, onClick, children }: { selected: boolean; onClick
 function CheckRow({ checked, onChange, label }: { checked: boolean; onChange: (checked: boolean) => void; label: string }) {
   return (
     <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-semibold hover:bg-white/10">
-      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-4 w-4 accent-[#22d3ee]" />
+      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-4 w-4 accent-[rgb(var(--accent))]" />
       {label}
     </label>
   );
@@ -348,7 +348,7 @@ function LegendGroup({ title, items, shape }: { title: string; items: [string, s
 function CutPanel({ cut, scene, onOpen }: { cut: CutState; scene: RefObject<ShipScene | null>; onOpen: (id: string) => void }) {
   const meta = cut.status ? STATUS[cut.status] : null;
   return (
-    <div className="on-stage absolute right-4 top-[4.75rem] z-20 w-[15.75rem] rounded-[14px] border border-[rgba(140,180,220,.26)] bg-[rgba(6,11,20,.92)] p-4" role="region" aria-label="Cut section">
+    <div className="on-stage absolute right-4 top-[4.75rem] z-20 w-[15.75rem] rounded border border-[rgba(140,180,220,.26)] bg-[rgba(6,11,20,.92)] p-4" role="region" aria-label="Cut section">
       <div className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">Cut section · {cut.mode === 'x' ? 'across' : 'lengthwise'}</div>
       <div className="mt-2 flex flex-wrap gap-1.5">
         <Btn small onClick={() => scene.current?.enter()}>
@@ -397,7 +397,7 @@ export function Btn({ on, onClick, children, small, disabled }: { on?: boolean; 
       disabled={disabled}
       aria-pressed={on}
       className={clsx(
-        'whitespace-nowrap rounded-[10px] border font-semibold transition disabled:cursor-not-allowed disabled:opacity-50',
+        'whitespace-nowrap rounded border font-semibold transition disabled:cursor-not-allowed disabled:opacity-50',
         small ? 'px-2.5 py-1 text-xs' : 'px-3.5 py-[9px] text-sm',
         on ? 'border-accent/60 bg-accent/[0.12] text-accent' : 'border-[rgba(140,180,220,.26)] text-ink-muted hover:border-[rgba(140,180,220,.5)] hover:text-ink',
       )}

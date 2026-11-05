@@ -49,6 +49,7 @@ interface Inside {
   sea: boolean;
   halves: boolean[];
   overlayDisplay: string;
+  exposure: number;
   saved: {
     fov: number;
     near: number;
@@ -294,6 +295,9 @@ export class ShipScene {
       }
     });
     this.scene.add(room.group);
+    // Indoors the outdoor exposure blows painted bulkheads out to white.
+    const exposure = this.renderer.toneMappingExposure;
+    this.renderer.toneMappingExposure = 0.86;
     const fog = this.scene.fog;
     this.scene.fog = null;
     const ground = this.ground.visible;
@@ -351,6 +355,7 @@ export class ShipScene {
       sea: seaVis,
       halves,
       overlayDisplay,
+      exposure,
       saved,
     };
     this.ev.onInside(title);
@@ -362,6 +367,7 @@ export class ShipScene {
     if (!inn) return;
     this.scene.remove(inn.group);
     disposeInterior(inn.group);
+    this.renderer.toneMappingExposure = inn.exposure;
     for (const [l, intensity] of inn.lights) l.intensity = intensity;
     this.scene.fog = inn.fog;
     this.ground.visible = inn.ground;
