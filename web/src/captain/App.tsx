@@ -1,5 +1,6 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
+import { BootScreen } from './components/layout/BootScreen';
 import { ActivityLog } from './screens/ActivityLog';
 import { Brief } from './screens/Brief';
 import { ChangeFeed } from './screens/ChangeFeed';
@@ -20,6 +21,7 @@ export default function App() {
   return (
     <AuthGate>
     <StoreProvider>
+      <BootScreen>
       {/* Hash routing works from any static file server, fully offline. */}
       <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
@@ -37,6 +39,7 @@ export default function App() {
           </Route>
         </Routes>
       </HashRouter>
+      </BootScreen>
     </StoreProvider>
     </AuthGate>
   );
