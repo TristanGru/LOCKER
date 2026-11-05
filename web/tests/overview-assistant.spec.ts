@@ -43,10 +43,10 @@ test('assistant stays collapsed, loads on demand, closes with Escape and fits mo
   await page.goto('/');
   const launcher=page.getByRole('button',{name:'Open overview assistant',exact:true});
   await expect(launcher).toBeVisible();
-  await expect(page.getByRole('dialog',{name:'Ask LOCKER'})).toHaveCount(0);
+  await expect(page.getByRole('dialog',{name:'Ask Davy'})).toHaveCount(0);
   expect(requests).toBe(0);
   await open(page);
-  const dialog=page.getByRole('dialog',{name:'Ask LOCKER'});
+  const dialog=page.getByRole('dialog',{name:'Ask Davy'});
   const box=await dialog.boundingBox();
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x+box!.width).toBeLessThanOrEqual(390);

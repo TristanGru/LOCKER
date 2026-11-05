@@ -1,13 +1,13 @@
 # Ship and Shore Overview chat
 
-Ask LOCKER now generates **natural-language summaries with inline citations** and supports bounded follow-up conversations. It remains read-only synthetic decision support, not an operational readiness authority.
+Ask Davy now generates **natural-language summaries with inline citations** and supports bounded follow-up conversations. It remains read-only synthetic decision support, not an operational readiness authority.
 
 Implementation/design reference: [conversational summaries and citations plan](OVERVIEW_CHAT_CITATIONS_PLAN.md).
 
 ## Using the assistant
 
 1. Open Ship Overview or Shore Overview and select the unit.
-2. Click the floating **Ask LOCKER** button. It stays collapsed by default and takes no dashboard layout space.
+2. Click the floating **Ask Davy** button. It stays collapsed by default and takes no dashboard layout space.
 3. Choose **Summarize this ship/installation**, or enter your own question. Opening the panel does not automatically incur a generation request.
 4. Read the concise bottom line, explanation, dependencies and uncertainty sections.
 5. Click an inline citation such as **[1]**. The source view identifies the recorded fields, model assessment or calculation, source revision and exercise time.

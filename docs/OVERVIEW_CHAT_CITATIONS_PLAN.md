@@ -2,7 +2,7 @@
 
 **Status:** Approved and implemented as a bounded local overview-chat release. This document retains the original design/delivery checklist as a reference; see [current behavior and limitations](OVERVIEW_ASSISTANT.md). Generated summaries, typed inline citations, session-only follow-ups, historical evidence retention, failure guards and backend/browser acceptance coverage are present. Citation structure does not prove semantic entailment, and broader operational assurance remains out of scope.
 
-**Scope:** Upgrade the existing floating Ask LOCKER assistant on Ship and Shore Overview. Preserve read-only behavior, local `.env` credentials, loaded-data authority and optional local MiniLM search.
+**Scope:** Upgrade the existing floating Ask Davy assistant on Ship and Shore Overview. Preserve read-only behavior, local `.env` credentials, loaded-data authority and optional local MiniLM search.
 
 ## 1. Why the current experience is not useful enough
 
@@ -20,7 +20,7 @@ This is a product/grounding limitation, not just an endpoint or model problem. S
 
 ## 2. Target experience
 
-### On opening Ask LOCKER
+### On opening Ask Davy
 
 Keep the floating launcher and expandable side panel. Display a short assistant welcome with a **Summarize this ship** or **Summarize this installation** button. Generate the live summary only when requested, avoiding repeated provider calls whenever the drawer opens.
 
