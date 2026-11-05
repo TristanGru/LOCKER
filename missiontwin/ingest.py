@@ -19,15 +19,13 @@ from pathlib import Path
 import yaml
 
 from . import BANNER
-from .domain import (ALL_EICS, DATA_DIR, INPORT_CODES, MONTHS, SCENARIO_NOW, SHIP_IDS, SHIPS, STATUS_SCORE, UTC, date_dt, hull_key,
-                     parse_date, parse_dtg, parse_ts, mission_tree_json)
+from .domain import DATA_DIR, MONTHS, UTC, date_dt, parse_date, parse_dtg, parse_ts
 from .llm import LLMClient, build_name_index, extract_facts, surname_of
 from .models import Contradiction, ExtractedFact, IngestIssue, SourceRef
-from .profile import Profile, default_profile, load_profile
+from .profile import Profile, empty_profile, load_profile
 from .domain import COLUMNS
 from .validation import validate_events, validate_params
 
-NAME_TO_SHIP = {v["name"]: k for k, v in SHIPS.items()}
 
 # ------------------------------------------------------------------ per-file row rules
 FILE_RULES = {
@@ -63,7 +61,7 @@ SQUAD = ["wholesale_stock.csv", "fleet_onboard_stock.csv", "ship_positions.csv",
 
 
 def _check_row(fname: str, row: dict, profile: Profile | None = None):
-    all_eics = (profile or default_profile()).all_eics
+    all_eics = profile.all_eics
     rules = FILE_RULES.get(fname, {})
     missing = set(COLUMNS.get(fname, [])) - set(row)
     if missing: raise ValueError('Missing schema columns: ' + ', '.join(sorted(missing)))
@@ -106,7 +104,7 @@ def _check_row(fname: str, row: dict, profile: Profile | None = None):
     if fname == "csmp.csv":
         if len(row["jcn"]) != 13:
             raise ValueError(f"JCN must be 13 chars, got {row['jcn']!r}")
-        if row["status_code"] not in STATUS_SCORE:
+        if row["status_code"] not in profile.status_codes:
             raise ValueError(f"unknown equipment status code {row['status_code']!r}")
         if row["eic"] not in all_eics:
             raise ValueError(f"EIC {row['eic']!r} not in mission tree")
@@ -151,7 +149,7 @@ class Baseline:
     extraction_methods: dict = field(default_factory=dict)
     extraction_documents: dict = field(default_factory=dict)
     configuration_errors: list[str] = field(default_factory=list)
-    profile: Profile = field(default_factory=default_profile)
+    profile: Profile = field(default_factory=empty_profile)
     source_revision: str = ""
     snapshot_owner: object = None
 
@@ -263,7 +261,8 @@ def _sets(text: str) -> tuple[list[tuple[int, str]], str]:
 
 
 def parse_casrep(text: str, rel: str, profile: Profile | None = None) -> dict:
-    profile = profile or default_profile()
+    if profile is None:
+        raise ValueError('A dataset profile is required to read unit messages')
     sets, fm = _sets(text)
     ship = {v['name']: k for k, v in profile.ships.items()}.get(fm)
     if not ship:
@@ -338,7 +337,8 @@ def parse_casrep(text: str, rel: str, profile: Profile | None = None) -> dict:
 
 
 def parse_movement(text: str, rel: str, profile: Profile | None = None) -> dict:
-    profile = profile or default_profile()
+    if profile is None:
+        raise ValueError('A dataset profile is required to read unit messages')
     sets, fm = _sets(text)
     ship = {v['name']: k for k, v in profile.ships.items()}.get(fm)
     if not ship:
@@ -470,8 +470,7 @@ def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) ->
         b.params = yaml.safe_load((sq / "delay_model_params.yaml").read_text(encoding="utf-8"))
     except Exception as e:
         b.issues.append(IngestIssue(file="squadron/delay_model_params.yaml", loc="file", reason=str(e)))
-        from .domain import DEFAULT_PARAMS
-        b.params = dict(DEFAULT_PARAMS)
+        b.params = {}  # no assumptions in code: the dataset must state them
 
     try:
         validate_params(b.params)
@@ -490,7 +489,8 @@ def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) ->
         text = (data_dir / rel).read_text(encoding="utf-8")
         b.docs[rel] = {"ship_id": message["ship_id"], "known": message["time"], "pages": [text], "document_type": "casrep"}
         facts, method = extract_facts(client, rel, message["ship_id"], text, 1, message["time"],
-                                      b.name_index, document_type="casrep", casrep_id=message["casrep_id"])
+                                      b.name_index, document_type="casrep", casrep_id=message["casrep_id"],
+                                      known_eics=b.profile.all_eics)
         b.facts.extend(facts)
         b.extraction_methods[method] = b.extraction_methods.get(method, 0) + 1
         b.extraction_documents[rel] = {"document_type": "casrep", "methods": [method]}
@@ -516,7 +516,7 @@ def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) ->
             b.docs[rel] = {"ship_id": ship, "known": known, "pages": pages, "document_type": "daily_report"}
             b.extraction_documents[rel] = {"document_type": "daily_report", "methods": []}
             for pi, text in enumerate(pages, 1):
-                facts, method = extract_facts(client, rel, ship, text, pi, known, b.name_index)
+                facts, method = extract_facts(client, rel, ship, text, pi, known, b.name_index, known_eics=b.profile.all_eics)
                 b.extraction_methods[method] = b.extraction_methods.get(method, 0) + 1
                 b.extraction_documents[rel]["methods"].append(method)
                 for f in facts:
@@ -545,7 +545,7 @@ def load_baseline(data_dir: Path = DATA_DIR, client: LLMClient | None = None) ->
                 continue
             times = [row['_known']] + [t for t in revisions if t > row['_known']]
             conflict = next((block for t in times for block in b.view(t).schedule(ship)
-                             if block['employment_code'] not in INPORT_CODES
+                             if block['employment_code'] not in b.profile.inport_codes
                              and str(block['start_date'])[:10] <= refresh <= str(block['end_date'])[:10]), None)
             if conflict:
                 event = f" ({conflict['event_id']})" if conflict.get('event_id') else ''

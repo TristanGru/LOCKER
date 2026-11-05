@@ -6,7 +6,8 @@ import json
 from pathlib import Path
 
 from . import BANNER
-from .domain import ALL_EICS, AREAS, ROOT, SHIP_IDS, SYSTEMS, parse_ts
+from .domain import DATA_DIR, ROOT, parse_ts
+from .profile import load_profile
 
 
 REFERENCE_ROOT = ROOT / "data_sources" / "Synthetic Data"
@@ -25,11 +26,14 @@ def checksum_matches(path: Path, expected: str) -> bool:
     return any(hashlib.sha256(candidate).hexdigest() == expected for candidate in candidates)
 
 
-def normalize(source: Path = REFERENCE_ROOT, output: Path = NORMALIZED_ROOT):
+def normalize(source: Path = REFERENCE_ROOT, output: Path = NORMALIZED_ROOT, canonical: Path = DATA_DIR):
     source, output = source.resolve(), output.resolve()
     if output == source or source in output.parents:
         raise ValueError("Normalized output must not overwrite the reference package")
     manifest = json.loads((source / "manifest.json").read_text(encoding="utf-8"))
+    # The reference package is checked against the canonical dataset's own units, equipment and mission areas.
+    profile = load_profile(Path(canonical))
+    SHIP_IDS, ALL_EICS, AREAS, SYSTEMS = profile.ship_ids, profile.all_eics, profile.areas, profile.systems
     records, datasets, quarantine = [], [], []
     for entry in manifest["files"]:
         relative = entry["file"]

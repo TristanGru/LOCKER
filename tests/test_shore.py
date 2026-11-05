@@ -14,6 +14,7 @@ from missiontwin.fixes import rank_fixes
 from missiontwin.generate_shore import INSTALLATIONS, SNAPSHOT
 from missiontwin.ingest import find_contradictions, load_baseline
 from missiontwin.llm import LLMClient
+from conftest import signed_in
 
 RUNS = 2000
 
@@ -21,7 +22,7 @@ RUNS = 2000
 @pytest.fixture()
 def client(data_dir, tmp_path, offline_client):
     state = AppState(data_dir, tmp_path / 'log.jsonl', offline_client)
-    return TestClient(create_app(state)), state
+    return signed_in(create_app(state)), state
 
 
 def mission(fc, event_id):

@@ -10,19 +10,18 @@ import json
 import threading
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import BANNER
+from . import BANNER, auth
 from .brief import build_brief
-from .domain import (DATA_DIR, DEFAULT_PARAMS, EDITABLE_NUMERIC, ROOT, SCENARIO_NOW, SHIP_IDS, SHIPS, SYSTEMS, WATCHSTATIONS,
-                     COMPONENT_TO_SYSTEM, format_dtg, iso, local_label)
+from .domain import DATA_DIR, ROOT, format_dtg, iso, local_label
 from .engine import CACHE_STATS, Scenario, build_world, domino_graph, forecast, pval
 from .fixes import rank_fixes
 from .ingest import find_contradictions, load_baseline, read_pdf_pages
 from .llm import LLMClient, llm_brief, nl_to_action
-from .models import ACTION_TYPES, ActionAdapter, BriefBody, ChangeBody, FixDecisionBody, ParseBody, VersionBody, RefreshBody, CaptainPreviewBody, action_schema
+from .models import ACTION_TYPES, ActionAdapter, BriefBody, ChangeBody, FixDecisionBody, LoginBody, ParseBody, VersionBody, RefreshBody, CaptainPreviewBody, action_schema
 from .visualization import registry
 from .normalize import NORMALIZED_ROOT, REFERENCE_ROOT, normalize
 from .sources import load_snapshot, source_health, utc_now
@@ -54,7 +53,7 @@ class AppState:
         candidate = self.scenario.fork()
         candidate.apply(kind, payload)
         forecast(build_world(candidate))
-        return self.scenario.apply(kind, payload)
+        return self.scenario.apply(kind, payload, actor=auth.username())
 
     def refresh_sources(self, reset_scenario=False):
         attempt = {'at': utc_now(), 'status': 'failed'}
@@ -128,7 +127,12 @@ class AppState:
         ship = action.get("ship_id")
         if ship and ship not in self.baseline.profile.ships:
             raise HTTPException(422, "Unknown ship")
+        auth.allow_unit(ship)
+        if not ship and not auth.is_fleet():
+            raise auth.Denied("Changes without a unit are limited to fleet staff.")
         kind = action["type"]
+        if kind == "shift_mission":
+            auth.allow_unit(next((e["ship_id"] for e in self.baseline.events if e["event_id"] == action["event_id"]), None))
         if kind == "remove_person":
             if not any(row["member_id"] == action["member_id"] for row in self.baseline.r(ship, "roster.csv")):
                 raise HTTPException(422, "Unknown member for selected ship")
@@ -140,6 +144,15 @@ class AppState:
             raise HTTPException(422, "Unknown equipment identity for this unit")
         elif kind == "shift_mission" and not any(event["event_id"] == action["event_id"] for event in self.baseline.events):
             raise HTTPException(422, "Unknown event identity")
+
+
+SECURITY_HEADERS = {
+    'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer',
+    'Cross-Origin-Opener-Policy': 'same-origin',
+    'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
+                               "font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; "
+                               "base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
+}
 
 
 def reference_report(root: Path | None = None) -> dict | None:
@@ -173,10 +186,88 @@ def create_app(state: AppState | None = None) -> FastAPI:
         return holder['s']
 
     app.state.get = S
+    sessions = auth.Sessions()
+    guarded_prefixes = ('/api/', '/results', '/scenario', '/docs', '/redoc', '/openapi.json')
+    open_paths = {'/api/login', '/api/logout', '/api/session', '/api/accounts', '/api/health', '/api/ready'}
+
+    def scope(payload):
+        return auth.scoped(payload, S().baseline.profile.ship_ids)
+
+    def account_for(request: Request):
+        name = sessions.verify(request.cookies.get(auth.COOKIE))
+        return auth.accounts(S().baseline.profile).get(name) if name else None
+
+    def audit(rec: dict):
+        """Security events (sign-in, sign-out, denied requests) go to access.jsonl beside the activity log."""
+        s = S()
+        if not s.scenario.persist:
+            return
+        path = s.scenario.log_path.with_name('access.jsonl')
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with s.lock, open(path, 'a', encoding='utf-8') as f:
+                f.write(json.dumps({'at': utc_now(), **rec}, default=str) + '\n')
+        except OSError:
+            pass
+
+    @app.middleware('http')
+    async def zero_trust(request: Request, call_next):
+        """Verify the session on every request and deny by default. Only the built frontend files and the
+        sign-in/probe routes in open_paths answer without one; each route then checks the account's units."""
+        path = request.url.path
+        guarded = path.startswith(guarded_prefixes) and path not in open_paths
+        account = account_for(request) if path.startswith(guarded_prefixes) else None
+        if guarded and account is None:
+            response = JSONResponse(status_code=401, content={'detail': 'Sign in required'})
+        else:
+            token = auth.set_user(account)
+            try:
+                response = await call_next(request)
+            finally:
+                auth.reset_user(token)
+            if response.status_code == 403 and account is not None:
+                audit({'op': 'access_denied', 'actor': account['username'], 'method': request.method, 'path': path})
+        response.headers.update(SECURITY_HEADERS)
+        if path.startswith('/api/'):
+            response.headers['Cache-Control'] = 'no-store'
+        return response
+
+    @app.post('/api/login')
+    def login(body: LoginBody, request: Request):
+        name = body.username.strip().lower()
+        account = auth.accounts(S().baseline.profile).get(name)
+        if account is None:
+            audit({'op': 'login_failed', 'username': name[:80]})
+            raise HTTPException(401, 'Unknown username')
+        audit({'op': 'login', 'actor': name})
+        response = JSONResponse(auth.public(account))
+        response.set_cookie(auth.COOKIE, sessions.issue(name), max_age=auth.SESSION_SECONDS, httponly=True,
+                            samesite='strict', secure=request.url.scheme == 'https', path='/')
+        return response
+
+    @app.post('/api/logout')
+    def logout(request: Request):
+        if auth.user():
+            audit({'op': 'logout', 'actor': auth.username()})
+        sessions.revoke(request.cookies.get(auth.COOKIE))
+        response = JSONResponse({'ok': True})
+        response.delete_cookie(auth.COOKIE, path='/')
+        return response
+
+    @app.get('/api/session')
+    def session():
+        """Who is signed in ({'user': null} when nobody is), so the sign-in screen needs no failed request."""
+        return {'user': auth.public(auth.user()) if auth.user() else None}
+
+    @app.get('/api/accounts')
+    def accounts():
+        """The sign-in choices shown on the login screen: usernames and roles only (there is no password yet)."""
+        return [{k: a[k] for k in ('username', 'role', 'title', 'detail')} for a in auth.accounts(S().baseline.profile).values()]
 
     def _ship(ship_id):
         if ship_id not in S().baseline.profile.ships:
             raise HTTPException(422, 'Unknown ship identity')
+        auth.allow_unit(ship_id)
 
     @app.exception_handler(ValueError)
     async def validation_error(request, error):
@@ -188,16 +279,19 @@ def create_app(state: AppState | None = None) -> FastAPI:
         with s.lock:
             errors, coverage = s.baseline.configuration_errors, s.baseline.coverage()
             ok = not errors and not any(coverage.values()) and s.last_attempt['status'] != 'failed'
+            if auth.user() is None or not auth.is_fleet():  # probes and COs get the status only
+                return JSONResponse(status_code=200 if ok else 503, content={'ok': ok})
             return JSONResponse(status_code=200 if ok else 503, content={'ok': ok, 'configuration_errors': errors,
                 'coverage': coverage, 'source_revision': s.baseline.source_revision, 'last_attempt': s.last_attempt})
 
     @app.get('/api/sources')
     def sources():
         s = S()
-        with s.lock: return s.sources()
+        with s.lock: return scope(s.sources())
 
     @app.post('/api/sources/refresh')
     def refresh_sources(body: RefreshBody):
+        auth.fleet_only('Refreshing sources')
         s = S()
         with s.lock:
             s.check_version(body.base_version)
@@ -225,21 +319,21 @@ def create_app(state: AppState | None = None) -> FastAPI:
             feed = [{"event_id": e["event_id"], "title": e["title"], "kind": e["kind"], "ship_id": e["ship_id"], "known_at": iso(e["known_at"]),
                      "known_dtg": format_dtg(e["known_at"]), "refs": e["refs"], "played": e["event_id"] in played} for e in s.baseline.feed.get("events", [])]
             nxt = sc.next_event()
-            return {"banner": BANNER, "version": sc.version, "scenario_now": iso(s.baseline.profile.now), "cursor": iso(cur),
-                    "cursor_dtg": format_dtg(cur), "cursor_local": local_label(cur), "seed": pval(sc.params(), "seed"),
+            return scope({"banner": BANNER, "version": sc.version, "scenario_now": iso(s.baseline.profile.now), "cursor": iso(cur),
+                    "cursor_dtg": format_dtg(cur), "cursor_local": local_label(cur, s.baseline.profile.local_time), "seed": pval(sc.params(), "seed"),
                     "runs": pval(sc.params(), "runs"), "ships": [{"ship_id": k, **v} for k, v in s.baseline.profile.ships.items()], "feed": feed,
                     "next_event": nxt["event_id"] if nxt else None, "llm": s.client.status(),
                     "extraction_methods": s.baseline.extraction_methods, "ingest_issues": len(s.baseline.issues),
                     "changes": len(sc.changes), "cache": CACHE_STATS,
                     "systems": {k: {"name": v["name"], "critical": v["critical"]} for k, v in s.baseline.profile.systems.items()},
                     'source_revision': s.baseline.source_revision, 'watchstations': s.baseline.profile.watchstations,
-                    'berths': _berths(s.baseline, cur)}
+                    'berths': _berths(s.baseline, cur), 'user': auth.public(auth.user()) if auth.user() else None})
 
     @app.get("/api/forecast")
     def get_forecast():
         s = S()
         with s.lock:
-            return {**s.fc(), 'version': s.scenario.version, 'source_revision': s.baseline.source_revision}
+            return scope({**s.fc(), 'version': s.scenario.version, 'source_revision': s.baseline.source_revision})
 
     @app.get("/api/dashboard")
     def dashboard():
@@ -250,15 +344,16 @@ def create_app(state: AppState | None = None) -> FastAPI:
             if state.initial_forecast is None:
                 state.initial_forecast = forecast(build_world(Scenario(state.baseline, persist=False)))
             return {"state": state_(), "forecast": get_forecast(),
-                    "baseline": state.initial_forecast, "issues": issues(),
-                    "assumptions": assumptions(), "log": log(), "visualization": registry(state.baseline.profile), 'sources': state.sources()}
+                    "baseline": scope(state.initial_forecast), "issues": issues(),
+                    "assumptions": assumptions(), "log": log(), "visualization": visualization(), 'sources': sources()}
 
     @app.get("/api/visualization")
     def visualization():
-        return registry(S().baseline.profile)
+        return scope(registry(S().baseline.profile))
 
     @app.get("/api/data-contract")
     def data_contract():
+        auth.fleet_only('The data contract and server paths')
         report = reference_report()
         return {'active_profile': S().baseline.profile.name, 'active_path': str(S().data_dir),
                 "reference": report, "catalog": S().baseline.catalog}
@@ -279,8 +374,8 @@ def create_app(state: AppState | None = None) -> FastAPI:
             if action.get('ship_id') and action['ship_id'] not in state.baseline.profile.ships:
                 raise HTTPException(422, "Unknown ship")
             scenario.apply("action", action, actor="preview")
-        elif body.kind == "set_assumption" and body.key in EDITABLE_NUMERIC:
-            low, high = EDITABLE_NUMERIC[body.key]
+        elif body.kind == "set_assumption" and body.key in state.baseline.params["editable_ranges"]:
+            low, high = state.baseline.params["editable_ranges"][body.key]
             try:
                 value = float(body.value)
             except (TypeError, ValueError):
@@ -294,7 +389,7 @@ def create_app(state: AppState | None = None) -> FastAPI:
             after = forecast(build_world(scenario))
         except (KeyError, ValueError) as error:
             raise HTTPException(422, f"Invalid proposal: {error}")
-        return {"base_version": body.base_version, "before": before, "after": after,
+        return {"base_version": body.base_version, "before": scope(before), "after": scope(after),
                 "persisted": False, "proposal": body.model_dump(mode="json")}
 
     @app.post('/api/captain/preview')
@@ -334,13 +429,13 @@ def create_app(state: AppState | None = None) -> FastAPI:
                 s.validate_action(action)
                 candidate.apply('action', action, actor='preview')
             after = forecast(build_world(candidate))
-            return {'base_version': body.base_version, 'before': before, 'after': after, 'persisted': False}
+            return {'base_version': body.base_version, 'before': scope(before), 'after': scope(after), 'persisted': False}
 
     @app.get("/results")
     def results():
         s = S()
         with s.lock:
-            return {**s.fc(), "version": s.scenario.version}
+            return scope({**s.fc(), "version": s.scenario.version})
 
     @app.get("/api/graph/{ship_id}")
     def graph(ship_id: str, event_id: str | None = None):
@@ -352,6 +447,8 @@ def create_app(state: AppState | None = None) -> FastAPI:
     @app.get("/api/facts")
     def facts(ship_id: str | None = None):
         s = S()
+        if ship_id is not None:
+            _ship(ship_id)
         with s.lock:
             v = s.view()
             confirmed = {c["payload"]["fact_id"]: c["payload"]["include"] for c in s.scenario.changes if c["kind"] == "confirm_fact"}
@@ -362,7 +459,7 @@ def create_app(state: AppState | None = None) -> FastAPI:
                 d["confirmed"] = confirmed.get(f.fact_id)
                 d["feeds_engine"] = f.fact_id in w.facts_used
                 out.append(d)
-            return {"facts": out}
+            return scope({"facts": out})
 
     @app.get("/api/issues")
     def issues():
@@ -370,12 +467,15 @@ def create_app(state: AppState | None = None) -> FastAPI:
         with s.lock:
             v = s.view()
             thr = pval(s.scenario.params(), "staleness_threshold_days")
-            return {"ingest_issues": [i.model_dump() for i in s.baseline.issues],
+            return scope({"ingest_issues": [i.model_dump() for i in s.baseline.issues],
                     "contradictions": [c.model_dump() for c in find_contradictions(v)],
-                    "stale": v.stale_files(thr)}
+                    "stale": v.stale_files(thr)})
 
     @app.get('/api/source')
     def source(file: str, loc: str = '', span: str = '', profile: str = 'canonical'):
+        if profile != 'canonical':
+            auth.fleet_only('The reference exercise package')
+        auth.allow_file(file)
         with S().lock:
             return source_body(file, loc, span, profile)
 
@@ -434,9 +534,9 @@ def create_app(state: AppState | None = None) -> FastAPI:
             if not isinstance(v, dict) or "value" not in v:
                 continue
             rows.append({"key": k, "value": v["value"], "tag": v.get("tag"), "source": v.get("source"), "edited": bool(v.get("edited")),
-                         "default": DEFAULT_PARAMS.get(k, {}).get("value")})
+                         "default": s.baseline.params.get(k, {}).get("value")})  # as the dataset states it
         editable = []
-        for path, (lo, hi) in EDITABLE_NUMERIC.items():
+        for path, (lo, hi) in s.baseline.params["editable_ranges"].items():
             editable.append({"path": path, "value": pval(p, path), "min": lo, "max": hi, "tag": p[path.split(".")[0]].get("tag"),
                              "source": p[path.split(".")[0]].get("source")})
         return {"rows": rows, "editable": editable}
@@ -450,16 +550,17 @@ def create_app(state: AppState | None = None) -> FastAPI:
 
     @app.get("/api/actions/schema")
     def schema():
-        return {'types': ACTION_TYPES, 'schema': action_schema(), 'ships': S().baseline.profile.ship_ids,
-                'eics': sorted(S().baseline.profile.all_eics)}
+        return scope({'types': ACTION_TYPES, 'schema': action_schema(), 'ships': S().baseline.profile.ship_ids,
+                'eics': sorted(S().baseline.profile.all_eics)})
 
     @app.get("/api/log")
     def log():
-        return {"changes": S().scenario.changes, "version": S().scenario.version}
+        return scope({"changes": S().scenario.changes, "version": S().scenario.version})
 
     # ------------------------------------------------------------ write (versioned)
     @app.post("/api/events/play")
     def play(body: VersionBody):
+        auth.fleet_only('Playing the exercise feed')
         s = S()
         with s.lock:
             s.check_version(body.base_version)
@@ -483,26 +584,29 @@ def create_app(state: AppState | None = None) -> FastAPI:
                     return _decide(s, a["fix_id"], "approve", 0.0, "via plain-English action")
                 c = s.commit('action', a)
             elif body.kind == "set_assumption":
-                if body.key not in EDITABLE_NUMERIC:
+                if body.key not in s.baseline.params["editable_ranges"]:
                     raise HTTPException(422, f"{body.key} is not editable")
-                lo, hi = EDITABLE_NUMERIC[body.key]
+                lo, hi = s.baseline.params["editable_ranges"][body.key]
                 try:
                     val = float(body.value)
                 except (TypeError, ValueError):
                     raise HTTPException(422, "value must be a number")
                 if not lo <= val <= hi:
                     raise HTTPException(422, f"value out of range [{lo}, {hi}]")
+                auth.fleet_only('Changing model assumptions')
                 c = s.commit('set_assumption', {'key': body.key, 'value': val})
             elif body.kind == "confirm_fact":
                 fact = next((f for f in s.view().facts_with_corroboration() if f.fact_id == body.fact_id), None)
                 if fact is None:
                     raise HTTPException(422, "Fact is not known at this scenario cursor")
+                auth.allow_unit(getattr(fact, 'ship_id', None))
                 if body.include is None:
                     raise HTTPException(422, 'include must be explicitly true or false')
                 if body.include and fact.status == "NEEDS_REVIEW":
                     raise HTTPException(422, "invalid evidence must be corrected before confirmation")
                 c = s.commit('confirm_fact', {'fact_id': body.fact_id, 'include': body.include})
             elif body.kind == 'play_event':
+                auth.fleet_only('Playing the exercise feed')
                 c = s.commit('play_event', {"event_id": body.event_id} if body.event_id else {})
             return {"change": c, "version": s.scenario.version}
 
@@ -511,23 +615,29 @@ def create_app(state: AppState | None = None) -> FastAPI:
         s = S()
         with s.lock:
             applied = change(body)
-            return {**applied, "results": {**s.fc(), "version": s.scenario.version}}
+            return {**applied, "results": scope({**s.fc(), "version": s.scenario.version})}
 
     def _decide(s: AppState, fix_id: str, decision: str, delay: float, note: str):
         fix = None
-        for ship in s.baseline.profile.ship_ids:
+        units = s.baseline.profile.ship_ids if auth.is_fleet() else auth.user()['units']
+        for ship in units:
             r = s.rankings.get((s.scenario.digest(), ship))
             if r:
                 fix = next((c for c in r["candidates"] if c["fix_id"] == fix_id), None)
                 if fix:
                     break
         if fix is None:
-            for ship in s.baseline.profile.ship_ids:
+            for ship in units:
                 fix = next((c for c in s.ranking(ship)["candidates"] if c["fix_id"] == fix_id), None)
                 if fix:
                     break
         if fix is None:
             raise HTTPException(404, f"fix {fix_id} not in the current ranking; refresh")
+        if not auth.is_fleet():
+            outside = sorted({step[k] for step in fix["steps"] for k in ("donor", "receiver") if step.get(k) and step[k] not in units})
+            if outside:
+                names = ", ".join(s.baseline.profile.ships[u]["name"] for u in outside)
+                raise auth.Denied(f"This fix moves a part or sailor from {names}. Fleet staff must approve transfers between units.")
         payload = {"decision": decision, "approval_delay_days": delay, "note": note,
                    "fix": {"fix_id": fix["fix_id"], "title": fix["title"], "steps": fix["steps"]},
                    "expected": {m["event_id"]: m["p_after"] for m in fix["missions"]}}
@@ -546,15 +656,19 @@ def create_app(state: AppState | None = None) -> FastAPI:
         s = S()
         with s.lock:
             s.check_version(body.base_version)
-            c = s.scenario.undo()
+            last = s.scenario.changes[-1] if s.scenario.changes else None
+            if last and not auth.is_fleet() and last.get("actor") != auth.username():
+                raise auth.Denied("You can only undo your own last change; fleet staff can undo any change.")
+            c = s.scenario.undo(actor=auth.username())
             return {"undone": c, "version": s.scenario.version}
 
     @app.post("/api/reset")
     def reset(body: VersionBody):
+        auth.fleet_only('Resetting the exercise')
         s = S()
         with s.lock:
             s.check_version(body.base_version)
-            s.scenario.reset()
+            s.scenario.reset(actor=auth.username())
             return {"version": s.scenario.version}
 
     @app.post("/api/actions/parse")
@@ -609,11 +723,6 @@ def _berths(baseline, cursor) -> list[dict]:
             out.append({'ship_id': row['ship_id'], 'name': baseline.profile.ships[row['ship_id']]['name'],
                         'in_port': row['status'] == 'INPORT', 'pier': row['pier']})
     return out
-
-
-def _ship(ship_id: str):
-    if ship_id not in SHIPS:
-        raise HTTPException(404, f"unknown ship {ship_id}")
 
 
 app = create_app()

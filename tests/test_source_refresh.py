@@ -9,11 +9,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from missiontwin.api import AppState, create_app
-from missiontwin.domain import SHIPS, WATCHSTATIONS, iso
+from missiontwin.domain import iso
 from missiontwin.engine import Scenario, build_world, forecast
 from missiontwin.ingest import load_baseline
 from missiontwin.export import export_json
 from missiontwin.sources import fingerprint
+from conftest import signed_in
 
 
 @pytest.fixture
@@ -21,7 +22,7 @@ def workspace(data_dir, offline_client, tmp_path):
     root = tmp_path / 'sources'
     shutil.copytree(data_dir, root)
     state = AppState(root, tmp_path / 'activity.jsonl', offline_client)
-    with TestClient(create_app(state), raise_server_exceptions=False) as client:
+    with signed_in(create_app(state), raise_server_exceptions=False) as client:
         yield root, state, client
 
 
@@ -170,7 +171,7 @@ def test_missing_required_source_is_unknown_not_green(data_dir, offline_client, 
     shutil.copytree(data_dir, root)
     (root / 'KESSLER/csmp.csv').unlink()
     state = AppState(root, tmp_path / 'log.jsonl', offline_client)
-    client = TestClient(create_app(state))
+    client = signed_in(create_app(state))
     data = client.get('/api/dashboard').json()
     for m in data['forecast']['missions']:
         if m['ship_id'] == 'KESSLER':
@@ -221,7 +222,7 @@ def test_alternate_json_export_same_engine(workspace, monkeypatch, tmp_path, off
     assert alternate.baseline.coverage() == {s: [] for s in alternate.baseline.profile.ship_ids}
     assert alternate.fc()['missions'] == expected
     assert alternate.sources()['adapter'] == 'json-export'
-    viewer = TestClient(create_app(alternate))
+    viewer = signed_in(create_app(alternate))
     record = viewer.get('/api/source', params={'file': 'KESSLER/roster.csv'}).json()
     assert record['meta']['original_file'] == 'KESSLER/roster.csv.json'
     assert viewer.get('/api/source', params={'file': record['meta']['original_file']}).status_code == 200
@@ -237,8 +238,10 @@ def test_profile_weights_and_clock_are_loaded(workspace):
     systems[0]['name'] = 'Profile-configured radar'
     tree['scoring']['critical_child_cap'] = .45
     tree_path.write_text(json.dumps(tree))
-    (root / 'squadron/dataset_profile.json').write_text(json.dumps({'schema_version': 1, 'name': 'alternate',
-        'mapping_version': 'test-2', 'scenario_now': '2026-11-04T00:00:00Z', 'ships': SHIPS, 'watchstations': WATCHSTATIONS}))
+    profile_path = root / 'squadron/dataset_profile.json'
+    profile = json.loads(profile_path.read_text())
+    profile.update(name='alternate', mapping_version='test-2', scenario_now='2026-11-04T00:00:00Z')
+    profile_path.write_text(json.dumps(profile))
     response = refresh(client, state)
     assert response.status_code == 200, response.text
     data = client.get('/api/dashboard').json()
@@ -252,7 +255,8 @@ def test_profile_weights_and_clock_are_loaded(workspace):
 
 def test_alternate_unit_and_equipment_are_not_bound_to_demo_constants(workspace):
     root, state, client = workspace
-    (root / 'squadron/dataset_profile.json').write_text(json.dumps({'schema_version': 1, 'name': 'replacement', 'ships': SHIPS}))
+    profile_path = root / 'squadron/dataset_profile.json'
+    profile_path.write_text(json.dumps({**json.loads(profile_path.read_text()), 'name': 'replacement'}))
     for path in list(root.rglob('*')):
         if path.suffix in ('.csv', '.json', '.txt', '.yaml'):
             text = path.read_text(encoding='utf-8').replace('KESSLER', 'ORION').replace('SPY1D', 'RADARX')
@@ -267,8 +271,9 @@ def test_alternate_unit_and_equipment_are_not_bound_to_demo_constants(workspace)
     assert client.get('/api/graph/ORION').status_code == 200
     assert client.get('/api/fixes/ORION').status_code == 200
     assert client.post('/api/brief', json={'ship_id': 'ORION'}).status_code == 200
-    unmapped = next(s for s in data['visualization']['systems'] if s['eic'] == 'RADARX')
-    assert unmapped['mounts'] == []
+    # The drawing layout is data too, so the renamed system keeps its place on the ship.
+    renamed = next(s for s in data['visualization']['systems'] if s['eic'] == 'RADARX')
+    assert renamed['mounts'] == ['air_radar']
 
 
 def test_invalid_profile_tree_and_event_cycle_rejected(workspace):

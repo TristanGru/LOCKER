@@ -5,13 +5,14 @@ from fastapi.testclient import TestClient
 import pytest
 
 from missiontwin.api import AppState, create_app
-from missiontwin.domain import SCENARIO_NOW, parse_ts
+from missiontwin.domain import parse_ts
 from missiontwin.engine import Scenario, build_world, forecast
+from conftest import signed_in
 
 
 @pytest.fixture
 def api(data_dir, offline_client, tmp_path):
-    return TestClient(create_app(AppState(data_dir, tmp_path / "activity.jsonl", offline_client)))
+    return signed_in(create_app(AppState(data_dir, tmp_path / "activity.jsonl", offline_client)))
 
 
 def test_results_has_thirty_daily_probabilities_for_every_graph_node(api):
@@ -68,7 +69,7 @@ def test_item_daily_probability_recovers_when_repaired(baseline, log_path):
     scenario = Scenario(baseline, log_path)
     scenario.apply("set_assumption", {"key": "etr_slip.p_slip", "value": 0})
     scenario.apply("action", {"type": "add_casrep", "ship_id": "KESSLER", "eic": "SPY1D", "category": 4,
-                              "etr": (SCENARIO_NOW + timedelta(days=2)).isoformat()})
+                              "etr": (baseline.profile.now + timedelta(days=2)).isoformat()})
     result = forecast(build_world(scenario), runs=500)
     items = [n for n in result["nodes"] if n["kind"] == "whatif"]
     assert items

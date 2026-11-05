@@ -1,0 +1,237 @@
+{
+  "_banner": "SYNTHETIC - FOR EXERCISE - NOT REAL NAVY DATA",
+  "schema_version": 1,
+  "name": "canonical",
+  "mapping_version": "1",
+  "scenario_now": "2026-11-04T08:00:00Z",
+  "local_time": {
+    "utc_offset_hours": -5,
+    "label": "EST",
+    "zone": "Norfolk, VA (EST in November)"
+  },
+  "squadron": "DESRON 99",
+  "tycom": "CNSL",
+  "ships": {
+    "KESSLER": {
+      "name": "USS KESSLER",
+      "hull": "DDG-991",
+      "uic": "99101",
+      "dodaac": "V99101",
+      "role": "Primary ship; full demo scenario",
+      "depth": "full",
+      "ofrp_phase": "INTEGRATED"
+    },
+    "VARNELL": {
+      "name": "USS VARNELL",
+      "hull": "DDG-992",
+      "uic": "99102",
+      "dodaac": "V99102",
+      "role": "Donor; holds the spare cooling pump",
+      "depth": "full",
+      "ofrp_phase": "BASIC"
+    },
+    "ASHBY": {
+      "name": "USS ASHBY",
+      "hull": "DDG-993",
+      "uic": "99103",
+      "dodaac": "V99103",
+      "role": "Third ship for the squadron view",
+      "depth": "light",
+      "ofrp_phase": "SUSTAINMENT"
+    }
+  },
+  "watchstations": {
+    "2200": "LOOKOUT",
+    "2300": "HELMSMAN",
+    "2400": "QUARTERMASTER OF THE WATCH",
+    "2500": "BOATSWAINS MATE OF THE WATCH",
+    "3110": "ENGINEERING OFFICER OF THE WATCH (SYNTH)",
+    "4310": "SPY RADAR SYSTEM CONTROLLER (SYNTH)",
+    "4320": "CIWS MOUNT CONTROLLER (SYNTH)",
+    "4330": "VLS LAUNCH CONTROL OPERATOR (SYNTH)",
+    "4410": "SONAR SUPERVISOR (SYNTH)",
+    "4420": "HELO CONTROL OFFICER (SYNTH)",
+    "4510": "GUN CONTROL OPERATOR (SYNTH)"
+  },
+  "inport_employment_codes": [
+    "UPK",
+    "INPORT",
+    "AVAIL",
+    "HOLUPK",
+    "RFS"
+  ],
+  "supply_holders": {
+    "NAVSUP_WSS": {
+      "counts_as_wholesale_stock": true,
+      "direct_pull": true,
+      "release_when_unstated": {
+        "fixed_days": 1,
+        "label": "WSS release (record states no lead)"
+      }
+    },
+    "DLA": {
+      "counts_as_wholesale_stock": true,
+      "direct_pull": false
+    },
+    "PROGRAM_OFFICE": {
+      "counts_as_wholesale_stock": false,
+      "direct_pull": true,
+      "release_when_unstated": {
+        "param": "program_office_release_days",
+        "label": "program office release (ledger; record states no lead)"
+      }
+    }
+  },
+  "visual_model": {
+    "model": "Illustrative DDG; not verified DTMB geometry or actual installed layout",
+    "hull_class": "Notional Arleigh Burke-style destroyer"
+  },
+  "mounts": {
+    "air_radar": [
+      16.5,
+      26,
+      0
+    ],
+    "chill": [
+      12,
+      4,
+      3.2
+    ],
+    "vls_fwd": [
+      33.9,
+      12,
+      0
+    ],
+    "vls_aft": [
+      -21.3,
+      12,
+      0
+    ],
+    "engine_p": [
+      -30,
+      4,
+      -3.2
+    ],
+    "engine_s": [
+      -15,
+      4,
+      3.2
+    ],
+    "genset_1": [
+      -3,
+      4,
+      -3.2
+    ],
+    "genset_2": [
+      24,
+      4,
+      -3.2
+    ],
+    "flight": [
+      -55.2,
+      12,
+      0
+    ],
+    "gun": [
+      51.6,
+      14,
+      0
+    ],
+    "sonar": [
+      61.8,
+      3.6,
+      3.2
+    ],
+    "sat": [
+      1.5,
+      19,
+      -7.5
+    ],
+    "ciws": [
+      -35.7,
+      20,
+      0
+    ],
+    "steering": [
+      -62,
+      4,
+      0
+    ],
+    "navigation": [
+      20,
+      24,
+      6
+    ],
+    "operations": [
+      8,
+      13,
+      -3
+    ],
+    "support": [
+      4,
+      4,
+      3.2
+    ],
+    "surface_launchers": [
+      -11,
+      12,
+      7
+    ]
+  },
+  "system_mounts": {
+    "SPY1D": [
+      "air_radar"
+    ],
+    "CIWS": [
+      "ciws"
+    ],
+    "VLS": [
+      "vls_fwd",
+      "vls_aft"
+    ],
+    "SQQ89": [
+      "sonar"
+    ],
+    "HELO": [
+      "flight"
+    ],
+    "GUN5": [
+      "gun"
+    ],
+    "SSM": [
+      "surface_launchers"
+    ],
+    "GTM": [
+      "engine_p",
+      "engine_s"
+    ],
+    "SSDG": [
+      "genset_1",
+      "genset_2"
+    ],
+    "STEER": [
+      "steering"
+    ],
+    "NAVRAD": [
+      "navigation"
+    ],
+    "HM": [
+      "support"
+    ],
+    "LAN": [
+      "operations"
+    ],
+    "COMMS": [
+      "sat"
+    ]
+  },
+  "component_mounts": {
+    "SPY1D-CW": {
+      "name": "Radar cooling water pump",
+      "mounts": [
+        "chill"
+      ]
+    }
+  },
+  "provenance": "proposed (all identities invented; layout illustrative)"
+}

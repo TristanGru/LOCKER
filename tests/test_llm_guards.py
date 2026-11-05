@@ -3,7 +3,6 @@ import json
 
 import pytest
 
-from missiontwin.domain import SCENARIO_NOW
 from missiontwin.llm import LLMClient, extract_facts, llm_brief
 
 
@@ -22,7 +21,7 @@ def test_invalid_extracted_date_is_review_only(baseline, tmp_path, monkeypatch):
     sentence = f'[{member}] detaches 32 FEB.'
     output = {'facts': [{'type': 'personnel_transfer', 'member_token': member, 'date': '32 FEB', 'span': sentence}]}
     monkeypatch.setattr(client, '_post', lambda *args: json.dumps(output))
-    facts, _ = extract_facts(client, 'report.pdf', 'KESSLER', sentence, 1, SCENARIO_NOW, baseline.name_index)
+    facts, _ = extract_facts(client, 'report.pdf', 'KESSLER', sentence, 1, baseline.profile.now, baseline.name_index, known_eics=baseline.profile.all_eics)
     assert facts and facts[0].status == 'NEEDS_REVIEW'
 
 

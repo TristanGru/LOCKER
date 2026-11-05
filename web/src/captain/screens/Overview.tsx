@@ -26,7 +26,7 @@ export function Overview() {
   return (
     <div className="mx-auto max-w-[92rem] space-y-5 px-8 pb-10 pt-6">
       <div>
-        <p className="label-caps">Mission overview · ships and shore · next 30 days</p>
+        <p className="label-caps">Mission overview{all.length > 0 && <> · {new Set(all.map((m) => m.unitKind)).size > 1 ? 'ships and shore' : all[0].unitName}</>} · next 30 days</p>
         {lead ? (
           <Headline mission={lead} />
         ) : (
@@ -47,7 +47,8 @@ export function Overview() {
               })}
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-ink-muted">
-              <div className="flex items-center gap-1 rounded-full border border-line p-0.5" role="group" aria-label="Show missions for">
+              {/* The filter only matters when the account covers both ships and shore. */}
+              {new Set(all.map((m) => m.unitKind)).size > 1 && <div className="flex items-center gap-1 rounded-full border border-line p-0.5" role="group" aria-label="Show missions for">
                 {SCOPES.map(({ id, label }) => {
                   const n = id === 'all' ? all.length : all.filter((m) => m.unitKind === id).length;
                   const Icon = id === 'installation' ? Building2 : id === 'ship' ? Anchor : null;
@@ -58,7 +59,7 @@ export function Overview() {
                     </button>
                   );
                 })}
-              </div>
+              </div>}
               <span className="inline-flex items-center gap-2">
                 <i className="h-3.5 w-px bg-ink/70" aria-hidden /> {pct(getBands().yellow)} watch
               </span>

@@ -91,32 +91,6 @@ def load_snapshot(source: Path, adapter_name: str, client: LLMClient):
         raise
 
 
-# Deliberately explicit: loading evidence is not a claim that all its fields affect forecasts.
-COVERAGE = {
-    'csmp.csv': ('modeled', 'Material impairments and first linked requisition; not a multi-part repair scheduler'),
-    'requisition_status.csv': ('modeled', 'Known status history, estimated shipping and modeled transit/repair'),
-    'onboard_allowance_cosal.csv': ('modeled', 'Storeroom inventory and transfer eligibility'),
-    'roster.csv': ('modeled', 'Qualified personnel availability; not watch-rotation optimization'),
-    'quals.csv': ('modeled', 'Latest known qualification per person/station and expiry'),
-    'training_readiness.csv': ('modeled', 'Training expiry and scheduled refresh'),
-    'cert_status.csv': ('modeled', 'Certification status and expiry'),
-    'schedule_30day.csv': ('modeled', 'Event dates and planned port windows'),
-    'availabilities.csv': ('modeled', 'Availability completion; not automatic certification rescheduling'),
-    'sked_schedule.csv': ('partial', 'Lost-PMS risk only; IEM and workforce capacity are not modeled'),
-    'wholesale_stock.csv': ('partial', 'Stock, release/transit lead times and engineering validation; no real authorization'),
-    'watchbill.csv': ('review_only', 'Unqualified assignment detection; no sustainable rotation calculation'),
-    'nec_billets.csv': ('review_only', 'Ship/shore disagreement; not a complete NEC staffing projection'),
-    'readiness_baseline.csv': ('comparison', 'Reported material/rating baseline, kept separate from forecast probabilities'),
-    'fleet_onboard_stock.csv': ('partial', 'Cannibalization eligibility and derived stock review; COSAL is storeroom inventory authority'),
-    'ship_positions.csv': ('context_only', 'Context only; transfer windows use schedule and known movement messages'),
-    'insurv_findings.csv': ('not_modeled', 'Optional inspection prior is not implemented'),
-    'roc_poe_mission_map.csv': ('context_only', 'Assignment context; runtime dependency weights come from the validated mission tree'),
-    'mission_equipment_tree.json': ('modeled', 'Profile-specific hierarchy, dependencies and material weights'),
-    'status_code_reference.csv': ('context_only', 'Reference vocabulary; arrival regime mapping is an explicit model assumption'),
-    'hazard_model.csv': ('modeled', 'Public regional storm, grid and tide figures applied to invented facilities by stated assumption'),
-    'shore_profile.json': ('modeled', 'Mock installations with invented capability hierarchy, dependencies and weights'),
-    'public_hazard_snapshot.json': ('partial', 'Public regional inputs behind hazard_model.csv; not a measurement of any installation'),
-}
 
 
 def source_health(baseline, configured_path, adapter, last_success, last_attempt):
@@ -124,11 +98,9 @@ def source_health(baseline, configured_path, adapter, last_success, last_attempt
     stale = baseline.view(baseline.profile.now).stale_files()
     for entry in baseline.catalog:
         file = entry['file']
-        name = file.rsplit('/', 1)[-1]
-        usage, explanation = COVERAGE.get(name, ('context_only', 'Supporting source; no direct forecast contribution'))
-        if 'casrep_messages/' in file: usage, explanation = 'modeled', 'Casualty lifecycle and equipment impairment'
-        if 'daily_reports/' in file: usage, explanation = 'partial', 'Verified selected personnel/assist facts; tentative claims require review'
-        if '/movrep/' in file or '/logreq/' in file: usage, explanation = 'partial', 'Known arrival, departure and delivery-window constraints'
+        # How the forecast uses each source is stated by the dataset's catalog, never assumed here.
+        usage = entry.get('usage') or 'unspecified'
+        explanation = entry.get('explanation') or 'The data catalog does not state how this source is used'
         issues = [i for i in baseline.issues if i.file == file or (file.endswith('/') and i.file.startswith(file))]
         path = baseline.data_dir / file
         owner, _, fname = file.partition('/')

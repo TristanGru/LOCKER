@@ -20,9 +20,11 @@ from pathlib import Path
 import yaml
 
 from . import BANNER
-from .domain import (AREAS, COLUMNS, DATA_DIR, DEFAULT_PARAMS, PARTS, ROC_PRIMARY, ROC_WEIGHTS, SCENARIO_NOW, SHIP_IDS,
-                     SHIPS, STATUS_SCORE, SYSTEMS, TYCOM, UTC, WATCHSTATION_RATINGS, WATCHSTATIONS, COMPONENT_TO_SYSTEM,
-                     d, date_dt, format_dtg, hull_key, iso, mission_tree_json, parts_index)
+from .domain import COLUMNS, DATA_DIR, UTC, date_dt, format_dtg, iso
+# The synthetic dataset's authoring values. Only the generators import these; the running system reads the files written here.
+from .synthetic_spec import (AREAS, DEFAULT_PARAMS, EDITABLE_RANGES, PARTS, ROC_PRIMARY, ROC_WEIGHTS, SCENARIO_NOW, SHIP_IDS,
+                             SHIPS, STATUS_SCORE, SYSTEMS, TYCOM, WATCHSTATION_RATINGS, WATCHSTATIONS, COMPONENT_TO_SYSTEM,
+                             coverage_of, d, dataset_profile, hull_key, mission_tree_json, parts_index)
 
 SEED = 20261104
 BASE_AS_OF = "2026-11-04T06:00:00Z"
@@ -1155,7 +1157,7 @@ class Gen:
 
     # ------------------------------------------------------------ DRRS baseline (spec 11)
     def gen_readiness_baseline(self):
-        from .domain import CRITICAL_CAP
+        from .synthetic_spec import CRITICAL_CAP
         as_of = "2026-11-04T06:00:00Z"  # last DRRS report BEFORE the day-0 casualty (see spec 11 note)
         for s in SHIP_IDS:
             comp_score = {}
@@ -1223,6 +1225,7 @@ class Gen:
         sq = self.out / "squadron"
         params = {"_banner": BANNER, "scenario_now": iso(SCENARIO_NOW)}
         params.update(DEFAULT_PARAMS)
+        params["editable_ranges"] = EDITABLE_RANGES  # which assumptions a user may edit, and within what bounds
         (sq / "delay_model_params.yaml").write_text(
             "# " + BANNER + "\n# Assumptions ledger (spec 19). Every engine number not computed from data.\n" +
             yaml.safe_dump(params, sort_keys=False, width=120), encoding="utf-8", newline="")
@@ -1265,6 +1268,12 @@ class Gen:
             rows.append({"case_id": cid, "ship_id": s, "input_text": t, "expected_redacted": e, "names_that_must_not_appear": n})
         self.write_csv(sq, "pii_redaction_test.csv", rows)
 
+        # Who the units are, the scenario clock, homeport clock, in-port codes, supply holders and drawing layout.
+        self.write_json(sq / "dataset_profile.json", dataset_profile())
+        self.cat(None, "dataset_profile.json", "Dataset profile (units, clock, layout)", "MissionTwin team", "static",
+                 "Ships inside the package", BASE_AS_OF, 3650)
+        for entry in self.catalog:  # how the forecast uses each source, stated in the catalog itself
+            entry["usage"], entry["explanation"] = coverage_of(entry["file"])
         self.write_json(sq / "data_catalog.json", {"_banner": BANNER, "datasets": self.catalog})
 
     def cat(self, ship, file, real, steward, refresh, path, as_of, stale):

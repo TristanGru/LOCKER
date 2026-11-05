@@ -3,7 +3,8 @@ import type * as T from './types';
 import { ApiError } from './errors';
 import { configureBands, oddsStatus, pct } from '../theme/status';
 export { ApiError };
-let selectedShip = 'KESSLER';
+// Set from the signed-in account's first unit (the dataset's unit order); no unit is assumed here.
+let selectedShip = '';
 let paused = false;
 let displayedVersion: number | undefined;
 const shownFixes = new Map<string, {fix:T.Fix; version:number}>();
@@ -12,9 +13,18 @@ export function selectShip(id: string) { selectedShip = id; }
 export async function backend(path: string, body?: unknown): Promise<any> {
   const r = await fetch('/api/' + path, {method: body === undefined ? 'GET' : 'POST', headers: {'Content-Type':'application/json'}, body: body === undefined ? undefined : JSON.stringify(body)});
   const d = await r.json();
+  if (r.status === 401 && path !== 'login') window.dispatchEvent(new Event('locker:signed-out'));
   if (!r.ok) throw new ApiError(r.status, typeof d.detail === 'string' ? d.detail : JSON.stringify(d.detail || d), r.status === 409 ? 'STALE_VERSION' : 'VALIDATION');
   return d;
 }
+/** The signed-in account. The server checks it on every request; the UI only hides what the role cannot use. */
+export interface Account { username: string; role: 'fleet' | 'co'; title: string; detail: string; units: string[] }
+export const auth = {
+  session: async (): Promise<Account | null> => (await backend('session')).user,
+  accounts: (): Promise<Omit<Account, 'units'>[]> => backend('accounts'),
+  login: (username: string): Promise<Account> => backend('login', { username }),
+  logout: (): Promise<unknown> => backend('logout', {}),
+};
 export async function dashboard(): Promise<any> {
   const d = await backend('dashboard');
   configureBands(d.forecast.bands);
@@ -147,7 +157,7 @@ function donorText(d:any, effects:Record<string, {mission_p_delta:number; capabi
   const name = (u:string) => d.state.ships.find((s:any) => s.ship_id === u)?.name || u;
   const part = (label:string, x:number) => Math.abs(x) >= MOVES ? `${label} ${points(x)} pts` : '';
   const rows = Object.entries(effects || {}).map(([u, v]) => ({ u, events: v.mission_p_delta, material: v.capability_delta }));
-  const say = (r:typeof rows[number]) => `${name(r.u)}: ${[part('events', r.events), part('material', r.material)].filter(Boolean).join(', ')}`;
+  const say = (r:typeof rows[number]) => `${name(r.u)}: ${[part('event odds (summed)', r.events), part('material', r.material)].filter(Boolean).join(', ')}`;
   const costs = rows.filter((r) => r.events <= -MOVES || r.material <= -MOVES);
   const gains = rows.filter((r) => !costs.includes(r) && (r.events >= MOVES || r.material >= MOVES));
   return [costs.length ? `Cost to other units: ${costs.map(say).join('; ')}.` : 'No cost to other units.',
@@ -165,7 +175,7 @@ async function getFixes(missionId:string):Promise<T.FixesPayload> {
     return {id:f.fix_id,missionId:m.event_id,rank:f.rank,title:f.title,action:f.title,rationale:`${f.why.join('; ').replace(/\.$/,'')}. ${donorText(d,f.donor_effects)}`,owner:'Human review required',effort:'Medium',
       confidence:after,targets:f.gates,recordIds:[],oddsBefore:anchor(m.event_id,m.p_before,m.p_before),oddsAfter:after,
       otherMissions:f.missions.filter((x:any)=>x.event_id!==m.event_id && Math.abs(x.p_after-x.p_before)>=MOVES)
-        .map((x:any)=>({missionId:x.event_id,code:x.ship_id+' / '+code(d.forecast.missions.find((r:any)=>r.event_id===x.event_id)),before:anchor(x.event_id,x.p_before,x.p_before),after:anchor(x.event_id,x.p_before,x.p_after)})),
+        .map((x:any)=>({missionId:x.event_id,code:x.ship_id+' / '+(code(d.forecast.missions.find((r:any)=>r.event_id===x.event_id)) || x.display || x.codename || x.label),before:anchor(x.event_id,x.p_before,x.p_before),after:anchor(x.event_id,x.p_before,x.p_after)})),
       externalApproval:'Exercise only. Interval comparison; review donor consequences.',decision:'pending'};
   });
   if(ranking.warning) throw new ApiError(422,ranking.warning,'COVERAGE');
@@ -179,6 +189,26 @@ async function getFixes(missionId:string):Promise<T.FixesPayload> {
   return {missionId,fixes:helpful,decided:[],note};
 }
 const event=(e:any,i:number):T.DemoEvent=>({id:e.event_id,seq:i+1,type:({casrep:'CASREP',supply:'SUPPLY',personnel:'PERSONNEL',schedule:'SCHEDULE',facility:'FACILITY'} as any)[e.kind] || 'SCHEDULE',title:e.title,summary:e.title,recordId:e.refs[0]?sourceId({file:e.refs[0].split('#')[0]}):'',arrivedAt:e.played?e.known_at:undefined});
+/** One activity-log record in plain words, filed under the right filter. */
+function logLine(c:any):{type:T.LogType;message:string} {
+  const p=c.payload || {};
+  switch (c.kind) {
+    case 'play_event': return {type:'event',message:`Event received: ${p.title || p.event_id}`};
+    case 'fix_decision': {
+      const verb=p.decision==='approve'?'Approved':p.decision==='reject'?'Rejected':'Updated';
+      return {type:p.decision==='approve'?'approval':p.decision==='reject'?'rejection':'modification',
+        message:`${verb} fix: ${p.fix?.title || p.fix?.fix_id || 'fix'}${p.note ? ` (note: ${p.note})` : ''}`};
+    }
+    case 'set_assumption': return {type:'scenario',message:`Assumption changed: ${p.key} = ${p.value}`};
+    case 'confirm_fact': return {type:'system',message:`Report fact ${p.fact_id} ${p.include ? 'confirmed' : 'excluded'} for the forecast`};
+    case 'action': {
+      const what:Record<string,string>={delay_part:`Delay part ${p.doc_number} by ${p.days} days`,remove_person:`Remove sailor ${p.member_id}`,
+        shift_mission:`Shift ${p.event_id} by ${p.days} days`,add_casrep:`Hypothetical CAT ${p.category} casualty on ${p.eic}`};
+      return {type:'scenario',message:`${p.ship_id ? p.ship_id+': ' : ''}${what[p.type] || p.type}`};
+    }
+    default: return {type:'system',message:`${c.kind}: ${JSON.stringify(p)}`};
+  }
+}
 export const api = {
   getMissions,getFleetMissions,getShip,getFixes,
   getGraph:async(focus='all')=>graph(await dashboard(),focus),
@@ -191,7 +221,7 @@ export const api = {
     const p=await backend('captain/preview',{base_version:displayedVersion,ship_id:selectedShip,changes:req.changes});
     return {id:'Preview v'+p.base_version,changes:req.changes,description:['Isolated backend preview; no shared state changed. Hypothetical casualties assume a seven-day repair estimate.'],missionDeltas:deltas(p.before,p.after),nodeChanges:[]};},
   getBrief:async(id:string):Promise<T.Brief>=>{const d=await dashboard(),m=missionRows(d).find(m=>m.id===id) || missionRows(d)[0],b=await backend('brief',{ship_id:selectedShip});const unit=d.state.ships.find((s:any)=>s.ship_id===selectedShip);return {missionId:m.id,title:`${m.code} / ${selectedShip} readiness brief`,unit:unit?`${unit.name} (${unit.hull})`:selectedShip,classification:'SYNTHETIC EXERCISE',generatedAt:d.state.cursor,bottomLine:`${m.code}: ${pct(m.odds)} across sampled event interval`,odds:m.odds,status:m.status,sections:[{heading:'Backend assessment',paragraphs:[{text:b.text,cites:sources(b.citations)}]}],citations:await Promise.all(sources(b.citations).map(record))};},
-  getLog:async():Promise<T.LogEntry[]>=>{const l=await backend('log');return l.changes.map((c:any)=>({id:String(c.seq),ts:c.wall_time,type:'system',actor:c.actor,message:c.kind+': '+JSON.stringify(c.payload),refs:[]})).reverse();},
+  getLog:async():Promise<T.LogEntry[]>=>{const l=await backend('log');return l.changes.map((c:any)=>({id:String(c.seq),ts:c.wall_time,actor:c.actor,refs:[],...logLine(c)})).reverse();},
   stop:async(req:T.StopRequest):Promise<T.StopResult>=>{paused=req.stopped;return {stopped:paused,at:new Date().toISOString()};},
   logAction:async(type:T.LogType,message:string,refs:string[]=[]):Promise<T.LogEntry>=>({id:'local',ts:new Date().toISOString(),type,actor:'Browser (not persisted)',message,refs}),
   resetDemo:async()=>{await mutate('reset');return {ok:true};},

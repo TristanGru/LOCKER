@@ -8,7 +8,8 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from missiontwin.domain import SCENARIO_NOW, day_of, format_dtg, parse_dtg, parse_ts
+from missiontwin.domain import format_dtg, parse_dtg, parse_ts
+from missiontwin.synthetic_spec import SCENARIO_NOW, day_of
 from missiontwin.engine import CACHE_STATS, Scenario, build_world, forecast, planned_case, _evaluate, horizon_days
 from missiontwin.ingest import load_baseline
 from missiontwin.llm import FALLBACK_BADGE, LLMClient, llm_brief, nl_to_action

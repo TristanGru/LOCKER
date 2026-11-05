@@ -2,7 +2,9 @@ import { createRoot } from 'react-dom/client';
 
 async function start() {
   // Keep the advanced workspace available during incremental UI integration.
-  if (new URLSearchParams(location.search).has('legacy')) {
+  // The advanced workspace has no sign-in screen of its own; without a session the captain app shows one.
+  const signedIn = new URLSearchParams(location.search).has('legacy') && Boolean((await (await fetch('/api/session')).json()).user);
+  if (signedIn) {
     const {default: App} = await import('./Workspace');
     createRoot(document.getElementById('root')!).render(<App />);
   } else {

@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { api } from '../../api/api';
 import clsx from '../../lib/clsx';
+import { useAuth } from '../../state/auth';
 import { useStore } from '../../state/store';
 
 interface NavItem {
@@ -42,6 +43,8 @@ const NAV_KEY = 'locker-nav-collapsed';
 
 export function LeftNav() {
   const { bump, closePanel, setCascade } = useStore();
+  const { isFleet } = useAuth();
+  const items = isFleet ? NAV : NAV.filter((item) => item.to !== '/shore');
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
@@ -105,7 +108,7 @@ export function LeftNav() {
         </button>
       </div>
       <ul className="flex-1 space-y-1 p-3">
-        {NAV.map((item) => (
+        {items.map((item) => (
           <li key={item.to}>
             <NavLink
               to={item.to}
@@ -131,7 +134,7 @@ export function LeftNav() {
       </ul>
 
       <div className={clsx('space-y-3 border-t border-line', collapsed ? 'p-2' : 'p-4')}>
-        <button
+        {isFleet && <button
           onClick={reset}
           disabled={resetting}
           title={confirmReset ? 'Click again to reset' : 'Reset demo'}
@@ -139,7 +142,7 @@ export function LeftNav() {
         >
           <RotateCcw className={clsx('h-4 w-4', resetting && 'animate-spin')} aria-hidden />
           <span className={collapsed ? 'sr-only' : undefined}>{confirmReset ? 'Click again to reset' : 'Reset demo'}</span>
-        </button>
+        </button>}
         <div className={clsx('flex items-center gap-2 text-sm text-ink-muted', collapsed && 'justify-center')} title="Offline · demo data · fictional">
           <WifiOff className="h-3.5 w-3.5 shrink-0" aria-hidden />
           <span className={collapsed ? 'sr-only' : undefined}>Offline · demo data · fictional</span>

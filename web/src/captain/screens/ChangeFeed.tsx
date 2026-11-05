@@ -11,6 +11,7 @@ import { DominoGraph } from '../components/graph/DominoGraph';
 import { EmptyState, ErrorState, Loading } from '../components/ui/States';
 import clsx from '../lib/clsx';
 import { useLagged } from '../lib/useLagged';
+import { useAuth } from '../state/auth';
 import { useStore } from '../state/store';
 import { useApi } from '../state/useApi';
 
@@ -21,6 +22,7 @@ const MISSION_LAG_MS = 1450;
 export function ChangeFeed() {
   const { stopped, bump, cascade, setCascade, openNode, closePanel, panel, setFocus } = useStore();
   const navigate = useNavigate();
+  const { isFleet } = useAuth();
   const events = useApi(() => api.getEvents());
   const missionsQ = useApi(() => api.getMissions());
   const [graphFocus, setGraphFocus] = useState('all');
@@ -40,13 +42,14 @@ export function ChangeFeed() {
   const deltas = useLagged(lastDeltas ?? delivered[0]?.missionDeltas ?? null, cascading ? MISSION_LAG_MS : 0);
 
   const next = useCallback(async () => {
-    if (busy || stopped || remaining === 0) return;
+    if (busy || stopped || remaining === 0 || !isFleet) return;
     setBusy(true);
     setError(null);
     try {
       const r = await api.nextEvent();
       // Stay on the focused mission if this event touched it; otherwise follow the biggest mover.
-      const moved = r.missionDeltas.filter((d) => Math.abs(d.after - d.before) >= 0.005);
+      // Follow only this unit's events: another unit's event is not on this unit's graph.
+      const moved = r.missionDeltas.filter((d) => Math.abs(d.after - d.before) >= 0.005 && liveMissions.some((m) => m.id === d.missionId));
       if (moved.length && !moved.some((d) => d.missionId === graphFocus)) {
         const top = [...moved].sort((a, b) => Math.abs(b.after - b.before) - Math.abs(a.after - a.before))[0];
         setGraphFocus(top.missionId);
@@ -59,7 +62,7 @@ export function ChangeFeed() {
     } finally {
       setBusy(false);
     }
-  }, [busy, stopped, remaining, graphFocus, setCascade, bump]);
+  }, [busy, stopped, remaining, isFleet, graphFocus, liveMissions, setCascade, bump]);
 
   // Presenter shortcut: press N for the next event.
   useEffect(() => {
@@ -89,7 +92,7 @@ export function ChangeFeed() {
           <div>
             <div className="label-caps">Demo events</div>
             <div className="mt-1.5 flex items-center gap-1.5" aria-label={`${delivered.length} of ${total} delivered`}>
-              {Array.from({ length: total || 4 }, (_, i) => (
+              {Array.from({ length: total }, (_, i) => (
                 <motion.span
                   key={i}
                   className={clsx('h-2.5 w-7 rounded-full', i < delivered.length ? 'bg-accent' : 'bg-ink/10')}
@@ -98,7 +101,7 @@ export function ChangeFeed() {
                 />
               ))}
               <span className="num ml-2 text-sm text-ink-muted">
-                {delivered.length}/{total || 4}
+                {delivered.length}/{total}
               </span>
             </div>
           </div>
@@ -109,6 +112,10 @@ export function ChangeFeed() {
           ) : remaining === 0 && events.data ? (
             <div className="flex items-center gap-2 rounded-xl border border-ready/40 bg-ready-soft px-4 py-3 font-semibold text-ready">
               <CheckCheck className="h-5 w-5" aria-hidden /> All events in. Reset demo to replay.
+            </div>
+          ) : !isFleet ? (
+            <div className="max-w-xs rounded-xl border border-line px-4 py-3 text-sm text-ink-muted">
+              Fleet staff release exercise events. New events for your ship appear here as they arrive.
             </div>
           ) : (
             <button onClick={next} disabled={busy || !events.data} className="btn-accent px-6 py-3.5 text-lg">

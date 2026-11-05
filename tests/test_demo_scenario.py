@@ -82,15 +82,16 @@ def test_approved_fix_is_what_the_forecast_shows(baseline, log_path):
 
 
 def test_fix_options_all_help_and_carry_no_redundant_steps(baseline, log_path):
-    """Every offered option helps by at least MIN_GAIN, and no package is matched by a smaller package of its own steps."""
+    """Every offered option helps by at least the dataset's minimum gain, and no package is matched by a smaller package of
+    its own steps."""
     import json
-    from missiontwin.fixes import MIN_GAIN
     for played in (1, 4):
         s = Scenario(baseline, log_path=log_path)
         for _ in range(played):
             s.apply("play_event", {})
         r = rank_fixes(s, "KESSLER", runs=1000)
         assert r["candidates"] and r["evaluated"] == len(r["candidates"]) + sum(r["pruned"].values())
+        MIN_GAIN = r["min_gain"]  # read from the dataset's fix_search assumptions
         steps = {c["fix_id"]: {json.dumps(x, sort_keys=True) for x in c["steps"]} for c in r["candidates"]}
         for c in r["candidates"]:
             gain = max(m["p_after"] - m["p_before"] for m in c["missions"] if m["ship_id"] == "KESSLER")
@@ -114,10 +115,11 @@ def test_no_op_steps_are_not_offered_and_empty_ranking_explains_why(baseline, lo
     for x in steps:
         if x["kind"] == "expedite":
             item = next(i for i in world.ships["KESSLER"].items if i.key == x["item_key"])
-            assert any(w["on_hand_qty"] > 0 for w in world.wholesale[item.part_niin] if w["holder"] in ("NAVSUP_WSS", "DLA"))
+            assert any(w["on_hand_qty"] > 0 for w in world.wholesale[item.part_niin]
+                       if w["holder"] in world.profile.holders_where("counts_as_wholesale_stock"))
     idle = rank_fixes(s, "VARNELL", runs=200)
     assert idle["candidates"] == [] and idle["note"] == "No option is available for VARNELL's current blockers."
-    monkeypatch.setattr(fixes, "MIN_GAIN", 0.5)
+    s.apply("set_assumption", {"key": "fix_search.min_gain", "value": 0.5})  # the threshold is a dataset assumption
     none_help = rank_fixes(s, "KESSLER", runs=200)
     assert none_help["candidates"] == [] and f"{none_help['evaluated']} options evaluated" in none_help["note"]
     assert "50 point or more" in none_help["note"]

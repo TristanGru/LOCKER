@@ -2,11 +2,12 @@
 import pytest
 from fastapi.testclient import TestClient
 from missiontwin.api import AppState, create_app
+from conftest import signed_in
 
 @pytest.fixture
 def captain(data_dir, offline_client, tmp_path):
     state = AppState(data_dir, tmp_path / 'captain.jsonl', offline_client)
-    return TestClient(create_app(state)), state
+    return signed_in(create_app(state)), state
 
 
 def test_combined_preview_isolated(captain):

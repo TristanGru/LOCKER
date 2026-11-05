@@ -28,13 +28,17 @@ The **assumptions ledger** (`delay_model_params.yaml`) is ours. It holds every n
       "refresh": "daily",
       "fielded_access_path": "NTCSS replication via L-IDE to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "modeled",
+      "explanation": "Material impairments and first linked requisition; not a multi-part repair scheduler"
     }
   ]
 }
 ```
 
 One entry per mock file. The UI's source panel reads `real_system`, `steward`, `as_of` and `staleness_threshold_days`.
+`usage` (modeled, partial, review_only, comparison, context_only, not_modeled) and `explanation` state how the forecast
+uses the source; the app shows them as written and never assumes a coverage level for a file.
 
 ### 2.2 `delay_model_params.yaml` **[PROP]**
 
@@ -81,15 +85,31 @@ cannibalization_note: "Any cannibalization rate is a lower bound (GAO-02-86: dat
 
 YAML comments are lost when the file is parsed, so the generated ledger stores every key as
 `{value: ..., tag: sourced|assumed, source: "..."}` (for example `transit_days_conus_default: {value: 5, tag: sourced, source: "DLA ADC 1114 (snippet)"}`).
-The single source of defaults is `DEFAULT_PARAMS` in `missiontwin/domain.py`. Keys added during the build, all `assumed` unless noted:
+The generator writes the synthetic values from `DEFAULT_PARAMS` in `missiontwin/synthetic_spec.py`; the running system reads
+only this file (there is no fallback in code, and `validation.py` lists the keys the engine requires). Keys added during the build, all `assumed` unless noted:
 `ranking_runs` (2000), `engineering_validation_days` (1-3), `cannibalize_extra_days` (1-2, informed by GAO double-work finding),
 `background_failure_rate_per_unit_day` (0.001), `lost_pms_hazard_multiplier` (2.0), `training_refresh_success` (0.9),
-`etr_slip` now `{p_slip, median, sigma}`, `availability_slip` now `{p_late, median, sigma}`.
+`etr_slip` now `{p_slip, median, sigma}`, `availability_slip` now `{p_late, median, sigma}`,
+`casrep_category_score` (CAT 2 0.6, CAT 3/4 0.0), `casrep_no_etr_days` (30), `unknown_status_regime` (DUE_IN),
+`expedite_regime_step` (one regime faster), `redundancy_loss_score` (0.6), `system_capable_score` (0.6), and `fix_search`
+(minimum gain 1 point, gate treated as met at 0.995, casualty probability 0.02, ISIC shift options 4 and 7 days, search sizes).
+`editable_ranges` (no `value`) lists the assumptions a user may edit and their bounds.
 Edits made in the UI are scenario changes (event-sourced), never writes to this file.
+
+### 2.4 `dataset_profile.json` **[PROP]**
+
+Who the units are and how they are drawn and supplied: `ships` (name, hull, UIC, DODAAC, role), `watchstations`,
+`scenario_now` (day 0), `local_time` (homeport UTC offset and label), `inport_employment_codes` (schedule codes meaning
+pierside), `supply_holders` (which holders count as wholesale stock, which a fix may pull from directly, and the release lead
+when a stock record states none), `visual_model`, `mounts`, `system_mounts` and `component_mounts` (where each system sits
+on the illustrative ship). Installations come from `shore_profile.json`. The supply status code to delay regime mapping is
+`status_code_reference.csv` (`CARRIES_PRIOR` keeps the previous status's regime). A dataset without this file is rejected.
 
 ## 3. Rules
 
 - The engine reads only this file for assumptions. No magic numbers in code.
+- Runtime code names no unit, system, part, watchstation or event; `tests/test_data_only.py` enforces it and adds a ship in
+  data alone to prove it appears everywhere, with its own CO sign-in.
 - Every key that is `assumed` shows `ASSUMED` in the UI; every `sourced` key shows its source.
 - Changing a value re-runs the forecast (the "change one assumption live" demo moment).
 

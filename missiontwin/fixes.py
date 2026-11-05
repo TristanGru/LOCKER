@@ -6,8 +6,10 @@ fixes don't swap order from noise. Ranking: net squadron missions in green, then
 then lower donor cost, then fewer actions, then no cannibalization. The captain approves, rejects or edits; nothing auto-applies.
 
 Only options that help are offered: a candidate must add a squadron event in green or raise the ship's own interval
-readiness on one of its events by at least MIN_GAIN, and a package is dropped when a smaller package of its own steps does as well.
-Steps that provably cannot change the forecast are not generated.
+readiness on one of its events by at least fix_search.min_gain, and a package is dropped when a smaller package of its own steps
+does as well. Steps that provably cannot change the forecast are not generated. Every limit (minimum gain, gate treated as met,
+casualty probability worth a fix, schedule-shift options, search size) and the supply holders' roles come from the dataset
+(delay_model_params.yaml fix_search, dataset_profile.json supply_holders).
 """
 from __future__ import annotations
 
@@ -17,14 +19,10 @@ import itertools
 import json
 import time
 
-from .domain import SHIP_IDS, SHIPS, SYSTEMS, WATCHSTATIONS, COMPONENT_TO_SYSTEM, band, format_dtg, dt_of, parts_index
+from .domain import band, format_dtg
 from .engine import INF, Scenario, apply_fix, build_world, first_common_port, forecast, inport_place, mission_display, pval
 from .validation import validate_world
 
-
-# Smallest improvement in one of the ship's own events (interval probability) worth asking a human to approve.
-# One point: below the whole-percent precision the UI and brief display, and above common-random-number noise.
-MIN_GAIN = 0.01
 
 
 def _fid(steps: list) -> str:
@@ -38,6 +36,9 @@ def _single_steps(world, fc: dict, ship_id: str) -> list[dict]:
     dt_of = profile.dt_of
     bands = fc['bands']
     pidx = profile.parts_index()
+    search = pval(world.params, "fix_search")
+    pull_holders = profile.holders_where("direct_pull")
+    stock_holders = profile.holders_where("counts_as_wholesale_stock")
     out, seen = [], set()
     units = profile.ship_ids
 
@@ -54,12 +55,12 @@ def _single_steps(world, fc: dict, ship_id: str) -> list[dict]:
         sw = world.ships[unit]
         mobj = next(x for x in sw.missions if x.event_id == m["event_id"])
         for g in m["gates"]:
-            if g["p_ok"] >= 0.995:
+            if g["p_ok"] >= search["gate_met"]:
                 continue
             gid = f"{m['event_id']}|{g['gate_id']}"
             if g["kind"] == "system":
                 for it in g.get("items", []):
-                    if it["kind"] not in ("casualty",) or (it.get("p_active_at_mission") or 0) < 0.02:
+                    if it["kind"] not in ("casualty",) or (it.get("p_active_at_mission") or 0) < search["casualty_relevance"]:
                         continue
                     item = next((i for i in sw.items if i.key == it["key"]), None)
                     if not item or not item.part_niin:
@@ -86,13 +87,13 @@ def _single_steps(world, fc: dict, ship_id: str) -> list[dict]:
                                 f"Cannibalize NIIN {niin} from {SHIPS[d]['name']} installed {comp}", gid,
                                 f"Degrades {d} {SYSTEMS[sys_eic]['name']} until its own replacement arrives; double work (GAO).", unit)
                     for w in world.wholesale.get(niin, []):
-                        if w["on_hand_qty"] > 0 and w["holder"] in ("PROGRAM_OFFICE", "NAVSUP_WSS"):
+                        if w["on_hand_qty"] > 0 and w["holder"] in pull_holders:
                             add({"kind": "part_transfer", "source_kind": "wholesale", "holder": w["holder"], "niin": niin,
                                  "receiver": unit, "item_key": item.key},
                                 f"Pull NIIN {niin} from {w['holder_name']}", gid,
                                 f"{w['holder']} on hand {w['on_hand_qty']}" + ("; ISEA engineering validation required" if w["requires_engineering_validation"] else ""), unit)
                     # Expedite moves one regime faster only when wholesale has stock; otherwise apply_fix is a no-op.
-                    if sum(w["on_hand_qty"] for w in world.wholesale.get(niin, []) if w["holder"] in ("NAVSUP_WSS", "DLA")) > 0:
+                    if sum(w["on_hand_qty"] for w in world.wholesale.get(niin, []) if w["holder"] in stock_holders) > 0:
                         add({"kind": "expedite", "receiver": unit, "item_key": item.key, "doc_number": item.doc_number},
                             f"Expedite requisition {item.doc_number} (OTS/GDSC)", gid,
                             "Ledger: one regime faster because wholesale has stock.", unit)
@@ -138,7 +139,7 @@ def _single_steps(world, fc: dict, ship_id: str) -> list[dict]:
         # Schedule shifts always move the ship event; a support window follows it.
         target = next((x for sx in world.ships.values() for x in sx.missions if x.event_id == mobj.supports), mobj) if mobj.supports else mobj
         owner = world.ships[target.ship]
-        for days in (4, 7):
+        for days in search["shift_days"]:
             later = [x for x in owner.missions if x.start > target.start and x.event_id != target.event_id]
             if all(target.end + days < x.start for x in later):
                 add({"kind": "shift_mission", "event_id": target.event_id, "days": days},
@@ -152,7 +153,8 @@ def _single_steps(world, fc: dict, ship_id: str) -> list[dict]:
     return out
 
 
-def candidates(world, fc: dict, ship_id: str, max_pairs: int = 30) -> list[dict]:
+def candidates(world, fc: dict, ship_id: str) -> list[dict]:
+    search = pval(world.params, "fix_search")
     singles = _single_steps(world, fc, ship_id)
     plans = [{"steps": [s["step"]], "title": s["title"], "why": [s["why"]], "gates": [s["gate"]]} for s in singles]
     pairs = []
@@ -165,10 +167,10 @@ def candidates(world, fc: dict, ship_id: str, max_pairs: int = 30) -> list[dict]
             continue
         pairs.append({"steps": [a["step"], b["step"]], "title": f"{a['title']} + {b['title']}", "why": [a["why"], b["why"]],
                       "gates": [a["gate"], b["gate"]]})
-    plans += pairs[:max_pairs]
+    plans += pairs[:int(search["max_pairs"])]
     # Independent ship and shore blockers can each hold an event at zero, so a useful package may need both.
     shore_steps = [s for s in singles if s["unit"] != ship_id and s["step"]["kind"] == "part_transfer"]
-    own_pairs = [p for p in pairs if all(step.get("receiver", step.get("ship")) == ship_id for step in p["steps"])][:8]
+    own_pairs = [p for p in pairs if all(step.get("receiver", step.get("ship")) == ship_id for step in p["steps"])][:int(search["max_ship_shore_pairs"])]
     for pair in own_pairs:
         for shore in shore_steps:
             plans.append({"steps": pair["steps"] + [shore["step"]], "title": f"{pair['title']} + {shore['title']}",
@@ -229,7 +231,8 @@ def rank_fixes(scn: Scenario, ship_id: str, runs: int | None = None) -> dict:
                         "donor_effects": donor, "donor_cost": round(donor_cost, 4), "missions": missions,
                         "score": [green - base_green, round(own_uplift, 3), round(donor_cost, 3), -len(p["steps"])]})
     evaluated = len(results)
-    results, pruned = _prune(results, ship_id)
+    min_gain = float(pval(base_world.params, "fix_search")["min_gain"])
+    results, pruned = _prune(results, ship_id, min_gain)
     # Last tie-break: of otherwise equal options, prefer the one that does not cannibalize (double work, GAO).
     results.sort(key=lambda r: (r["net_green"], round(r["own_uplift"], 3), round(r["donor_cost"], 3), -len(r["steps"]),
                                 -sum(s.get("source_kind") == "cannibalize" for s in r["steps"])), reverse=True)
@@ -239,25 +242,25 @@ def rank_fixes(scn: Scenario, ship_id: str, runs: int | None = None) -> dict:
            "baseline_green": base_green, "candidates": results, "elapsed_s": round(time.time() - t0, 2),
            "rule": "interval readiness: net squadron events green, receiver improvement, donor cost, then fewer actions, then no cannibalization",
            'assessment_basis': 'event_interval', "common_random_numbers": True,
-           "evaluated": evaluated, "pruned": pruned, "min_gain": MIN_GAIN}
+           "evaluated": evaluated, "pruned": pruned, "min_gain": min_gain}
     if not results:
         out["note"] = (f"None of the {evaluated} options evaluated raises a {ship_id} event's interval readiness by "
-                       f"{MIN_GAIN * 100:.0f} point or more, or adds an event in green." if evaluated else
+                       f"{min_gain * 100:.0f} point or more, or adds an event in green." if evaluated else
                        f"No option is available for {ship_id}'s current blockers.")
     return out
 
 
-def _prune(results: list[dict], ship_id: str) -> tuple[list[dict], dict]:
+def _prune(results: list[dict], ship_id: str, min_gain: float) -> tuple[list[dict], dict]:
     """Keep options a human should weigh: drop those that do not help, then packages whose extra steps add nothing."""
     def best_gain(r):  # largest improvement on any one of this ship's events (a summed uplift double-counts prerequisites)
         return max((m["p_after"] - m["p_before"] for m in r["missions"] if m["ship_id"] == ship_id), default=0.0)
 
-    helpful = [r for r in results if r["net_green"] > 0 or best_gain(r) >= MIN_GAIN]
+    helpful = [r for r in results if r["net_green"] > 0 or best_gain(r) >= min_gain]
     step_sets = {id(r): {json.dumps(s, sort_keys=True) for s in r["steps"]} for r in helpful}
 
     def covers(q, r):  # q is a strict sub-package of r and is at least as good on every ranking criterion
         return (step_sets[id(q)] < step_sets[id(r)] and q["net_green"] >= r["net_green"]
-                and q["own_uplift"] >= r["own_uplift"] - MIN_GAIN and q["donor_cost"] >= r["donor_cost"] - MIN_GAIN)
+                and q["own_uplift"] >= r["own_uplift"] - min_gain and q["donor_cost"] >= r["donor_cost"] - min_gain)
 
     kept = [r for r in helpful if not any(covers(q, r) for q in helpful)]
     return kept, {"no_gain": len(results) - len(helpful), "redundant_steps": len(helpful) - len(kept)}

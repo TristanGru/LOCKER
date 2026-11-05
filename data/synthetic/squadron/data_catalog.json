@@ -11,7 +11,9 @@
       "refresh": "daily",
       "fielded_access_path": "NTCSS replication to Jupiter (inferred)",
       "as_of": "2026-10-14T08:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "modeled",
+      "explanation": "Qualified personnel availability; not watch-rotation optimization"
     },
     {
       "file": "KESSLER/quals.csv",
@@ -23,7 +25,9 @@
       "refresh": "daily",
       "fielded_access_path": "NTCSS replication to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "modeled",
+      "explanation": "Latest known qualification per person/station and expiry"
     },
     {
       "file": "KESSLER/watchbill.csv",
@@ -35,7 +39,9 @@
       "refresh": "daily",
       "fielded_access_path": "NTCSS replication to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "review_only",
+      "explanation": "Unqualified assignment detection; no sustainable rotation calculation"
     },
     {
       "file": "KESSLER/nec_billets.csv",
@@ -47,7 +53,9 @@
       "refresh": "weekly",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "review_only",
+      "explanation": "Ship/shore disagreement; not a complete NEC staffing projection"
     },
     {
       "file": "VARNELL/roster.csv",
@@ -59,7 +67,9 @@
       "refresh": "daily",
       "fielded_access_path": "NTCSS replication to Jupiter (inferred)",
       "as_of": "2026-11-03T08:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "modeled",
+      "explanation": "Qualified personnel availability; not watch-rotation optimization"
     },
     {
       "file": "VARNELL/quals.csv",
@@ -71,7 +81,9 @@
       "refresh": "daily",
       "fielded_access_path": "NTCSS replication to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "modeled",
+      "explanation": "Latest known qualification per person/station and expiry"
     },
     {
       "file": "VARNELL/watchbill.csv",
@@ -83,7 +95,9 @@
       "refresh": "daily",
       "fielded_access_path": "NTCSS replication to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "review_only",
+      "explanation": "Unqualified assignment detection; no sustainable rotation calculation"
     },
     {
       "file": "VARNELL/nec_billets.csv",
@@ -95,7 +109,9 @@
       "refresh": "weekly",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "review_only",
+      "explanation": "Ship/shore disagreement; not a complete NEC staffing projection"
     },
     {
       "file": "ASHBY/roster.csv",
@@ -107,7 +123,9 @@
       "refresh": "daily",
       "fielded_access_path": "NTCSS replication to Jupiter (inferred)",
       "as_of": "2026-11-03T08:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "modeled",
+      "explanation": "Qualified personnel availability; not watch-rotation optimization"
     },
     {
       "file": "ASHBY/quals.csv",
@@ -119,7 +137,9 @@
       "refresh": "daily",
       "fielded_access_path": "NTCSS replication to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "modeled",
+      "explanation": "Latest known qualification per person/station and expiry"
     },
     {
       "file": "ASHBY/watchbill.csv",
@@ -131,7 +151,9 @@
       "refresh": "daily",
       "fielded_access_path": "NTCSS replication to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "review_only",
+      "explanation": "Unqualified assignment detection; no sustainable rotation calculation"
     },
     {
       "file": "ASHBY/nec_billets.csv",
@@ -143,7 +165,9 @@
       "refresh": "weekly",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "review_only",
+      "explanation": "Ship/shore disagreement; not a complete NEC staffing projection"
     },
     {
       "file": "KESSLER/schedule_30day.csv",
@@ -155,7 +179,9 @@
       "refresh": "on change",
       "fielded_access_path": "Fleet Forces schedule data via Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 7
+      "staleness_threshold_days": 7,
+      "usage": "modeled",
+      "explanation": "Event dates and planned port windows"
     },
     {
       "file": "VARNELL/schedule_30day.csv",
@@ -167,7 +193,9 @@
       "refresh": "on change",
       "fielded_access_path": "Fleet Forces schedule data via Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 7
+      "staleness_threshold_days": 7,
+      "usage": "modeled",
+      "explanation": "Event dates and planned port windows"
     },
     {
       "file": "ASHBY/schedule_30day.csv",
@@ -179,7 +207,9 @@
       "refresh": "on change",
       "fielded_access_path": "Fleet Forces schedule data via Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 7
+      "staleness_threshold_days": 7,
+      "usage": "modeled",
+      "explanation": "Event dates and planned port windows"
     },
     {
       "file": "squadron/events_missions.json",
@@ -191,7 +221,9 @@
       "refresh": "on change",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "context_only",
+      "explanation": "Supporting source; no direct forecast contribution"
     },
     {
       "file": "KESSLER/cert_status.csv",
@@ -203,7 +235,9 @@
       "refresh": "on change",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "modeled",
+      "explanation": "Certification status and expiry"
     },
     {
       "file": "VARNELL/cert_status.csv",
@@ -215,7 +249,9 @@
       "refresh": "on change",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "modeled",
+      "explanation": "Certification status and expiry"
     },
     {
       "file": "ASHBY/cert_status.csv",
@@ -227,7 +263,9 @@
       "refresh": "on change",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "modeled",
+      "explanation": "Certification status and expiry"
     },
     {
       "file": "KESSLER/availabilities.csv",
@@ -239,7 +277,9 @@
       "refresh": "on change",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "modeled",
+      "explanation": "Availability completion; not automatic certification rescheduling"
     },
     {
       "file": "VARNELL/availabilities.csv",
@@ -251,7 +291,9 @@
       "refresh": "on change",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "modeled",
+      "explanation": "Availability completion; not automatic certification rescheduling"
     },
     {
       "file": "ASHBY/availabilities.csv",
@@ -263,7 +305,9 @@
       "refresh": "on change",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "modeled",
+      "explanation": "Availability completion; not automatic certification rescheduling"
     },
     {
       "file": "KESSLER/training_readiness.csv",
@@ -275,7 +319,9 @@
       "refresh": "weekly",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "modeled",
+      "explanation": "Training expiry and scheduled refresh"
     },
     {
       "file": "VARNELL/training_readiness.csv",
@@ -287,7 +333,9 @@
       "refresh": "weekly",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "modeled",
+      "explanation": "Training expiry and scheduled refresh"
     },
     {
       "file": "ASHBY/training_readiness.csv",
@@ -299,7 +347,9 @@
       "refresh": "weekly",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "modeled",
+      "explanation": "Training expiry and scheduled refresh"
     },
     {
       "file": "squadron/mission_equipment_tree.json",
@@ -311,7 +361,9 @@
       "refresh": "per force revision",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 90
+      "staleness_threshold_days": 90,
+      "usage": "modeled",
+      "explanation": "Profile-specific hierarchy, dependencies and material weights"
     },
     {
       "file": "squadron/roc_poe_mission_map.csv",
@@ -323,7 +375,9 @@
       "refresh": "rarely",
       "fielded_access_path": "Reference table (manual load)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 365
+      "staleness_threshold_days": 365,
+      "usage": "context_only",
+      "explanation": "Assignment context; runtime dependency weights come from the validated mission tree"
     },
     {
       "file": "KESSLER/csmp.csv",
@@ -335,7 +389,9 @@
       "refresh": "daily",
       "fielded_access_path": "NTCSS replication via L-IDE to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "modeled",
+      "explanation": "Material impairments and first linked requisition; not a multi-part repair scheduler"
     },
     {
       "file": "KESSLER/requisition_status.csv",
@@ -347,7 +403,9 @@
       "refresh": "daily",
       "fielded_access_path": "NTCSS replication via L-IDE to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "modeled",
+      "explanation": "Known status history, estimated shipping and modeled transit/repair"
     },
     {
       "file": "VARNELL/csmp.csv",
@@ -359,7 +417,9 @@
       "refresh": "daily",
       "fielded_access_path": "NTCSS replication via L-IDE to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "modeled",
+      "explanation": "Material impairments and first linked requisition; not a multi-part repair scheduler"
     },
     {
       "file": "VARNELL/requisition_status.csv",
@@ -371,7 +431,9 @@
       "refresh": "daily",
       "fielded_access_path": "NTCSS replication via L-IDE to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "modeled",
+      "explanation": "Known status history, estimated shipping and modeled transit/repair"
     },
     {
       "file": "ASHBY/csmp.csv",
@@ -383,7 +445,9 @@
       "refresh": "daily",
       "fielded_access_path": "NTCSS replication via L-IDE to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "modeled",
+      "explanation": "Material impairments and first linked requisition; not a multi-part repair scheduler"
     },
     {
       "file": "ASHBY/requisition_status.csv",
@@ -395,7 +459,9 @@
       "refresh": "daily",
       "fielded_access_path": "NTCSS replication via L-IDE to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "modeled",
+      "explanation": "Known status history, estimated shipping and modeled transit/repair"
     },
     {
       "file": "KESSLER/casrep_messages/",
@@ -407,7 +473,9 @@
       "refresh": "per message",
       "fielded_access_path": "Message traffic via MFOM to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 7
+      "staleness_threshold_days": 7,
+      "usage": "modeled",
+      "explanation": "Casualty lifecycle and equipment impairment"
     },
     {
       "file": "VARNELL/casrep_messages/",
@@ -419,7 +487,9 @@
       "refresh": "per message",
       "fielded_access_path": "Message traffic via MFOM to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 7
+      "staleness_threshold_days": 7,
+      "usage": "modeled",
+      "explanation": "Casualty lifecycle and equipment impairment"
     },
     {
       "file": "ASHBY/casrep_messages/",
@@ -431,7 +501,9 @@
       "refresh": "per message",
       "fielded_access_path": "Message traffic via MFOM to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 7
+      "staleness_threshold_days": 7,
+      "usage": "modeled",
+      "explanation": "Casualty lifecycle and equipment impairment"
     },
     {
       "file": "KESSLER/onboard_allowance_cosal.csv",
@@ -443,7 +515,9 @@
       "refresh": "weekly",
       "fielded_access_path": "NTCSS replication via L-IDE to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Storeroom inventory and transfer eligibility"
     },
     {
       "file": "VARNELL/onboard_allowance_cosal.csv",
@@ -455,7 +529,9 @@
       "refresh": "weekly",
       "fielded_access_path": "NTCSS replication via L-IDE to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Storeroom inventory and transfer eligibility"
     },
     {
       "file": "ASHBY/onboard_allowance_cosal.csv",
@@ -467,7 +543,9 @@
       "refresh": "weekly",
       "fielded_access_path": "NTCSS replication via L-IDE to Jupiter (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Storeroom inventory and transfer eligibility"
     },
     {
       "file": "squadron/fleet_onboard_stock.csv",
@@ -479,7 +557,9 @@
       "refresh": "derived",
       "fielded_access_path": "Derived view (one source: per-ship COSAL)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "partial",
+      "explanation": "Cannibalization eligibility and derived stock review; COSAL is storeroom inventory authority"
     },
     {
       "file": "squadron/wholesale_stock.csv",
@@ -491,7 +571,9 @@
       "refresh": "daily",
       "fielded_access_path": "NAVSUP data on Advana / Navy Data Platform (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 5
+      "staleness_threshold_days": 5,
+      "usage": "partial",
+      "explanation": "Stock, release/transit lead times and engineering validation; no real authorization"
     },
     {
       "file": "squadron/status_code_reference.csv",
@@ -503,7 +585,9 @@
       "refresh": "per change",
       "fielded_access_path": "Reference table",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 365
+      "staleness_threshold_days": 365,
+      "usage": "context_only",
+      "explanation": "Reference vocabulary; arrival regime mapping is an explicit model assumption"
     },
     {
       "file": "KESSLER/sked_schedule.csv",
@@ -515,7 +599,9 @@
       "refresh": "weekly",
       "fielded_access_path": "Jupiter data product or merged PMS application (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 7
+      "staleness_threshold_days": 7,
+      "usage": "partial",
+      "explanation": "Lost-PMS risk only; IEM and workforce capacity are not modeled"
     },
     {
       "file": "KESSLER/sked_loep.csv",
@@ -527,7 +613,9 @@
       "refresh": "per force revision",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 90
+      "staleness_threshold_days": 90,
+      "usage": "context_only",
+      "explanation": "Supporting source; no direct forecast contribution"
     },
     {
       "file": "VARNELL/sked_schedule.csv",
@@ -539,7 +627,9 @@
       "refresh": "weekly",
       "fielded_access_path": "Jupiter data product or merged PMS application (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 7
+      "staleness_threshold_days": 7,
+      "usage": "partial",
+      "explanation": "Lost-PMS risk only; IEM and workforce capacity are not modeled"
     },
     {
       "file": "VARNELL/sked_loep.csv",
@@ -551,7 +641,9 @@
       "refresh": "per force revision",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 90
+      "staleness_threshold_days": 90,
+      "usage": "context_only",
+      "explanation": "Supporting source; no direct forecast contribution"
     },
     {
       "file": "ASHBY/sked_schedule.csv",
@@ -563,7 +655,9 @@
       "refresh": "weekly",
       "fielded_access_path": "Jupiter data product or merged PMS application (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 7
+      "staleness_threshold_days": 7,
+      "usage": "partial",
+      "explanation": "Lost-PMS risk only; IEM and workforce capacity are not modeled"
     },
     {
       "file": "ASHBY/sked_loep.csv",
@@ -575,7 +669,9 @@
       "refresh": "per force revision",
       "fielded_access_path": "Jupiter data product (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 90
+      "staleness_threshold_days": 90,
+      "usage": "context_only",
+      "explanation": "Supporting source; no direct forecast contribution"
     },
     {
       "file": "squadron/ship_positions.csv",
@@ -587,7 +683,9 @@
       "refresh": "daily",
       "fielded_access_path": "Operational message traffic (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 7
+      "staleness_threshold_days": 7,
+      "usage": "context_only",
+      "explanation": "Context only; transfer windows use schedule and known movement messages"
     },
     {
       "file": "KESSLER/movrep/",
@@ -599,7 +697,9 @@
       "refresh": "per transit",
       "fielded_access_path": "Message traffic (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 7
+      "staleness_threshold_days": 7,
+      "usage": "partial",
+      "explanation": "Known arrival, departure and delivery-window constraints"
     },
     {
       "file": "VARNELL/movrep/",
@@ -611,7 +711,9 @@
       "refresh": "per transit",
       "fielded_access_path": "Message traffic (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 7
+      "staleness_threshold_days": 7,
+      "usage": "partial",
+      "explanation": "Known arrival, departure and delivery-window constraints"
     },
     {
       "file": "ASHBY/movrep/",
@@ -623,7 +725,9 @@
       "refresh": "per transit",
       "fielded_access_path": "Message traffic (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 7
+      "staleness_threshold_days": 7,
+      "usage": "partial",
+      "explanation": "Known arrival, departure and delivery-window constraints"
     },
     {
       "file": "KESSLER/logreq/",
@@ -635,7 +739,9 @@
       "refresh": "per port visit",
       "fielded_access_path": "Message traffic (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 7
+      "staleness_threshold_days": 7,
+      "usage": "partial",
+      "explanation": "Known arrival, departure and delivery-window constraints"
     },
     {
       "file": "KESSLER/daily_reports/",
@@ -647,7 +753,9 @@
       "refresh": "daily",
       "fielded_access_path": "Document upload (no system of record)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 2
+      "staleness_threshold_days": 2,
+      "usage": "partial",
+      "explanation": "Verified selected personnel/assist facts; tentative claims require review"
     },
     {
       "file": "VARNELL/daily_reports/",
@@ -659,7 +767,9 @@
       "refresh": "daily",
       "fielded_access_path": "Document upload (no system of record)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 2
+      "staleness_threshold_days": 2,
+      "usage": "partial",
+      "explanation": "Verified selected personnel/assist facts; tentative claims require review"
     },
     {
       "file": "ASHBY/daily_reports/",
@@ -671,7 +781,9 @@
       "refresh": "daily",
       "fielded_access_path": "Document upload (no system of record)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 2
+      "staleness_threshold_days": 2,
+      "usage": "partial",
+      "explanation": "Verified selected personnel/assist facts; tentative claims require review"
     },
     {
       "file": "KESSLER/readiness_baseline.csv",
@@ -683,7 +795,9 @@
       "refresh": "monthly or on change",
       "fielded_access_path": "SIPR only when real (spec 20); synthetic stand-in here",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "comparison",
+      "explanation": "Reported material/rating baseline, kept separate from forecast probabilities"
     },
     {
       "file": "VARNELL/readiness_baseline.csv",
@@ -695,7 +809,9 @@
       "refresh": "monthly or on change",
       "fielded_access_path": "SIPR only when real (spec 20); synthetic stand-in here",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "comparison",
+      "explanation": "Reported material/rating baseline, kept separate from forecast probabilities"
     },
     {
       "file": "ASHBY/readiness_baseline.csv",
@@ -707,7 +823,9 @@
       "refresh": "monthly or on change",
       "fielded_access_path": "SIPR only when real (spec 20); synthetic stand-in here",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "comparison",
+      "explanation": "Reported material/rating baseline, kept separate from forecast probabilities"
     },
     {
       "file": "KESSLER/insurv_findings.csv",
@@ -719,7 +837,9 @@
       "refresh": "per inspection",
       "fielded_access_path": "USFF (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 3650
+      "staleness_threshold_days": 3650,
+      "usage": "not_modeled",
+      "explanation": "Optional inspection prior is not implemented"
     },
     {
       "file": "VARNELL/insurv_findings.csv",
@@ -731,7 +851,9 @@
       "refresh": "per inspection",
       "fielded_access_path": "USFF (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 3650
+      "staleness_threshold_days": 3650,
+      "usage": "not_modeled",
+      "explanation": "Optional inspection prior is not implemented"
     },
     {
       "file": "ASHBY/insurv_findings.csv",
@@ -743,7 +865,9 @@
       "refresh": "per inspection",
       "fielded_access_path": "USFF (inferred)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 3650
+      "staleness_threshold_days": 3650,
+      "usage": "not_modeled",
+      "explanation": "Optional inspection prior is not implemented"
     },
     {
       "file": "squadron/shore_profile.json",
@@ -755,7 +879,9 @@
       "refresh": "static",
       "fielded_access_path": "Ships inside the package",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 3650
+      "staleness_threshold_days": 3650,
+      "usage": "modeled",
+      "explanation": "Mock installations with invented capability hierarchy, dependencies and weights"
     },
     {
       "file": "squadron/public_hazard_snapshot.json",
@@ -767,7 +893,9 @@
       "refresh": "on rebuild",
       "fielded_access_path": "scripts/build_shore_public_data.py",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 3650
+      "staleness_threshold_days": 3650,
+      "usage": "partial",
+      "explanation": "Public regional inputs behind hazard_model.csv; not a measurement of any installation"
     },
     {
       "file": "NSNORFOLK/csmp.csv",
@@ -779,7 +907,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "modeled",
+      "explanation": "Material impairments and first linked requisition; not a multi-part repair scheduler"
     },
     {
       "file": "NSNORFOLK/requisition_status.csv",
@@ -791,7 +921,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 7
+      "staleness_threshold_days": 7,
+      "usage": "modeled",
+      "explanation": "Known status history, estimated shipping and modeled transit/repair"
     },
     {
       "file": "NSNORFOLK/onboard_allowance_cosal.csv",
@@ -803,7 +935,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Storeroom inventory and transfer eligibility"
     },
     {
       "file": "NSNORFOLK/roster.csv",
@@ -815,7 +949,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Qualified personnel availability; not watch-rotation optimization"
     },
     {
       "file": "NSNORFOLK/quals.csv",
@@ -827,7 +963,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Latest known qualification per person/station and expiry"
     },
     {
       "file": "NSNORFOLK/watchbill.csv",
@@ -839,7 +977,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "review_only",
+      "explanation": "Unqualified assignment detection; no sustainable rotation calculation"
     },
     {
       "file": "NSNORFOLK/nec_billets.csv",
@@ -851,7 +991,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "review_only",
+      "explanation": "Ship/shore disagreement; not a complete NEC staffing projection"
     },
     {
       "file": "NSNORFOLK/readiness_baseline.csv",
@@ -863,7 +1005,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "comparison",
+      "explanation": "Reported material/rating baseline, kept separate from forecast probabilities"
     },
     {
       "file": "NSNORFOLK/training_readiness.csv",
@@ -875,7 +1019,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Training expiry and scheduled refresh"
     },
     {
       "file": "NSNORFOLK/schedule_30day.csv",
@@ -887,7 +1033,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Event dates and planned port windows"
     },
     {
       "file": "NSNORFOLK/cert_status.csv",
@@ -899,7 +1047,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Certification status and expiry"
     },
     {
       "file": "NSNORFOLK/availabilities.csv",
@@ -911,7 +1061,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Availability completion; not automatic certification rescheduling"
     },
     {
       "file": "NSNORFOLK/sked_schedule.csv",
@@ -923,7 +1075,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "partial",
+      "explanation": "Lost-PMS risk only; IEM and workforce capacity are not modeled"
     },
     {
       "file": "NSNORFOLK/sked_loep.csv",
@@ -935,7 +1089,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 90
+      "staleness_threshold_days": 90,
+      "usage": "context_only",
+      "explanation": "Supporting source; no direct forecast contribution"
     },
     {
       "file": "NSNORFOLK/insurv_findings.csv",
@@ -947,7 +1103,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 3650
+      "staleness_threshold_days": 3650,
+      "usage": "not_modeled",
+      "explanation": "Optional inspection prior is not implemented"
     },
     {
       "file": "NSNORFOLK/hazard_model.csv",
@@ -959,7 +1117,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 3650
+      "staleness_threshold_days": 3650,
+      "usage": "modeled",
+      "explanation": "Public regional storm, grid and tide figures applied to invented facilities by stated assumption"
     },
     {
       "file": "NSAHR/csmp.csv",
@@ -971,7 +1131,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "modeled",
+      "explanation": "Material impairments and first linked requisition; not a multi-part repair scheduler"
     },
     {
       "file": "NSAHR/requisition_status.csv",
@@ -983,7 +1145,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 7
+      "staleness_threshold_days": 7,
+      "usage": "modeled",
+      "explanation": "Known status history, estimated shipping and modeled transit/repair"
     },
     {
       "file": "NSAHR/onboard_allowance_cosal.csv",
@@ -995,7 +1159,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Storeroom inventory and transfer eligibility"
     },
     {
       "file": "NSAHR/roster.csv",
@@ -1007,7 +1173,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Qualified personnel availability; not watch-rotation optimization"
     },
     {
       "file": "NSAHR/quals.csv",
@@ -1019,7 +1187,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Latest known qualification per person/station and expiry"
     },
     {
       "file": "NSAHR/watchbill.csv",
@@ -1031,7 +1201,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "review_only",
+      "explanation": "Unqualified assignment detection; no sustainable rotation calculation"
     },
     {
       "file": "NSAHR/nec_billets.csv",
@@ -1043,7 +1215,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "review_only",
+      "explanation": "Ship/shore disagreement; not a complete NEC staffing projection"
     },
     {
       "file": "NSAHR/readiness_baseline.csv",
@@ -1055,7 +1229,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "comparison",
+      "explanation": "Reported material/rating baseline, kept separate from forecast probabilities"
     },
     {
       "file": "NSAHR/training_readiness.csv",
@@ -1067,7 +1243,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Training expiry and scheduled refresh"
     },
     {
       "file": "NSAHR/schedule_30day.csv",
@@ -1079,7 +1257,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Event dates and planned port windows"
     },
     {
       "file": "NSAHR/cert_status.csv",
@@ -1091,7 +1271,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Certification status and expiry"
     },
     {
       "file": "NSAHR/availabilities.csv",
@@ -1103,7 +1285,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 30
+      "staleness_threshold_days": 30,
+      "usage": "modeled",
+      "explanation": "Availability completion; not automatic certification rescheduling"
     },
     {
       "file": "NSAHR/sked_schedule.csv",
@@ -1115,7 +1299,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 14
+      "staleness_threshold_days": 14,
+      "usage": "partial",
+      "explanation": "Lost-PMS risk only; IEM and workforce capacity are not modeled"
     },
     {
       "file": "NSAHR/sked_loep.csv",
@@ -1127,7 +1313,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 90
+      "staleness_threshold_days": 90,
+      "usage": "context_only",
+      "explanation": "Supporting source; no direct forecast contribution"
     },
     {
       "file": "NSAHR/insurv_findings.csv",
@@ -1139,7 +1327,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 3650
+      "staleness_threshold_days": 3650,
+      "usage": "not_modeled",
+      "explanation": "Optional inspection prior is not implemented"
     },
     {
       "file": "NSAHR/hazard_model.csv",
@@ -1151,7 +1341,9 @@
       "refresh": "on change",
       "fielded_access_path": "No public feed; authorized export required",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 3650
+      "staleness_threshold_days": 3650,
+      "usage": "modeled",
+      "explanation": "Public regional storm, grid and tide figures applied to invented facilities by stated assumption"
     },
     {
       "file": "squadron/delay_model_params.yaml",
@@ -1163,7 +1355,9 @@
       "refresh": "on edit",
       "fielded_access_path": "Ships inside the package",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 3650
+      "staleness_threshold_days": 3650,
+      "usage": "context_only",
+      "explanation": "Supporting source; no direct forecast contribution"
     },
     {
       "file": "squadron/scenario_feed.json",
@@ -1175,7 +1369,23 @@
       "refresh": "static",
       "fielded_access_path": "n/a (demo only)",
       "as_of": "2026-11-04T06:00:00Z",
-      "staleness_threshold_days": 3650
+      "staleness_threshold_days": 3650,
+      "usage": "context_only",
+      "explanation": "Supporting source; no direct forecast contribution"
+    },
+    {
+      "file": "squadron/dataset_profile.json",
+      "spec": "data_sources/19_catalog_and_assumptions.md",
+      "real_system": "Dataset profile (units, clock, layout)",
+      "system_of_record": "Dataset",
+      "steward": "MissionTwin team",
+      "marking": "CUI when real; NOTIONAL here",
+      "refresh": "static",
+      "fielded_access_path": "Ships inside the package",
+      "as_of": "2026-11-04T06:00:00Z",
+      "staleness_threshold_days": 3650,
+      "usage": "context_only",
+      "explanation": "Supporting source; no direct forecast contribution"
     }
   ]
 }

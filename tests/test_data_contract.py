@@ -7,7 +7,9 @@ from datetime import date, timedelta
 import pytest
 
 from missiontwin import BANNER
-from missiontwin.domain import ALL_EICS, COLUMNS, PER_SHIP_CSV, ROOT, SHIP_IDS, SPEC_OF_FILE, SQUADRON_CSV, parts_index
+from missiontwin.domain import COLUMNS, PER_SHIP_CSV, ROOT, SPEC_OF_FILE, SQUADRON_CSV
+# The generator's authoring spec: this file checks that the written dataset matches it.
+from missiontwin.synthetic_spec import ALL_EICS, SHIP_IDS, parts_index
 
 SPECS = ROOT / "data_sources"
 

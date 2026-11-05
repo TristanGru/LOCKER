@@ -32,3 +32,11 @@ def baseline(data_dir, offline_client):
 @pytest.fixture()
 def log_path(tmp_path):
     return tmp_path / "activity.jsonl"
+
+
+def signed_in(app, username="fleet.commander@us.navy.mil", **kwargs):
+    """A test client with a session for the given account (the fleet account sees every unit)."""
+    from fastapi.testclient import TestClient
+    client = TestClient(app, **kwargs)
+    assert client.post("/api/login", json={"username": username}).status_code == 200
+    return client

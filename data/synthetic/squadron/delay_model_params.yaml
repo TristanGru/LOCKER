@@ -141,3 +141,112 @@ cannibalization_note:
   value: 'Any cannibalization rate is a lower bound (GAO-02-86: data understated up to 50%)'
   tag: sourced
   source: GAO-02-86
+casrep_category_score:
+  value:
+    '2': 0.6
+    '3': 0.0
+    '4': 0.0
+  tag: assumed
+  source: 'CASREP category to equipment score: CAT 2 degraded, CAT 3/4 not mission capable'
+casrep_no_etr_days:
+  value: 30
+  tag: assumed
+  source: an open CASREP with no ETR is treated as unresolved for the 30-day horizon
+unknown_status_regime:
+  value: DUE_IN
+  tag: assumed
+  source: 'supply status code missing from status_code_reference.csv: treated as backordered'
+expedite_regime_step:
+  value:
+    PROCUREMENT: LONG
+    LONG: DUE_IN
+    DUE_IN: NEAR
+    NEAR: NEAR
+  tag: assumed
+  source: 'expedite_effect: one delay regime faster'
+redundancy_loss_score:
+  value: 0.6
+  tag: assumed
+  source: a component that loses a redundant unit (still above minimum working) is degraded; same score as equipment status
+    3
+system_capable_score:
+  value: 0.6
+  tag: assumed
+  source: a critical system at or above this score counts toward mission-area capability (the yellow band edge)
+fix_search:
+  value:
+    min_gain: 0.01
+    gate_met: 0.995
+    casualty_relevance: 0.02
+    shift_days:
+    - 4
+    - 7
+    max_pairs: 30
+    max_ship_shore_pairs: 8
+  tag: assumed
+  source: 'fix search limits: smallest gain worth approving (1 point), gate treated as met, casualty probability worth a fix,
+    ISIC schedule-shift options, package search size'
+editable_ranges:
+  staleness_threshold_days:
+  - 1
+  - 60
+  transit_days_conus_default:
+  - 0
+  - 30
+  background_failure_rate_per_unit_day:
+  - 0
+  - 0.05
+  lost_pms_hazard_multiplier:
+  - 1
+  - 10
+  training_refresh_success:
+  - 0
+  - 1
+  etr_slip.p_slip:
+  - 0
+  - 1
+  etr_slip.median:
+  - 0
+  - 60
+  availability_slip.p_late:
+  - 0
+  - 1
+  availability_slip.median:
+  - 0
+  - 60
+  repair_after_part_days.min:
+  - 0
+  - 30
+  repair_after_part_days.mode:
+  - 0
+  - 30
+  repair_after_part_days.max:
+  - 0
+  - 60
+  cross_deck_days.same_port:
+  - 0
+  - 30
+  program_office_release_days.min:
+  - 0
+  - 60
+  program_office_release_days.max:
+  - 0
+  - 60
+  part_arrival_days_by_regime.NEAR.median_conus:
+  - 0
+  - 120
+  part_arrival_days_by_regime.DUE_IN.median:
+  - 0
+  - 365
+  part_arrival_days_by_regime.LONG.median:
+  - 0
+  - 365
+  part_arrival_days_by_regime.LONG.sigma:
+  - 0.01
+  - 3
+  bands.green:
+  - 0
+  - 1
+  bands.yellow:
+  - 0
+  - 1

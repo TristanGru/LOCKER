@@ -4,7 +4,7 @@ import csv
 import pytest
 
 from missiontwin.brief import build_brief
-from missiontwin.domain import SHIP_IDS, parse_ts
+from missiontwin.domain import parse_ts
 from missiontwin.engine import Scenario, build_world, forecast
 from missiontwin.ingest import find_contradictions
 from missiontwin.llm import LLMClient, LLMUnavailable, extraction_messages, pii_guard, redact, surname_of
@@ -33,7 +33,7 @@ def test_x4_only_after_the_report_arrives(baseline):
 
 
 def roster_surnames(baseline):
-    return {surname_of(r["display_name"]) for s in SHIP_IDS for r in baseline.r(s, "roster.csv")}
+    return {surname_of(r["display_name"]) for s in baseline.profile.ship_ids for r in baseline.r(s, "roster.csv")}
 
 
 def test_redaction_fixture(baseline, data_dir):
@@ -66,7 +66,7 @@ def test_no_names_in_brief(baseline, log_path):
     for name in roster_surnames(baseline):
         if len(name) >= 3:
             assert f" {name.lower()} " not in f" {b['text'].lower()} ", name
-    for s in SHIP_IDS:
+    for s in baseline.profile.ship_ids:
         for r in baseline.r(s, "roster.csv"):
             assert r["display_name"] not in b["text"]
 

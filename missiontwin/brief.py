@@ -5,7 +5,7 @@ Every claim carries a citation [n] to a source record. No display names: people 
 from __future__ import annotations
 
 from . import BANNER
-from .domain import SHIPS, format_dtg, local_label, parse_ts
+from .domain import format_dtg, local_label, parse_ts
 from .engine import mission_display
 
 
@@ -23,12 +23,12 @@ def build_brief(fc: dict, ship_id: str, ranking: dict | None, contradictions: li
             marks.append(f"[{idx + 1}]")
         return "".join(marks)
 
-    info = fc.get('units', SHIPS)[ship_id]
+    info = fc['units'][ship_id]
     def pct(value):
         return 'Unknown' if value is None else f'{value * 100:.0f}%'
     now = parse_ts(fc["cursor"])
     L = [BANNER, f"READINESS BRIEF  {info['name']} ({info['hull']})",
-         f"As of {fc['cursor_dtg']} ({local_label(now)}). Seed {fc['seed']}, {fc['runs']:,} runs. Read-only; the captain decides.",
+         f"As of {fc['cursor_dtg']} ({local_label(now, fc['local_time'])}). Seed {fc['seed']}, {fc['runs']:,} runs. Read-only; the captain decides.",
          "Exercise estimates, not official readiness ratings. Headline probabilities assess the sampled event interval.", "",
          "BOTTOM LINE"]
     ctx_missions = []

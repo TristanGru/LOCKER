@@ -92,8 +92,8 @@ const navigation = [
 export default function Workspace() {
   const [data, setData] = useState<Dashboard | null>(null),
     [view, setView] = useState<View>("missions"),
-    [ship, setShip] = useState("KESSLER"),
-    [eventId, setEventId] = useState("EVT-KESSLER-01"),
+    [ship, setShip] = useState(""),  // first unit from the dataset once loaded
+    [eventId, setEventId] = useState(""),
     [system, setSystem] = useState<string | null>(null);
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false),

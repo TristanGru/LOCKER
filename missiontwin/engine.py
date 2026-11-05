@@ -24,17 +24,14 @@ from pathlib import Path
 
 import numpy as np
 
-from .domain import (AREAS, COMPONENT_TO_SYSTEM, CRITICAL_CAP, INPORT_CODES, LOG_DIR, MONTHS, SCENARIO_NOW, SHIP_IDS, SHIPS, SYSTEMS,
-                     UTC, WATCHSTATIONS, band, date_dt, day_of, dt_of, format_dtg, iso, local_label, parse_ts, parts_index)
+from .domain import LOG_DIR, MONTHS, UTC, band, date_dt, format_dtg, iso, local_label, parse_ts
 from .ingest import Baseline, View, fact_date
 from .models import SourceRef
-from .profile import Profile, default_profile
+from .profile import Profile, empty_profile
 from .validation import validate_params, validate_world
 
-REGIME_OF = {"BA": "NEAR", "BB": "DUE_IN", "BC": "LONG", "BV": "PROCUREMENT", "BZ": "PROCUREMENT", "B3": "LONG",
-             "CB": "REJECTED", "CG": "REJECTED", "CJ": "REJECTED", "CU": "REJECTED"}
-FASTER = {"PROCUREMENT": "LONG", "LONG": "DUE_IN", "DUE_IN": "NEAR", "NEAR": "NEAR"}
 INF = 1e9
+CARRIES_PRIOR = "CARRIES_PRIOR"  # status_code_reference.csv regime: the code keeps the previous status's delay regime
 
 
 # ====================================================================== params
@@ -259,7 +256,8 @@ class World:
     notes: list
     facts_used: list
     digest: str
-    profile: Profile = field(default_factory=default_profile)
+    profile: Profile = field(default_factory=empty_profile)
+    regimes: dict = field(default_factory=dict)  # supply status code -> delay regime (status_code_reference.csv)
     coverage: dict = field(default_factory=dict)
     reported_baseline: dict = field(default_factory=dict)
     source_revision: str = ''
@@ -332,18 +330,18 @@ class Scenario:
         self._log({"op": "apply", **c})
         return c
 
-    def undo(self) -> dict | None:
+    def undo(self, actor: str | None = None) -> dict | None:
         if not self.changes:
             return None
         c = self.changes.pop()
         self.version += 1
-        self._log({"op": "undo", "seq": c["seq"], "kind": c["kind"]})
+        self._log({"op": "undo", "seq": c["seq"], "kind": c["kind"], **({"actor": actor} if actor else {})})
         return c
 
-    def reset(self):
+    def reset(self, actor: str | None = None):
         self.changes = []
         self.version += 1
-        self._log({"op": "reset"})
+        self._log({"op": "reset", **({"actor": actor} if actor else {})})
 
     def _log(self, rec: dict):
         if not self.persist:
@@ -362,22 +360,28 @@ def _src(r) -> list:
     return [s] if s else []
 
 
-def regime_for(req: dict) -> str:
+def regime_for(req: dict, regimes: dict, unknown: str) -> str:
+    """Delay regime of a requisition's current supply status, from status_code_reference.csv."""
     code = req["status_code"]
-    if code == "B5":
+    if regimes.get(code) == CARRIES_PRIOR:
         for _, c, _e in reversed(req["_history"][:-1]):
-            if c != "B5":
-                return REGIME_OF.get(c, "DUE_IN")
-        return "DUE_IN"
-    return REGIME_OF.get(code, "DUE_IN")
+            if regimes.get(c) != CARRIES_PRIOR:
+                return regimes.get(c, unknown)
+        return unknown
+    return regimes.get(code, unknown)
 
 
-def arrival(req: dict, params: dict, cursor: float, expedited: bool, wholesale_on_hand: int, profile=None) -> tuple[float, list, list]:
+def status_regimes(b) -> dict:
+    return {row["code"]: row["delay_regime"] for row in b.r("squadron", "status_code_reference.csv")}
+
+
+def arrival(req: dict, params: dict, cursor: float, expedited: bool, wholesale_on_hand: int, profile: Profile,
+            regimes: dict) -> tuple[float, list, list]:
     """Requisition -> (base day, [stages], explanation lines)."""
-    day_of = (profile or default_profile()).day_of
+    day_of = profile.day_of
     reg = pval(params, "part_arrival_days_by_regime")
     transit = float(pval(params, "transit_days_conus_default"))
-    regime = regime_for(req)
+    regime = regime_for(req, regimes, pval(params, "unknown_status_regime"))
     explain = [f"{req['doc_number']}: status {req['status_code']} ({regime}) since {req['status_time']:%d %b %H%MZ}"]
     if regime == "REJECTED":
         base = day_of(req["status_time"]) + reg["REJECTED"]["re_requisition_add_days"]
@@ -386,8 +390,9 @@ def arrival(req: dict, params: dict, cursor: float, expedited: bool, wholesale_o
     else:
         base = day_of(req["status_time"])
     if expedited and wholesale_on_hand > 0 and regime != "NEAR":
-        explain.append(f"expedite: {regime} -> {FASTER[regime]} (wholesale on hand {wholesale_on_hand})")
-        regime = FASTER[regime]
+        faster = pval(params, "expedite_regime_step")[regime]
+        explain.append(f"expedite: {regime} -> {faster} (wholesale on hand {wholesale_on_hand})")
+        regime = faster
     elif expedited:
         explain.append("expedite requested but wholesale on hand is 0: no effect (ledger: expedite_effect)")
     sig = reg[regime]["sigma"]
@@ -419,7 +424,7 @@ def etr_slip_stage(params) -> Stage:
 def inport_place(sw: ShipWorld, t: float) -> str | None:
     for b in sw.blocks:
         if b["s"] <= t < b["e"]:
-            if b['code'] not in INPORT_CODES:
+            if not b['inport']:
                 return None
             # Messages constrain the matching planned port window, never imply a new track.
             for movement in getattr(sw, 'movements', []):
@@ -454,6 +459,8 @@ def build_world(scn: Scenario) -> World:
         if c["kind"] == "confirm_fact":
             confirmed[c["payload"]["fact_id"]] = bool(c["payload"]["include"])
     wholesale = {}
+    stock_holders = b.profile.holders_where("counts_as_wholesale_stock")
+    regimes = status_regimes(b)
     for w in v.squadron("wholesale_stock.csv"):
         wholesale.setdefault(w["niin"], []).append(dict(w))
     ships = {}
@@ -465,7 +472,8 @@ def build_world(scn: Scenario) -> World:
         for blk in v.schedule(s):
             sw.blocks.append({"s": day_of(date_dt(blk["start_date"])), "e": day_of(date_dt(blk["end_date"])) + 1,
                               "code": blk["employment_code"], "place": blk["oparea_or_port"], "event_id": blk["event_id"],
-                              "block_id": blk["block_id"], "src": blk["_src"], "status": blk["status"]})
+                              "block_id": blk["block_id"], "src": blk["_src"], "status": blk["status"],
+                              "inport": blk["employment_code"] in b.profile.inport_codes})
         sw.blocks.sort(key=lambda x: x["s"])
         sw.movements = [{**m, 'arrival_day': day_of(m['arrive']['time']) if m.get('arrive') else None,
                          'departure_day': day_of(m['depart']['time']) if m.get('depart') else None,
@@ -577,8 +585,8 @@ def build_world(scn: Scenario) -> World:
                         sources=srcs, floor=cursor)
             if j["job_state"] == "OPEN_AWAITING_PARTS" and docs:
                 r = reqs[docs[0]]
-                ws_on = sum(w["on_hand_qty"] for w in wholesale.get(r["niin"], []) if w["holder"] in ("NAVSUP_WSS", "DLA"))
-                base, stages, ex = arrival(r, params, cursor, r["doc_number"] in expedited, ws_on, b.profile)
+                ws_on = sum(w["on_hand_qty"] for w in wholesale.get(r["niin"], []) if w["holder"] in stock_holders)
+                base, stages, ex = arrival(r, params, cursor, r["doc_number"] in expedited, ws_on, b.profile, regimes)
                 item.base, item.stages, item.explain = base, stages + [install_stage(params)], ex + ["+ install/repair (ledger)"]
                 item.part_niin, item.doc_number = r["niin"], r["doc_number"]
                 item.sources.append(r["_src"])
@@ -599,10 +607,10 @@ def build_world(scn: Scenario) -> World:
         for cas in casreps:
             if cas["state"] != "OPEN" or (cas["jcn"] and any(j["jcn"] == cas["jcn"] for j in jobs)):
                 continue
-            sc = {2: 0.6, 3: 0.0, 4: 0.0}[cas["category"]]
+            sc = float(pval(params, "casrep_category_score")[str(cas["category"])])
             etr = cas["etr_history"][-1]["etr"] if cas["etr_history"] else None
             it = Item(key=f"casrep:{cas['casrep_id']}", ship=s, eic=cas["eic"], score=sc, start=day_of(cas["initial_time"]),
-                      base=day_of(etr) if etr else cursor + 30, stages=[etr_slip_stage(params)],
+                      base=day_of(etr) if etr else cursor + float(pval(params, "casrep_no_etr_days")), stages=[etr_slip_stage(params)],
                       title=f"CASREP {cas['casrep_id']} {cas['equipment']} (no 2-Kilo)", sources=[cas["_src"]], floor=cursor,
                       explain=[f"CASREP CAT {cas['category']} with no JCN; ETR {format_dtg(etr) if etr else 'unknown'} + slip risk"])
             sw.items.append(it)
@@ -614,8 +622,8 @@ def build_world(scn: Scenario) -> World:
                 if comp in impaired:
                     continue
                 rate = lam * inst * (lost_mult if comp in lost else 1.0)
-                sc = 0.0 if inst - 1 < minw else 0.6
-                ws_on = sum(w["on_hand_qty"] for w in wholesale.get(niin, []) if w["holder"] in ("NAVSUP_WSS", "DLA"))
+                sc = 0.0 if inst - 1 < minw else float(pval(params, "redundancy_loss_score"))
+                ws_on = sum(w["on_hand_qty"] for w in wholesale.get(niin, []) if w["holder"] in stock_holders)
                 reg = pval(params, "part_arrival_days_by_regime")
                 rg = "NEAR" if ws_on > 0 else "DUE_IN"
                 med = reg[rg].get("median_conus", reg[rg].get("median"))
@@ -643,7 +651,7 @@ def build_world(scn: Scenario) -> World:
             if m.supports and not m.codename and m.supports in by_event:
                 m.support_display = f"Support {by_event[m.supports].display}"
 
-    world = World(cursor=cursor, cursor_dt=cursor_dt, params=params, ships=ships, wholesale=wholesale, fixes=[],
+    world = World(cursor=cursor, cursor_dt=cursor_dt, params=params, ships=ships, wholesale=wholesale, fixes=[], regimes=regimes,
                   notes=[], facts_used=facts_used, digest=scn.digest(), profile=b.profile, coverage=b.coverage(), source_revision=b.source_revision,
                   reported_baseline={s: [{k: val for k, val in row.items() if not k.startswith('_') and k != 'as_of'} |
                       {'as_of': iso(row['as_of']), 'source': row['_src'].model_dump()} for row in v.rows(s, 'readiness_baseline.csv')] for s in SHIP_IDS})
@@ -711,7 +719,7 @@ def apply_action(world: World, a: dict, at: float):
         etr = parse_ts(a["etr"]) if isinstance(a["etr"], str) else a["etr"]
         sw = world.ships[a["ship_id"]]
         sw.items.append(Item(key=f"whatif:{a['eic']}:{at}", ship=a["ship_id"], eic=a["eic"],
-                             score={2: 0.6, 3: 0.0, 4: 0.0}[int(a["category"])], start=at, base=day_of(etr),
+                             score=float(pval(world.params, "casrep_category_score")[str(int(a["category"]))]), start=at, base=day_of(etr),
                              stages=[etr_slip_stage(world.params)], title=f"What-if CASREP CAT {a['category']} on {a['eic']}",
                              sources=[SourceRef(file="logs/activity.jsonl", loc="what-if")], kind="whatif", floor=at,
                              explain=[f"what-if ETR {format_dtg(etr)} + slip risk"]))
@@ -786,10 +794,10 @@ def apply_fix(world: World, fix: dict, at: float):
                 else:
                     comp, inst, minw = st["donor_comp"], st["installed"], st["min_working"]
                     reg = pval(world.params, "part_arrival_days_by_regime")
-                    ws_on = sum(w["on_hand_qty"] for w in world.wholesale.get(st["niin"], []) if w["holder"] in ("NAVSUP_WSS", "DLA"))
+                    ws_on = sum(w["on_hand_qty"] for w in world.wholesale.get(st["niin"], []) if w["holder"] in world.profile.holders_where("counts_as_wholesale_stock"))
                     rg = "NEAR" if ws_on > 0 else "DUE_IN"
                     donor.items.append(Item(key=f"cannibal:{st['donor']}:{comp}", ship=st["donor"], eic=comp,
-                                            score=0.0 if inst - 1 < minw else 0.6, start=t0, base=t0,
+                                            score=0.0 if inst - 1 < minw else float(pval(world.params, "redundancy_loss_score")), start=t0, base=t0,
                                             stages=[Stage("lognormal", reg[rg].get("median_conus", reg[rg].get("median")), reg[rg]["sigma"],
                                                           label=f"donor replacement ({rg})"), ins],
                                             title=f"Cannibalized NIIN {st['niin']} for {st['receiver']}", kind="cannibalized",
@@ -806,11 +814,15 @@ def apply_fix(world: World, fix: dict, at: float):
                 lead = asset.get('release_lead_days')
                 if lead not in (None, ''):
                     stages = [Stage('fixed', float(lead), label='source release lead')]
-                elif holder == 'PROGRAM_OFFICE':
-                    r = pval(world.params, 'program_office_release_days')
-                    stages = [Stage('uniform', r['min'], r['max'], label='program office release (ledger; record states no lead)')]
                 else:
-                    stages = [Stage('fixed', 1, label='WSS release (record states no lead)')]
+                    release = world.profile.supply_holders.get(holder, {}).get('release_when_unstated')
+                    if not release:
+                        raise ValueError(f'Supply holder {holder} has no release rule in the dataset profile')
+                    if 'param' in release:
+                        r = pval(world.params, release['param'])
+                        stages = [Stage('uniform', r['min'], r['max'], label=release['label'])]
+                    else:
+                        stages = [Stage('fixed', float(release['fixed_days']), label=release['label'])]
                 if asset.get('requires_engineering_validation'):
                     validation = pval(world.params, 'engineering_validation_days')
                     stages.append(Stage('uniform', validation['min'], validation['max'], label='engineering validation'))
@@ -828,7 +840,7 @@ def apply_fix(world: World, fix: dict, at: float):
             recv = world.ships[st["receiver"]]
             item = next((i for i in recv.items if i.key == st["item_key"]), None)
             if item and item.doc_number:
-                ws_on = sum(w["on_hand_qty"] for w in world.wholesale.get(item.part_niin, []) if w["holder"] in ("NAVSUP_WSS", "DLA"))
+                ws_on = sum(w["on_hand_qty"] for w in world.wholesale.get(item.part_niin, []) if w["holder"] in world.profile.holders_where("counts_as_wholesale_stock"))
                 if ws_on > 0:
                     reg = pval(world.params, "part_arrival_days_by_regime")
                     item.stages = [Stage("lognormal", reg["NEAR"]["median_conus"], reg["NEAR"]["sigma"], label="arrival (expedited, NEAR)"),
@@ -915,7 +927,8 @@ def _items_scores(sw: ShipWorld, T: np.ndarray, n: int, seed: int, planned: bool
 
 
 def _system_scores(comp_scores: dict, n: int, K: int, profile=None, unit: str | None = None) -> dict[str, np.ndarray]:
-    profile = profile or default_profile()
+    if profile is None:
+        raise ValueError('A dataset profile is required')
     SYSTEMS = profile.systems_for(unit) if unit else profile.systems
     out = {}
     one = np.ones((n, K), np.float32)
@@ -960,7 +973,8 @@ def _team_counts(sw: ShipWorld, ws: str, T: np.ndarray, n: int, seed: int, plann
 
 
 def _area_rollup(sys_scores: dict, profile=None, unit: str | None = None) -> dict[str, np.ndarray]:
-    profile = profile or default_profile()
+    if profile is None:
+        raise ValueError('A dataset profile is required')
     AREAS, SYSTEMS = profile.areas_for(unit) if unit else profile.areas, profile.systems
     out = {}
     for area, (_name, members) in AREAS.items():
@@ -1054,10 +1068,10 @@ def _p10_p90(x: np.ndarray):
     return float(a), float(b)
 
 
-def _day_str(day: float, profile=None) -> str | None:
+def _day_str(day: float, profile: Profile) -> str | None:
     if day is None or day >= INF / 2:
         return None
-    return iso((profile or default_profile()).dt_of(day))
+    return iso(profile.dt_of(day))
 
 
 _CACHE: "OrderedDict[str, dict]" = OrderedDict()
@@ -1230,7 +1244,7 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
         interval_gates = [{'gate_id': g['id'], 'label': g['label'], 'p_ok': round(float(g['ok'].all(axis=1).mean()), 4)} for g in interval_gates_raw]
         missions_out.append({
             "event_id": eid, "label": m.label, "codename": m.codename, "ship_id": s, "name": m.name, "start": iso(dt_of(m.start)),
-            "start_dtg": format_dtg(dt_of(m.start)), "start_local": local_label(dt_of(m.start)), "day": round(m.start, 2),
+            "start_dtg": format_dtg(dt_of(m.start)), "start_local": local_label(dt_of(m.start), world.profile.local_time), "day": round(m.start, 2),
             "p_ready": round(p, 4), "p_assessed": interval_probability, "band": band(assessment, bands), "next_domino": nd, "gates": gate_rows, "curve": curve,
             "planned": planned.get(eid), "areas": m.areas, "moved_note": m.moved_note, "consequence": m.consequence,
             "sources": [x.model_dump() for x in m.sources], "prereqs": m.prereqs,
@@ -1238,6 +1252,7 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
             "interval_gates": interval_gates, "interval_sampling_hours": 6, "supports": m.supports, "display": m.display,
         })
     ships_out = {}
+    capable = float(pval(world.params, "system_capable_score"))
     for s, sw in world.ships.items():
         rr = r[s]
         cap = {}
@@ -1246,7 +1261,7 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
             okc = np.ones((n, G), bool)
             for e, _w in members:
                 if SYSTEMS[e]["critical"]:
-                    okc &= rr["sys"][e][:, :G] >= 0.6
+                    okc &= rr["sys"][e][:, :G] >= capable
                     for q in SYSTEMS[e]["required_quals"]:
                         okc &= rr["teams"][q["watchstation_code"]][:, :G] >= q["k"]
             cap[a] = [round(float(x), 4) for x in okc.mean(axis=0)]
@@ -1261,7 +1276,7 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
                 "area_capability_mean": {a: round(float(np.mean(v)), 4) for a, v in cap.items()},
                 "areas": {a: {"mfom": [round(float(x) * 100, 1) for x in area[a].mean(axis=0)], "p_capable": cap[a]} for a in AREAS},
                 "systems": {e: [round(float(x), 3) for x in rr["sys"][e][:, :G].mean(axis=0)] for e in SYSTEMS},
-                "system_p_ok": {e: [round(float(x), 4) for x in (rr["sys"][e][:, :G] >= 0.6).mean(axis=0)] for e in SYSTEMS},
+                "system_p_ok": {e: [round(float(x), 4) for x in (rr["sys"][e][:, :G] >= capable).mean(axis=0)] for e in SYSTEMS},
             }
     unknown = {m['event_id'] for m in missions_out if world.coverage.get(m['ship_id'])}
     for _ in missions_out:
@@ -1292,7 +1307,7 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
         'coverage': world.coverage, 'reported_baseline': world.reported_baseline, 'units': world.profile.ships,
         "seed": seed, "runs": n, "cursor": iso(world.cursor_dt), "cursor_dtg": format_dtg(world.cursor_dt), "cursor_day": round(world.cursor, 3),
         "day0": iso(world.profile.now), "horizon_days": H, "grid_days": [float(x) for x in grid],
-        "grid_dates": [iso(dt_of(x)) for x in grid], "missions": missions_out, "ships": ships_out,
+        "grid_dates": [iso(dt_of(x)) for x in grid], "local_time": world.profile.local_time, "missions": missions_out, "ships": ships_out,
         "bands": bands, "fixes_applied": [f.get("title") for f in world.fixes],
     }
     if detail:

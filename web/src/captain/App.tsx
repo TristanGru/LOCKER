@@ -8,17 +8,24 @@ import { Fixes } from './screens/Fixes';
 import { Overview } from './screens/Overview';
 import { ShipOverview } from './screens/ShipOverview';
 import { WhatIf } from './screens/WhatIf';
+import { AuthGate, useAuth } from './state/auth';
 import { StoreProvider } from './state/store';
+
+/** Installations are fleet-only: a CO's session carries no shore units, so the route goes home. */
+function ShoreRoute() {
+  return useAuth().isFleet ? <ShipOverview domain="installation" /> : <Navigate to="/" replace />;
+}
 
 export default function App() {
   return (
+    <AuthGate>
     <StoreProvider>
       {/* Hash routing works from any static file server, fully offline. */}
       <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route element={<AppShell />}>
             <Route index element={<ShipOverview domain="ship" />} />
-            <Route path="shore" element={<ShipOverview domain="installation" />} />
+            <Route path="shore" element={<ShoreRoute />} />
             <Route path="missions" element={<Overview />} />
             <Route path="dominoes" element={<Dominoes />} />
             <Route path="fixes" element={<Fixes />} />
@@ -31,5 +38,6 @@ export default function App() {
         </Routes>
       </HashRouter>
     </StoreProvider>
+    </AuthGate>
   );
 }

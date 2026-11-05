@@ -3,7 +3,15 @@ from __future__ import annotations
 
 import math
 
-from .domain import DEFAULT_PARAMS
+# The assumptions the engine reads. Their VALUES live only in the dataset (squadron/delay_model_params.yaml).
+REQUIRED_PARAMS = (
+    'seed', 'runs', 'ranking_runs', 'bands', 'status_score_map', 'casualty_threshold_hours', 'casrep_rating_cap',
+    'staleness_threshold_days', 'part_arrival_days_by_regime', 'transit_days_conus_default', 'program_office_release_days',
+    'engineering_validation_days', 'expedite_effect', 'cross_deck_days', 'cannibalize_extra_days', 'repair_after_part_days',
+    'etr_slip', 'availability_slip', 'background_failure_rate_per_unit_day', 'lost_pms_hazard_multiplier',
+    'training_refresh_success', 'cannibalization_note', 'casrep_category_score', 'casrep_no_etr_days', 'unknown_status_regime',
+    'expedite_regime_step', 'redundancy_loss_score', 'system_capable_score', 'fix_search',
+)
 
 
 def validate_params(params: dict):
@@ -18,9 +26,12 @@ def validate_params(params: dict):
         elif isinstance(node, (float, int)) and not math.isfinite(node):
             raise ValueError('Model parameters must be finite')
     finite(params)
-    for key in DEFAULT_PARAMS:
+    for key in REQUIRED_PARAMS:
         if key not in params or not isinstance(params[key], dict) or 'value' not in params[key]:
             raise ValueError(f'Missing assumption: {key}')
+    ranges = params.get('editable_ranges')
+    if not isinstance(ranges, dict) or any(not isinstance(b, list) or len(b) != 2 or not b[0] <= b[1] for b in ranges.values()):
+        raise ValueError('editable_ranges must map each editable assumption to [min, max]')
     bands = value('bands')
     if not 0 <= bands['yellow'] <= bands['green'] <= 1:
         raise ValueError('Thresholds require 0 <= yellow <= green <= 1')
@@ -52,8 +63,20 @@ def validate_params(params: dict):
             raise ValueError(f'Invalid {key}')
     if not 0 <= value('training_refresh_success') <= 1:
         raise ValueError('Training probability must be between zero and one')
-    for key in ('transit_days_conus_default', 'background_failure_rate_per_unit_day', 'staleness_threshold_days', 'lost_pms_hazard_multiplier'):
+    for key in ('transit_days_conus_default', 'background_failure_rate_per_unit_day', 'staleness_threshold_days', 'lost_pms_hazard_multiplier',
+                'casrep_no_etr_days'):
         if value(key) < 0: raise ValueError(f'{key} cannot be negative')
+    for key in ('redundancy_loss_score', 'system_capable_score'):
+        if not 0 <= value(key) <= 1: raise ValueError(f'{key} must be between zero and one')
+    if any(not 0 <= float(v) <= 1 for v in value('casrep_category_score').values()):
+        raise ValueError('CASREP category scores must be between zero and one')
+    regimes = set(value('part_arrival_days_by_regime'))
+    step = value('expedite_regime_step')
+    if value('unknown_status_regime') not in regimes or any(a not in regimes or b not in regimes for a, b in step.items()):
+        raise ValueError('Regime names must be defined in part_arrival_days_by_regime')
+    search = value('fix_search')
+    if not 0 < search['min_gain'] < 1 or not 0 < search['gate_met'] <= 1 or not 0 <= search['casualty_relevance'] <= 1             or any(not isinstance(d, (int, float)) or d <= 0 for d in search['shift_days'])             or search['max_pairs'] < 0 or search['max_ship_shore_pairs'] < 0:
+        raise ValueError('Invalid fix_search limits')
 
 
 def validate_events(events, profile):

@@ -50,7 +50,7 @@ class AddCasrep(BaseModel):
     """What-if: a new casualty on a component or system."""
     type: Literal["add_casrep"] = "add_casrep"
     ship_id: str
-    eic: str = Field(description="Component or system EIC from the mission tree, e.g. GUN5-HYD")
+    eic: str = Field(description="Component or system EIC from the dataset's mission tree")
     category: Literal[2, 3, 4]
     etr: AwareDatetime
 
@@ -204,10 +204,14 @@ class RefreshBody(VersionBody):
     reset_scenario: bool = False
 
 
+class LoginBody(BaseModel):
+    username: str = Field(min_length=1, max_length=120)
+
+
 class ParseBody(BaseModel):
     text: str
-    ship_id: str = "KESSLER"
+    ship_id: str
 
 
 class BriefBody(BaseModel):
-    ship_id: str = "KESSLER"
+    ship_id: str

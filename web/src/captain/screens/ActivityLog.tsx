@@ -131,7 +131,7 @@ function Row({ entry: e, index }: { entry: LogEntry; index: number }) {
   const meta = TYPE_META[e.type];
   const Icon = meta.icon;
   const t = new Date(e.ts);
-  const isHuman = e.actor.startsWith('CO');
+  const isHuman = !['system', 'preview'].includes(e.actor);  // every signed-in account is a person
   return (
     <motion.li
       initial={{ opacity: 0, x: -8 }}

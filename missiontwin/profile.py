@@ -1,5 +1,8 @@
-"""Validated, snapshot-local domain configuration. Defaults retain the original demo contract.
+"""Validated, snapshot-local dataset configuration, read only from the dataset itself.
 
+squadron/dataset_profile.json names the units, the scenario clock, the homeport clock, in-port employment codes,
+supply holder roles and the drawing layout; mission_equipment_tree.json and shore_profile.json give the capability
+hierarchy. There is no fallback in code: a dataset missing any of it is rejected with a clear message.
 No process-global registry is mutated: multiple profiles can coexist in tests/servers.
 """
 from __future__ import annotations
@@ -10,7 +13,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from .domain import SHIPS, WATCHSTATIONS, SCENARIO_NOW, mission_tree_json, parse_ts
+from .domain import parse_ts
 
 
 @dataclass
@@ -30,6 +33,15 @@ class Profile:
     shore_mounts: dict = field(default_factory=dict)
     shore_system_mounts: dict = field(default_factory=dict)
     shore_layouts: dict = field(default_factory=dict)
+    local_time: dict = field(default_factory=dict)  # {"utc_offset_hours": -5, "label": "EST"}
+    inport_codes: frozenset = frozenset()  # schedule employment codes meaning "pierside"
+    supply_holders: dict = field(default_factory=dict)  # holder -> role (wholesale stock, direct pull, release lead)
+    status_codes: frozenset = frozenset()  # equipment status codes the mission tree scores
+    component_mounts: dict = field(default_factory=dict)  # component eic -> {"name", "mounts"} drawn on its own
+    visual_model: dict = field(default_factory=dict)
+
+    def holders_where(self, role: str) -> set:
+        return {h for h, r in self.supply_holders.items() if r.get(role)}
 
     @property
     def ship_ids(self):
@@ -74,15 +86,22 @@ class Profile:
         return out
 
 
-def profile_from(tree: dict, document: dict | None = None, shore: dict | None = None) -> Profile:
+PROFILE_REQUIRED = ('ships', 'watchstations', 'scenario_now', 'local_time', 'inport_employment_codes', 'supply_holders',
+                    'visual_model', 'mounts', 'system_mounts')
+
+
+def profile_from(tree: dict, document: dict, shore: dict | None = None) -> Profile:
     import math
-    doc = document or {}
+    doc = document
     shore = shore or {}
     if not isinstance(doc, dict) or not isinstance(tree, dict) or not isinstance(shore, dict):
         raise ValueError('Profile and mission tree must be JSON objects')
     if doc.get('schema_version', 1) != 1 or shore.get('schema_version', 1) != 1:
         raise ValueError('Unsupported profile schema_version (expected 1)')
-    ships = copy.deepcopy(doc.get('ships', SHIPS))
+    missing = [key for key in PROFILE_REQUIRED if key not in doc]
+    if missing:
+        raise ValueError('squadron/dataset_profile.json is missing: ' + ', '.join(missing))
+    ships = copy.deepcopy(doc['ships'])
     if set(ships) & set(shore.get('installations', {})):
         raise ValueError('Ship and installation identities must be distinct')
     ships.update(copy.deepcopy(shore.get('installations', {})))
@@ -93,11 +112,13 @@ def profile_from(tree: dict, document: dict | None = None, shore: dict | None = 
     if any(not isinstance(v[k], str) for v in ships.values() for k in ('name', 'hull', 'uic', 'dodaac')):
         raise ValueError('Unit identities and labels must be strings')
     scoring = tree.get('scoring', {})
-    critical_cap = float(scoring.get('critical_child_cap', .59))
+    if 'critical_child_cap' not in scoring or not scoring.get('status_score_map'):
+        raise ValueError('mission_equipment_tree.json scoring requires critical_child_cap and status_score_map')
+    critical_cap = float(scoring['critical_child_cap'])
     if not math.isfinite(critical_cap) or not 0 <= critical_cap <= 1 or scoring.get('rollup', 'weighted_average_with_critical_child') != 'weighted_average_with_critical_child':
         raise ValueError('Unsupported rollup or invalid critical child cap')
     systems, areas, components = {}, {}, set()
-    watchstations = copy.deepcopy(doc.get('watchstations', WATCHSTATIONS))
+    watchstations = copy.deepcopy(doc['watchstations'])
     watchstations.update(shore.get('watchstations', {}))
     area_units = {}
     for mission in list(tree.get('missions', [])) + list(shore.get('missions', [])):
@@ -142,11 +163,11 @@ def profile_from(tree: dict, document: dict | None = None, shore: dict | None = 
         areas[area] = (mission.get('mission_area_name', area), members)
     if not systems or set(systems) & components:
         raise ValueError('Missing systems or colliding system/component identities')
-    mounts = doc.get('mounts', {})
+    mounts = doc['mounts']
     for point in mounts.values():
         if len(point) != 3 or not all(isinstance(v, (int, float)) and math.isfinite(v) for v in point):
             raise ValueError('Visual mounts require three finite coordinates')
-    system_mounts = doc.get('system_mounts', {})
+    system_mounts = doc['system_mounts']
     if any(e not in systems or any(m not in mounts for m in ms) for e, ms in system_mounts.items()):
         raise ValueError('Visual mapping references unknown system or mount')
     shore_mounts, shore_system_mounts = shore.get('mounts', {}), shore.get('system_mounts', {})
@@ -155,21 +176,46 @@ def profile_from(tree: dict, document: dict | None = None, shore: dict | None = 
             raise ValueError('Visual mounts require three finite coordinates')
     if any(e not in systems or any(m not in shore_mounts for m in ms) for e, ms in shore_system_mounts.items()):
         raise ValueError('Visual mapping references unknown system or mount')
+    component_mounts = doc.get('component_mounts', {})
+    component_to_system = {c['eic']: e for e, s in systems.items() for c in s['components']}
+    if any(c not in component_to_system or not v.get('name') or any(m not in mounts for m in v.get('mounts', []))
+           for c, v in component_mounts.items()):
+        raise ValueError('Visual mapping references unknown component or mount')
+    local_time = doc['local_time']
+    if not isinstance(local_time, dict) or not isinstance(local_time.get('label'), str) or \
+            not isinstance(local_time.get('utc_offset_hours'), (int, float)) or not -14 <= local_time['utc_offset_hours'] <= 14:
+        raise ValueError('local_time requires utc_offset_hours (-14..14) and a label')
+    holders = doc['supply_holders']
+    if not isinstance(holders, dict) or any(not isinstance(r, dict) for r in holders.values()):
+        raise ValueError('supply_holders must map each holder to its role')
+    for holder, role in holders.items():
+        release = role.get('release_when_unstated')
+        if role.get('direct_pull') and (not isinstance(release, dict) or ('fixed_days' not in release and 'param' not in release)):
+            raise ValueError(f'supply holder {holder}: a direct-pull holder needs release_when_unstated (fixed_days or param)')
+    if not isinstance(doc['inport_employment_codes'], list) or not doc['inport_employment_codes']:
+        raise ValueError('inport_employment_codes must list at least one schedule employment code')
     return Profile(doc.get('name', 'canonical'), 1, str(doc.get('mapping_version', '1')), ships, systems, areas,
-                   watchstations, parse_ts(doc['scenario_now']) if 'scenario_now' in doc else SCENARIO_NOW,
-                   mounts, system_mounts, critical_cap, area_units, shore_mounts, shore_system_mounts, shore.get('layouts', {}))
+                   watchstations, parse_ts(doc['scenario_now']),
+                   mounts, system_mounts, critical_cap, area_units, shore_mounts, shore_system_mounts, shore.get('layouts', {}),
+                   local_time=dict(local_time), inport_codes=frozenset(doc['inport_employment_codes']),
+                   supply_holders=copy.deepcopy(holders), status_codes=frozenset(scoring['status_score_map']),
+                   component_mounts=copy.deepcopy(component_mounts), visual_model=dict(doc['visual_model']))
 
 
 def load_profile(root: Path) -> Profile:
     tree = json.loads((root / 'squadron/mission_equipment_tree.json').read_text(encoding='utf-8'))
     path = root / 'squadron/dataset_profile.json'
     shore_path = root / 'squadron/shore_profile.json'
+    if not path.exists():
+        raise ValueError('squadron/dataset_profile.json is required: it names the units, the scenario clock and layouts')
     try:
-        return profile_from(tree, json.loads(path.read_text(encoding='utf-8')) if path.exists() else None,
+        return profile_from(tree, json.loads(path.read_text(encoding='utf-8')),
                             json.loads(shore_path.read_text(encoding='utf-8')) if shore_path.exists() else None)
     except (KeyError, TypeError, AttributeError, IndexError) as error:
         raise ValueError(f'Malformed profile structure: {error}') from error
 
 
-def default_profile() -> Profile:
-    return profile_from(mission_tree_json())
+def empty_profile() -> Profile:
+    """Placeholder while no valid dataset is loaded (the snapshot then carries a configuration error)."""
+    from .domain import UTC
+    return Profile('unloaded', 1, '', {}, {}, {}, {}, datetime(1970, 1, 1, tzinfo=UTC), {}, {}, 0.0)

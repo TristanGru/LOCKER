@@ -34,6 +34,17 @@ On Linux/macOS use `python3.13 -m venv .venv` and `.venv/bin/python` in place of
 
 The canonical synthetic dataset is checked in at `data/synthetic/`. There is no need to regenerate it. `python -m missiontwin.generate` deliberately rewrites that fixture and is intended for fixture development, not routine demo startup.
 
+## Sign-in and access
+
+The app opens on a sign-in screen. For now an account is a username only, with no password:
+
+| Username | Sees | Can do |
+|---|---|---|
+| `fleet.commander@us.navy.mil` | Every ship and installation (the full site) | Everything, including playing the exercise feed, reset, source refresh, model assumptions and approving transfers between units |
+| `co.kessler`, `co.varnell`, `co.ashby` | Their own ship only; no Shore tab | What-ifs, fact review and fix decisions for their own ship. A fix that takes a part or sailor from another unit needs fleet approval. Undo only their own last change |
+
+The server enforces this, not the browser. Every `/api` request must carry the signed session cookie (HttpOnly, SameSite=Strict, 8 hours), and each route checks the account's units. Other units' records are removed before a response is sent, so they never reach a CO's browser. Only the built frontend files, `/api/login`, `/api/accounts`, `/api/health` and a status-only `/api/ready` answer without a session. Sign-ins, sign-outs and refused requests are written to `access.jsonl` next to the activity log, and every change in the activity log names the account that made it. There is one CO account per ship in the data profile, so a new ship gets one automatically (`missiontwin/auth.py`).
+
 ## Connected captain UI
 
 The default route now uses Sakie's layout with a top-level ship selector, DDG-only cutaway/interior viewer, and named missions (TIDEWATCH, SEASHIELD, DEEP LANTERN and IRON HORIZON, read from each event's `codename` in `squadron/events_missions.json`). Its data comes from the Python backend, not the browser mock. **Sources / controls** exposes source refresh and undo.
@@ -97,10 +108,11 @@ The GitHub Actions workflow runs backend and isolated browser checks. It is supp
 | `MISSIONTWIN_ADAPTER` | `directory` (default) or `json-export` |
 | `MISSIONTWIN_DEMO_MODE=1` | Guaranteed offline extraction/actions/briefs; forced by the launcher |
 | `MISSIONTWIN_ACTIVITY_LOG` | Optional activity-log path; see `missiontwin/domain.py` for the default |
+| `MISSIONTWIN_SESSION_SECRET` | Optional key for signing session cookies. Without it each server start makes a new key, which signs everyone out |
 | `LOCKER_URL` | Target URL for standalone browser tests |
 | `PLAYWRIGHT_CHANNEL` | Optional browser channel override |
 
-For direct API startup, set those variables and run `python -m uvicorn missiontwin.api:app --host 127.0.0.1 --port 8000`. API documentation is at `/docs`; `/api/health` checks liveness and `/api/ready` checks source/configuration readiness (503 after a failed refresh or with insufficient evidence).
+For direct API startup, set those variables and run `python -m uvicorn missiontwin.api:app --host 127.0.0.1 --port 8000`. API documentation is at `/docs` (sign in first); `/api/health` checks liveness and `/api/ready` checks source/configuration readiness (503 after a failed refresh or with insufficient evidence).
 
 - One shared, in-memory scenario per process; use **one worker**. Writes require `base_version` and stale writes return 409.
 - Sources are immutable inside the active snapshot. Changed input files have no effect until refresh. Scenario actions never modify inputs.
@@ -120,6 +132,11 @@ For direct API startup, set those variables and run `python -m uvicorn missiontw
 
 ## Project map and limits
 
+- **Only the data is hardcoded.** Units, equipment, parts, watchstations, events, the scenario clock, the ship drawing layout,
+  supply holder roles, source coverage and every model number come from the dataset (`squadron/dataset_profile.json`,
+  `mission_equipment_tree.json`, `shore_profile.json`, `delay_model_params.yaml`, `data_catalog.json`,
+  `status_code_reference.csv`). `missiontwin/synthetic_spec.py` is the generator's authoring input for the synthetic
+  dataset and only the generators import it; `tests/test_data_only.py` enforces this.
 - `missiontwin/profile.py`, `sources.py`, `ingest.py`, `validation.py`: profiles, adapters, snapshots, validation and provenance.
 - `engine.py`, `fixes.py`, `brief.py`: calculations, package comparison, and cited output.
 - `web/src/`: live workspace, source health, dependency graph, timeline, and illustrative ship.

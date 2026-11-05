@@ -7,12 +7,13 @@ from fastapi.testclient import TestClient
 from missiontwin.api import AppState, create_app
 from missiontwin.engine import Scenario, build_world, forecast
 from missiontwin.fixes import rank_fixes
+from conftest import signed_in
 
 
 @pytest.fixture()
 def client(data_dir, offline_client, tmp_path):
     st = AppState(data_dir=data_dir, log_path=tmp_path / "a.jsonl", client=offline_client)
-    return TestClient(create_app(st)), st
+    return signed_in(create_app(st)), st
 
 
 def test_stale_version_409(client):
