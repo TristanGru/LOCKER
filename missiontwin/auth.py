@@ -179,3 +179,17 @@ def _scope(o, others):
         return [_scope(v, others) for v in o
                 if not (isinstance(v, dict) and _owner(v, others)) and not (isinstance(v, str) and v in others)]
     return o
+
+
+LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1", "testserver"}
+
+
+def assistant_host_allowed(host: str) -> bool:
+    """The assistants answer only on hosts this deployment serves: this machine, the Vercel deployment's own
+    domains (VERCEL_URL, VERCEL_BRANCH_URL, VERCEL_PROJECT_PRODUCTION_URL, set by Vercel) and any custom domains
+    listed in LOCKER_ALLOWED_HOSTS (comma separated)."""
+    from urllib.parse import urlsplit
+    name = urlsplit("http://" + (host or "")).hostname
+    hosted = {os.environ.get(k, "") for k in ("VERCEL_URL", "VERCEL_BRANCH_URL", "VERCEL_PROJECT_PRODUCTION_URL")}
+    hosted |= set(os.environ.get("LOCKER_ALLOWED_HOSTS", "").split(","))
+    return bool(name) and (name in LOCAL_HOSTS or name in {h.strip().lower() for h in hosted if h.strip()})

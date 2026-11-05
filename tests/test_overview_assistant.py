@@ -1,3 +1,4 @@
+from pathlib import Path
 import copy
 
 import pytest
@@ -123,3 +124,22 @@ def test_projection_unknown_not_zero(overview):
     result = projection(fc, registry(state.baseline.profile), 'KESSLER')
     assert result['counts']['unknown'] > 0
     assert all(s['p'] is None for s in result['systems'] if s['basis'] == 'sampled_event_interval')
+
+
+def test_assistant_answers_on_the_hosting_domain_only(monkeypatch):
+    from missiontwin import auth
+    assert auth.assistant_host_allowed("127.0.0.1:8000")
+    assert not auth.assistant_host_allowed("locker-demo.vercel.app")
+    monkeypatch.setenv("VERCEL_PROJECT_PRODUCTION_URL", "locker-demo.vercel.app")
+    monkeypatch.setenv("LOCKER_ALLOWED_HOSTS", "locker.example.mil, other.example")
+    assert auth.assistant_host_allowed("locker-demo.vercel.app")
+    assert auth.assistant_host_allowed("LOCKER.example.mil:443")
+    assert not auth.assistant_host_allowed("evil.example")
+    assert not auth.assistant_host_allowed("")
+
+
+def test_llm_cache_tolerates_a_read_only_disk(tmp_path, monkeypatch):
+    from missiontwin.llm import LLMClient
+    client = LLMClient(base_url="", api_key="", model="m", cache_dir=tmp_path / "cache")
+    monkeypatch.setattr(Path, "mkdir", lambda *a, **k: (_ for _ in ()).throw(PermissionError("read-only")))
+    client.cache_put("k", "task", b"in", {"ok": True})  # no exception
