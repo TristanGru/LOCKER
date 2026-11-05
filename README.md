@@ -36,9 +36,9 @@ The canonical synthetic dataset is checked in at `data/synthetic/`. There is no 
 
 ## Connected captain UI
 
-The default route now uses Sakie's layout with a top-level ship selector, DDG-only cutaway/interior viewer, and named missions (TIDEWATCH, SEASHIELD, DEEP LANTERN and IRON HORIZON, read from each event's `codename` in `squadron/events_missions.json`). Its data comes from the Python backend, not the browser mock. **Sources / controls** exposes source refresh and undo.
+The default route now uses Sakie's layout with a top-level ship selector, DDG-only cutaway/interior viewer, and named missions (TIDEWATCH, SEASHIELD, DEEP LANTERN and IRON HORIZON, read from each event's `codename` in `squadron/events_missions.json`). Its data comes from the Python backend, not the browser mock. **Data & controls** (header) exposes source refresh, undo and the readiness thresholds.
 
-The previous advanced workspace is retained at **`/?legacy=1`** for the full assumption editor, report-fact review and structured preview/apply workflow. The walkthrough below describes that advanced workspace where screen names differ. See [UI integration status and remaining merge work](docs/UI_INTEGRATION.md).
+The previous advanced workspace (`/?legacy=1`) has been removed; the captain UI is the only front end. Where the walkthrough below names screens from that workspace, use the matching captain screen. See [UI integration status](docs/UI_INTEGRATION.md).
 
 ## Five-minute presenter walkthrough
 

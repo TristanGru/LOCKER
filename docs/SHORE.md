@@ -15,7 +15,6 @@ To see a failure reach a ship:
 3. On **Ship Overview**, select USS KESSLER and open **Davy's Dominoes**. Mission A's chain continues into the failed pier.
 4. Open **Fixes**. Packages for Kessler can include the pier repair, with the cost to NSA Hampton Roads (mock) shown.
 
-The advanced workspace at `/?legacy=1` stays ship-only because its viewer is a DDG.
 
 ## How it works
 
