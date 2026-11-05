@@ -93,6 +93,9 @@ export class ShipScene {
   private cutFace = 1;
   private curView: ViewKind = 'sky';
   private userMoved = false;
+  /** Camera flight between views, eased like the Shore Overview's. */
+  private tween: { p0: THREE.Vector3; p1: THREE.Vector3; t0: THREE.Vector3; t1: THREE.Vector3; start: number; dur: number; near: number; far: number } | null = null;
+  private animate = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   private xray = true;
   private seaOn = true;
   private visible = true;
@@ -134,6 +137,7 @@ export class ShipScene {
     this.ctl.dampingFactor = 0.08;
     this.ctl.addEventListener('start', () => {
       this.userMoved = true;
+      this.tween = null; // the user took the camera; stop flying
     });
 
     // Studio key + fill, cool rim and warm fill, soft ground shadow.
@@ -247,7 +251,7 @@ export class ShipScene {
 
   setView(kind: ViewKind) {
     if (this.inside) this.leave(true);
-    this.view(kind);
+    this.view(kind, true);
   }
 
   setXray(on: boolean) {
@@ -279,7 +283,7 @@ export class ShipScene {
   flip() {
     if (this.inside) return;
     this.cutFace *= -1;
-    this.view('cut');
+    this.view('cut', true);
   }
 
   /** Step into the compartment at the open cut. Drag looks around; WASD walks. */
@@ -287,6 +291,7 @@ export class ShipScene {
     const sp = this.split;
     const info = this.info;
     if (!sp || !info || this.inside) return;
+    this.tween = null; // stepping inside places the camera directly
     const focus = sp.focus;
     const lengthwise = sp.mode === 'z';
     const x = focus ? focus.p.x : lengthwise ? (info.bb.min.x + info.bb.max.x) / 2 : sp.cx;
@@ -410,7 +415,7 @@ export class ShipScene {
     const wasCut = !!this.split;
     this.leave(true);
     this.closeCut();
-    if (wasCut) this.view(this.curView);
+    if (wasCut) this.view(this.curView, true);
   }
 
   dispose() {
@@ -471,7 +476,7 @@ export class ShipScene {
       where,
       mode,
     });
-    if (reframe) this.view('cut');
+    if (reframe) this.view('cut', true);
     else this.applyHalves();
   }
 
@@ -635,8 +640,8 @@ export class ShipScene {
     return dist;
   }
 
-  /** Frame the camera for a named view. Re-runs on resize until the user first orbits. */
-  private view(kind: ViewKind) {
+  /** Frame the camera for a named view. Re-runs on resize until the user first orbits. `fly` eases the camera there. */
+  private view(kind: ViewKind, fly = false) {
     const info = this.info;
     if (!info) return;
     if (kind === 'cut' && !this.split) kind = 'iso';
@@ -676,12 +681,24 @@ export class ShipScene {
       ];
     }
     const [d, dist] = dirs[kind] ?? dirs.iso;
-    this.cam.near = Math.max(dist / 200, 0.05);
-    this.cam.far = dist * 20;
-    this.cam.updateProjectionMatrix();
-    this.cam.position.copy(c).add(d.clone().normalize().multiplyScalar(dist));
-    this.ctl.target.copy(c);
-    this.ctl.update();
+    const near = Math.max(dist / 200, 0.05);
+    const far = dist * 20;
+    const pos = c.clone().add(d.clone().normalize().multiplyScalar(dist));
+    if (fly && this.animate && this.framed) {
+      // Widen the clip range for the flight so nothing pops in or out on the way; set exactly on arrival.
+      this.cam.near = Math.min(this.cam.near, near);
+      this.cam.far = Math.max(this.cam.far, far);
+      this.cam.updateProjectionMatrix();
+      this.tween = { p0: this.cam.position.clone(), p1: pos, t0: this.ctl.target.clone(), t1: c.clone(), start: performance.now(), dur: 900, near, far };
+    } else {
+      this.tween = null;
+      this.cam.near = near;
+      this.cam.far = far;
+      this.cam.updateProjectionMatrix();
+      this.cam.position.copy(pos);
+      this.ctl.target.copy(c);
+      this.ctl.update();
+    }
     this.framed = true;
     this.applyHalves();
     this.ev.onView(kind);
@@ -834,10 +851,27 @@ export class ShipScene {
     }
   }
 
+  private stepTween(now: number) {
+    const tw = this.tween;
+    if (!tw) return;
+    const k = Math.min(1, (now - tw.start) / tw.dur);
+    const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; // ease in-out cubic
+    this.cam.position.lerpVectors(tw.p0, tw.p1, e);
+    this.ctl.target.lerpVectors(tw.t0, tw.t1, e);
+    if (k >= 1) {
+      this.tween = null;
+      this.cam.near = tw.near;
+      this.cam.far = tw.far;
+      this.cam.updateProjectionMatrix();
+    }
+  }
+
   private loop = () => {
     if (!this.visible || this.failed) return;
     try {
-      const t = (performance.now() - this.t0) / 1000;
+      const now = performance.now();
+      const t = (now - this.t0) / 1000;
+      this.stepTween(now);
       this.ctl.update();
       this.stepWalk();
       this.stepHover();
