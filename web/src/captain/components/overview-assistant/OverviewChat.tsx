@@ -35,8 +35,8 @@ export function OverviewChat({filter,domain}:{filter:string;domain:string}) {
   const [error,setError] = useState('');
   const [lastQuestion,setLastQuestion] = useState('');
   const [citation,setCitation] = useState<Citation|null>(null);
-  const [semantic,setSemantic] = useState(false);
-  const [mode,setMode] = useState('Exact / lexical retrieval');
+  const [semantic,setSemantic] = useState(true);
+  const [mode,setMode] = useState('Local evidence search is enabled automatically');
   const abort = useRef<AbortController|null>(null);
   const worker = useRef<Worker|null>(null);
   const serial = useRef(0);
@@ -94,10 +94,10 @@ export function OverviewChat({filter,domain}:{filter:string;domain:string}) {
     try {
       let semanticIds:string[]=[];
       if(semantic && packet) {
-        setMode('Loading local MiniLM / WASM…');
-        worker.current ||= new Worker(new URL('../../workers/overview-embed.worker.ts',import.meta.url),{type:'module'});
-        const w=worker.current;
+        setMode('Searching local records…');
         try {
+          worker.current ||= new Worker(new URL('../../workers/overview-embed.worker.ts',import.meta.url),{type:'module'});
+          const w=worker.current;
           semanticIds=await new Promise<string[]>((resolve,reject)=>{
             const timer=setTimeout(()=>{w.terminate();worker.current=null;reject(new Error('Embedding timeout'));},60000);
             signal.addEventListener('abort',()=>{clearTimeout(timer);reject(new Error('Canceled'));},{once:true});
@@ -105,8 +105,12 @@ export function OverviewChat({filter,domain}:{filter:string;domain:string}) {
             w.onmessage=e=>{if(e.data.id!==seq)return;clearTimeout(timer);e.data.error?reject(new Error(e.data.error)):resolve(e.data.ids);};
             w.postMessage({id:seq,packetId:packet.packet_id,question:text,records:packet.evidence.slice(0,300)});
           });
-          setMode('Local MiniLM + lexical retrieval');
-        } catch {setMode('Semantic unavailable — using exact / lexical retrieval');}
+          setMode('Local evidence search + exact record matching');
+        } catch {
+          worker.current?.terminate();worker.current=null;
+          setSemantic(false);
+          setMode('Using standard record search; no setup is needed');
+        }
       }
       if(signal.aborted || scope!==active.current)return;
       const result=await request(`conversations/${session.id}/messages`,{packet_id:session.packet_id,question:text,semantic_ids:semanticIds},undefined,signal);
@@ -135,7 +139,8 @@ export function OverviewChat({filter,domain}:{filter:string;domain:string}) {
     {(busy||session?.busy) && <p role="status">Preparing a grounded response… No unvalidated text is streamed.</p>}
     {error && <div role="alert"><p className="text-sm">{error}</p><button className="underline" disabled={busy} onClick={()=>lastQuestion?void send(lastQuestion):void initialize()}>Retry</button></div>}
     <form onSubmit={e=>{e.preventDefault();void send();}} className="space-y-2"><textarea aria-label="Ask about this unit" rows={2} maxLength={1500} value={question} onChange={e=>setQuestion(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send();}}} className="w-full resize-y rounded border bg-abyss-800 p-2" placeholder="Ask a follow-up… Enter sends, Shift+Enter adds a line"/><div className="flex gap-2"><button className="rounded border px-4 py-2" disabled={busy||!session||session.stale||session.busy||!question.trim()}>Send</button>{busy&&<button type="button" className="rounded border px-3" onClick={cancel}>Cancel response</button>}</div></form>
-    <label className="block text-xs"><input type="checkbox" checked={semantic} onChange={e=>{setSemantic(e.target.checked);setMode(e.target.checked?'Local MiniLM enabled':'Exact / lexical retrieval');}}/> Enable local MiniLM semantic search (Transformers.js)</label><p className="text-xs text-ink-muted">{mode}. Selected redacted context may be sent to your configured generation endpoint.</p>
+    <p className="text-xs text-ink-muted" role="status">{mode}.</p>
+    <details><summary className="cursor-pointer text-xs">Advanced search settings</summary><label className="mt-2 block text-xs"><input type="checkbox" checked={semantic} onChange={e=>{setSemantic(e.target.checked);setMode(e.target.checked?'Local evidence search is enabled automatically':'Using standard record search');}}/> Use local semantic search</label><p className="mt-1 text-xs text-ink-muted">MiniLM runs locally through Transformers.js. Search falls back automatically if unavailable. Selected redacted context may be sent to your configured generation endpoint.</p></details>
     {packet&&<details><summary className="cursor-pointer text-sm">Loaded sources · {packet.evidence.length} eligible records</summary>{packet.evidence.slice(0,300).map((e:any)=><details key={e.id} className="border-b py-2"><summary>{e.file} · {e.loc}</summary><pre className="whitespace-pre-wrap break-all text-xs">{JSON.stringify(e.fields,null,2)}</pre></details>)}</details>}
     {packet&&<details><summary>Uncertainty and data limitations</summary><ul className="list-disc pl-5">{packet.warnings.map((w:string)=><li key={w} className="text-xs">{w}</li>)}</ul></details>}
   </section>;

@@ -71,9 +71,9 @@ Live, cached and template responses are visibly distinct. Safe fallback categori
 
 ## Local MiniLM / Transformers.js
 
-Optional semantic retrieval uses **`Xenova/all-MiniLM-L6-v2`**, pinned revision `751bff37182d3f1213fa05d7196b954e230abad9`, through **Transformers.js 3.8.1** in a Web Worker. It uses quantized ONNX, CPU/WASM, 384-dimensional mean-pooled normalized vectors. Remote-model downloads are disabled at runtime.
+Semantic retrieval is **enabled automatically by default** and uses **`Xenova/all-MiniLM-L6-v2`**, pinned revision `751bff37182d3f1213fa05d7196b954e230abad9`, through **Transformers.js 3.8.1** in a Web Worker. It uses quantized ONNX, CPU/WASM, 384-dimensional mean-pooled normalized vectors. Remote-model downloads are disabled at runtime.
 
-Bundle assets once on a connected build machine:
+For deployment/build maintainers (not everyday users), bundle assets once on a connected build machine. Distribute the resulting build with these assets so local semantic search works out of the box:
 
 ```powershell
 cd web
@@ -85,7 +85,7 @@ npm --prefix web run build
 
 Generated model/runtime directories under `web/public/` are ignored by Git. The bundle script pins model revision, records hashes and copies runtime notices; retain applicable model/runtime licenses when redistributing. Copy the generated assets before an air-gapped build, or transfer the complete built `web/dist`.
 
-Enable the checkbox in the panel to use semantic ranking. Missing assets, unsupported inference, worker timeout or an oversized corpus fall back to lexical/structured retrieval. Vectors are packet-scoped browser memory only, unloaded after idle timeout or closing the panel. No LanceDB, persistent vector uploads or WebGPU are included.
+Users do not need to enable or configure embeddings: asking a question automatically uses local semantic ranking alongside exact record matching. The technical toggle lives under **Advanced search settings**, not in the normal chat workflow. Missing assets, unsupported inference, worker timeout or an oversized corpus automatically fall back to standard record search without blocking the answer or asking the user to fix settings. After an inference failure, the current panel uses standard search until reopened or explicitly re-enabled, avoiding repeated failed loads. Vectors are packet-scoped browser memory only, unloaded after idle timeout or closing the panel. No LanceDB, persistent vector uploads or WebGPU are included.
 
 Embeddings rank a bounded eligible-record subset, not a whole-table numerical population. All counts/values still come from backend queries or engine results. The Node-only `sharp` dependency is overridden to `0.35.5` to avoid older-libvips advisories; existing moderate React Router audit findings remain outside this change.
 
@@ -101,7 +101,7 @@ Main files: `missiontwin/overview_chat.py`, `missiontwin/overview.py`, `web/src/
 
 ## Verification
 
-Local release checks: **156 backend tests passed**, frontend typecheck/build passed, and **16 isolated browser tests passed**. Opt-in live evaluation completed ship and shore summaries plus one follow-up each: all four returned `llm` responses with resolvable citation maps (roughly 14–31 seconds in that run). Model lineage was correctly labeled partial. One shore explanation was manually inspected for reported-versus-modeled qualifiers; this limited review is not a general factuality guarantee or operational certification. Hosted CI was not exercised locally.
+Local release checks: **156 backend tests passed**, frontend typecheck/build passed, and **17 isolated browser tests passed**, including automatic local-search enablement and missing-model fallback. Opt-in live evaluation completed ship and shore summaries plus one follow-up each: all four returned `llm` responses with resolvable citation maps (roughly 14–31 seconds in that run). Model lineage was correctly labeled partial. One shore explanation was manually inspected for reported-versus-modeled qualifiers; this limited review is not a general factuality guarantee or operational certification. Hosted CI was not exercised locally.
 
 Backend and browser tests cover schema/value/citation rejection, correction/fallback, read-only behavior, owner isolation, stale/expired conversations, bounded memory/busy requests, follow-up context, history restoration, source views, keyboard/mobile behavior and local MiniLM inference without external HTTP requests.
 
