@@ -137,3 +137,23 @@ def test_assistants_and_fix_undo_respect_unit_access(app):
     v = fleet.post("/api/fixes/decide", json={"base_version": version(fleet), "fix_id": fix, "decision": "reject"}).json()["version"]
     assert co.post("/api/fixes/undo", json={"base_version": v, "fix_id": fix}).status_code == 403
     assert fleet.post("/api/fixes/undo", json={"base_version": v, "fix_id": fix}).status_code == 200
+
+
+def test_serverless_copies_share_sessions(monkeypatch):
+    """On a serverless deployment every copy of the app must accept a session another copy issued."""
+    monkeypatch.delenv("MISSIONTWIN_SESSION_SECRET", raising=False)
+    monkeypatch.setenv("VERCEL_DEPLOYMENT_ID", "dpl_test")
+    token = auth.Sessions().issue("co.kessler")
+    assert auth.Sessions().verify(token) == "co.kessler"
+    monkeypatch.setenv("VERCEL_DEPLOYMENT_ID", "dpl_other")
+    assert auth.Sessions().verify(token) is None  # a new deployment starts fresh
+    monkeypatch.setenv("MISSIONTWIN_SESSION_SECRET", "configured")
+    assert auth.Sessions().verify(auth.Sessions().issue("co.kessler")) == "co.kessler"
+
+
+def test_hosting_entrypoint_and_https_cookie(app):
+    import importlib
+    assert importlib.import_module("app").app is not None  # the root entrypoint imports through the package
+    app, _ = app
+    r = TestClient(app).post("/api/login", json={"username": "co.kessler"}, headers={"x-forwarded-proto": "https"})
+    assert r.status_code == 200 and "secure" in r.headers["set-cookie"].lower()

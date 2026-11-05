@@ -4,7 +4,7 @@
     "app": {
       "root": ".",
       "framework": "fastapi",
-      "entrypoint": "missiontwin/api.py"
+      "entrypoint": "app.py"
     },
     "web": {
       "root": "web",
