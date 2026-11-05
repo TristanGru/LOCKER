@@ -1,0 +1,72 @@
+{
+ "attribution": "(c) OpenStreetMap contributors, ODbL",
+ "license_url": "https://www.openstreetmap.org/copyright",
+ "retrieved": "2026-11-05T20:26:59Z",
+ "query": "[out:json][timeout:60];way[\"landuse\"=\"military\"][\"name\"=\"Lafayette River Annex\"](36.89,-76.32,36.91,-76.29);out tags geom;",
+ "meters_per_unit": 10.0,
+ "note": "The site boundary is from OSM. Everything inside it in the mock is invented.",
+ "projection": {
+  "lat0": 36.9022,
+  "lon0": -76.3024,
+  "north_origin": 0.0,
+  "east_origin": 0.0
+ },
+ "piers": [],
+ "shoreline": [],
+ "runways": [],
+ "aprons": [],
+ "boundary": [
+  [
+   15.57,
+   8.83
+  ],
+  [
+   12.2,
+   9.7
+  ],
+  [
+   12.13,
+   9.42
+  ],
+  [
+   -11.64,
+   14.51
+  ],
+  [
+   -16.61,
+   3.56
+  ],
+  [
+   -17.99,
+   -1.49
+  ],
+  [
+   -13.93,
+   -13.12
+  ],
+  [
+   -4.72,
+   -13.41
+  ],
+  [
+   14.33,
+   -14.58
+  ],
+  [
+   14.75,
+   -6.54
+  ],
+  [
+   17.95,
+   -6.75
+  ],
+  [
+   18.1,
+   -3.7
+  ],
+  [
+   14.93,
+   -3.52
+  ]
+ ]
+}

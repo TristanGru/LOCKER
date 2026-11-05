@@ -63,7 +63,7 @@ function Stage({ unit, onOpen, onFail }: { unit: ShipPayload; onOpen: (id: strin
   const [view, setView] = useState<BaseView>('iso');
   const [menu, setMenu] = useState<'view' | 'facilities' | 'ground' | null>(null);
   const [ground, setGround] = useState<Ground>('photo');
-  /** Set once the aerial photo has loaded (only the traced Norfolk layout has one). */
+  /** Set once the aerial photo has loaded (only traced layouts have one). */
   const [photoCredit, setPhotoCredit] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
   const select = (id: string | null) => {
@@ -75,7 +75,7 @@ function Stage({ unit, onOpen, onFail }: { unit: ShipPayload; onOpen: (id: strin
   const live = useRef({ onOpen, onFail, select, systems: unit.systems });
   live.current = { onOpen, onFail, select, systems: unit.systems };
   const key = pinKey(unit.systems);
-  const pointsKey = JSON.stringify({ points: unit.mountPoints ?? {}, layout: unit.layout ?? null });
+  const pointsKey = JSON.stringify({ points: unit.mountPoints ?? {}, layout: unit.layout ?? null, photo: unit.photo ?? null });
   const berthKey = JSON.stringify(unit.berths ?? []);
 
   useEffect(() => {
@@ -84,8 +84,9 @@ function Stage({ unit, onOpen, onFail }: { unit: ShipPayload; onOpen: (id: strin
     if (!host || !overlay) return;
     let scene: BaseScene;
     try {
-      const { points, layout } = JSON.parse(pointsKey);
-      scene = new BaseScene(host, overlay, points, layout, (id) => live.current.select(id), (error) => {
+      const { points, layout, photo } = JSON.parse(pointsKey);
+      setPhotoCredit(null);
+      scene = new BaseScene(host, overlay, points, layout, photo, (id) => live.current.select(id), (error) => {
         console.error('3D base view failed, falling back to the facility list', error);
         live.current.onFail();
       }, (credit) => setPhotoCredit(credit));
@@ -138,7 +139,7 @@ function Stage({ unit, onOpen, onFail }: { unit: ShipPayload; onOpen: (id: strin
   }, [focusId, menu]);
 
   const focused = unit.systems.find((s) => s.id === focusId) ?? null;
-  const atPier = unit.layout ? (unit.berths ?? []).filter((b) => b.in_port).map((b) => `${b.name} (${b.pier})`) : [];
+  const atPier = unit.layout?.piers.length ? (unit.berths ?? []).filter((b) => b.in_port).map((b) => `${b.name} (${b.pier})`) : [];
 
   const pick = (next: BaseView) => {
     setView(next);
@@ -233,7 +234,7 @@ function Stage({ unit, onOpen, onFail }: { unit: ShipPayload; onOpen: (id: strin
         {atPier.length > 0 && <span className="text-[#c3d0e0]">At pier: {atPier.join(', ')}</span>}
         <span className="ml-auto text-right text-[#c3d0e0]">
           {NOTICE}
-          {unit.layout && <> Piers and runways: {unit.layout.attribution}.</>}
+          {unit.layout && <> {unit.layout.boundary ? 'Site boundary' : 'Piers and runways'}: {unit.layout.attribution}.</>}
           {photoCredit && ground === 'photo' && <> {photoCredit} (public domain).</>}
         </span>
       </div>

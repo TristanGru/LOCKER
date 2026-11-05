@@ -1,0 +1,25 @@
+{
+  "image": "nsahr_naip.jpg",
+  "source": "USDA Farm Service Agency NAIP orthoimagery via USGS The National Map",
+  "service": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer/exportImage",
+  "license": "Public domain (U.S. Government work)",
+  "attribution": "Imagery: USDA NAIP via USGS",
+  "retrieved": "2026-11-05T20:27:17Z",
+  "bbox_wgs84": {
+    "west": -76.3074000938182,
+    "south": 36.897879087214825,
+    "east": -76.29739204263278,
+    "north": 36.90651103136225
+  },
+  "scene": {
+    "x_north": -47.99,
+    "x_south": 48.1,
+    "z_east": -44.58,
+    "z_west": 44.51
+  },
+  "pixels": [
+    2000,
+    1725
+  ],
+  "note": "Ground texture only. Facilities, failures and staff in the mock remain invented."
+}
