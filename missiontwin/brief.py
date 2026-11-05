@@ -66,8 +66,13 @@ def build_brief(fc: dict, ship_id: str, ranking: dict | None, contradictions: li
                 L.append(f"    {w.strip()}")
     if ranking and ranking.get("candidates"):
         L += ["", "RANKED FIXES (for decision)"]
+        # A ranking compares options on its own larger run, so each change is shown on the headline estimate above.
+        # Events the option does not move are left out.
+        headline = {m["event_id"]: m.get("p_assessed") for m in fc["missions"]}
         for c in ranking["candidates"][:3]:
-            eff = "; ".join(f"{mission_display(x)} {x['p_before'] * 100:.0f}%->{x['p_after'] * 100:.0f}%" for x in c["missions"] if x["ship_id"] == ship_id)
+            moved = [x for x in c["missions"] if x["ship_id"] == ship_id and abs(x["p_after"] - x["p_before"]) >= 0.005]
+            eff = "; ".join(f"{mission_display(x)} {(h := headline.get(x['event_id'], x['p_before']) or x['p_before']) * 100:.0f}%->"
+                            f"{min(1.0, max(0.0, h + x['p_after'] - x['p_before'])) * 100:.0f}%" for x in moved) or "no change to this ship's events"
             donor = "; ".join(f"{s}: missions {v['mission_p_delta'] * 100:+.1f} pts, capability {v['capability_delta'] * 100:+.1f} pts"
                               for s, v in c["donor_effects"].items()) or "no donor cost"
             L.append(f"- #{c['rank']} {c['title']}. {eff}. Donor: {donor}.")

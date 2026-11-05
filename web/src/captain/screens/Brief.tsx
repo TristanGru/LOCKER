@@ -84,7 +84,7 @@ function BriefDoc({ brief }: { brief: BriefT }) {
       <div className="px-10 pb-10 pt-8 print:px-0 print:pt-4">
         <header className="flex flex-wrap items-start justify-between gap-4 border-b border-line pb-6 print:border-black/30">
           <div>
-            <div className="label-caps print:text-black/60">USS Kestrel Bay (DDG-1047, fictional) · Commanding Officer's readiness brief</div>
+            <div className="label-caps print:text-black/60">{brief.unit} · Commanding Officer's readiness brief</div>
             <h2 className="mt-1 text-[2rem] font-bold leading-tight text-ink print:text-black">{brief.title}</h2>
             <div className="num mt-1 text-sm text-ink-dim print:text-black/60">
               Generated {generated.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })} by LOCKER · read-only analysis
@@ -110,7 +110,7 @@ function BriefDoc({ brief }: { brief: BriefT }) {
             </h3>
             <div className="mt-2 space-y-2.5">
               {s.paragraphs.map((p, pi) => (
-                <p key={pi} className="text-[1.05rem] leading-relaxed text-ink print:text-black">
+                <p key={pi} className="whitespace-pre-line text-[1.05rem] leading-relaxed text-ink print:text-black">
                   {p.text}
                   {p.cites.map((c) => (
                     <a key={c} href={`#cite-${c}`} onClick={(e) => e.preventDefault()} className="num ml-1 align-super text-[0.72rem] font-bold text-accent print:text-black" title={c}>

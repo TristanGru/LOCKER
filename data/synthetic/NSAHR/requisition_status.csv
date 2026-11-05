@@ -1,1 +1,2 @@
 doc_number,ship_id,dodaac,jcn,casrep_id,nsn,niin,nomenclature,qty,unit_of_issue,priority_designator,issue_priority_group,rdd,nors,date_requisitioned,status_code,status_date,esd,delay_regime,status_history,source_of_supply,tcn,expedite_flag,system_of_record,as_of,provenance
+N9920263070001,NSAHR,N99202,99202MS010002,,2530-01-999-8007,019998007,"CONTROLLER, BRAKE, TRAILER",1,EA,03,1,999,true,2026-11-03,BB,2026-11-03,2026-11-07,DUE_IN,2026-11-03T15:00:00Z BB 2026-11-07,NAVSUP WSS,,false,NOSS (proposed),2026-11-03T15:00:00Z,proposed

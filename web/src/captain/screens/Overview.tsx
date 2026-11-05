@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { Flag } from 'lucide-react';
+import { Anchor, Building2, Flag } from 'lucide-react';
+import { useState } from 'react';
 import { api } from '../api/api';
 import type { Mission, Status } from '../api/types';
 import { MissionRow } from '../components/overview/MissionCard';
@@ -10,23 +11,28 @@ import { useApi } from '../state/useApi';
 import { STATUS, STATUS_ORDER, pct, getBands } from '../theme/status';
 
 const RANK: Record<Status, number> = { unknown: -1, risk: 0, watch: 1, ready: 2 };
+type Scope = 'all' | 'ship' | 'installation';
+const SCOPES: { id: Scope; label: string }[] = [{ id: 'all', label: 'All units' }, { id: 'ship', label: 'Ships' }, { id: 'installation', label: 'Shore' }];
 
+/** Every ship and installation event in one ranked list, so a shore shortfall sits next to the ship event it holds up. */
 export function Overview() {
-  const { data, error, loading, reload } = useApi(() => api.getMissions());
-  const missions = data ? [...data.missions].sort((a, b) => RANK[a.status] - RANK[b.status] || a.daysOut - b.daysOut) : [];
+  const { data, error, loading, reload } = useApi(() => api.getFleetMissions());
+  const [scope, setScope] = useState<Scope>('all');
+  const all = data ? [...data].sort((a, b) => RANK[a.status] - RANK[b.status] || a.daysOut - b.daysOut) : [];
+  const missions = all.filter((m) => scope === 'all' || m.unitKind === scope);
   const counts = STATUS_ORDER.map((s) => [s, missions.filter((m) => m.status === s).length] as [Status, number]);
   const lead = missions[0];
 
   return (
     <div className="mx-auto max-w-[92rem] space-y-5 px-8 pb-10 pt-6">
       <div>
-        <p className="label-caps">Mission overview · next 30 days</p>
+        <p className="label-caps">Mission overview · ships and shore · next 30 days</p>
         {lead ? (
           <Headline mission={lead} />
         ) : (
           <h1 className="mt-2 text-[2rem] font-extrabold leading-tight text-ink">{loading ? 'Loading the readiness picture…' : 'Mission Overview'}</h1>
         )}
-        {data && missions.length > 0 && (
+        {data && all.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1" aria-label="Mission status counts">
               {counts.map(([s, n]) => {
@@ -41,6 +47,18 @@ export function Overview() {
               })}
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-ink-muted">
+              <div className="flex items-center gap-1 rounded-full border border-line p-0.5" role="group" aria-label="Show missions for">
+                {SCOPES.map(({ id, label }) => {
+                  const n = id === 'all' ? all.length : all.filter((m) => m.unitKind === id).length;
+                  const Icon = id === 'installation' ? Building2 : id === 'ship' ? Anchor : null;
+                  return (
+                    <button key={id} type="button" aria-pressed={scope === id} onClick={() => setScope(id)}
+                      className={clsx('inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold transition', scope === id ? 'bg-accent/15 text-ink' : 'text-ink-muted hover:text-ink')}>
+                      {Icon && <Icon className="h-3.5 w-3.5" aria-hidden />}{label} <span className="num text-xs text-ink-dim">{n}</span>
+                    </button>
+                  );
+                })}
+              </div>
               <span className="inline-flex items-center gap-2">
                 <i className="h-3.5 w-px bg-ink/70" aria-hidden /> {pct(getBands().yellow)} watch
               </span>
@@ -68,7 +86,7 @@ export function Overview() {
 
       {data && missions.length === 0 && (
         <EmptyState icon={Flag} title="No missions scheduled" className="glass">
-          No missions are on the schedule for the next 30 days.
+          {all.length ? 'No events for these units in the next 30 days.' : 'No missions are on the schedule for the next 30 days.'}
         </EmptyState>
       )}
 
@@ -95,6 +113,7 @@ function Headline({ mission: m }: { mission: Mission }) {
           {m.code}
         </h1>
         <StatusBadge status={m.status} />
+        <span className="text-sm font-semibold text-ink-muted">{m.unitName}</span>
       </div>
       <dl className="mt-3 flex flex-wrap items-baseline gap-x-8 gap-y-2">
         <div>
@@ -119,7 +138,7 @@ function Headline({ mission: m }: { mission: Mission }) {
         <p className="mt-3 max-w-[40rem] text-base font-semibold leading-snug text-ink">{domino} is next.</p>
       )}
       {m.status === 'ready' && (
-        <p className="mt-3 max-w-[40rem] text-base font-semibold leading-snug text-ink">Closest mission. Every mission is ready.</p>
+        <p className="mt-3 max-w-[40rem] text-base font-semibold leading-snug text-ink">Closest mission. Every ship and shore event is ready.</p>
       )}
     </motion.div>
   );

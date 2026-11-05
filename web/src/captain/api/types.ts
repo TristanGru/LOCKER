@@ -53,6 +53,10 @@ export interface Mission {
   id: string;
   code: string;
   name: string;
+  /** The ship or installation that owns this event. */
+  unitId: string;
+  unitName: string;
+  unitKind: 'ship' | 'installation';
   type: string;
   description: string;
   date: string; // ISO
@@ -362,6 +366,8 @@ export interface BriefSection {
 export interface Brief {
   missionId: string;
   title: string;
+  /** The unit the brief covers, e.g. "USS KESSLER (DDG-991)". */
+  unit: string;
   classification: string;
   generatedAt: string;
   bottomLine: string;

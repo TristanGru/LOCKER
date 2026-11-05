@@ -45,14 +45,15 @@ function daysUntil(start: string, cursor: string) {
   if (!Number.isFinite(eventDay) || !Number.isFinite(cursorDay)) return 0;
   return Math.round((eventDay - cursorDay) / 86400000);
 }
-const missionRows = (d: any, ship = selectedShip): T.Mission[] => d.forecast.missions.filter((m: any) => m.ship_id === ship).map((m: any) => {
+const missionRows = (d: any, ship: string | null = selectedShip): T.Mission[] => d.forecast.missions.filter((m: any) => ship === null || m.ship_id === ship).map((m: any) => {
+  const unit = d.state.ships.find((s: any) => s.ship_id === m.ship_id);
   const base = d.baseline?.missions?.find((x: any) => x.event_id === m.event_id);
   const odds = probability(m.p_assessed);
   const oddsAtStart = probability(m.p_ready);
   const baseline = base ? probability(base.p_assessed) : NaN;
   const gate = m.gates.find((g: any) => g.gate_id === m.next_domino);
   return {
-    id:m.event_id, code:code(m), name:m.name, type:m.areas.join(' / '), description:`${m.name}. Interval assessment through ${m.end}. Start: ${pct(oddsAtStart)}. ${m.coverage_issues.join('; ')}`,
+    id:m.event_id, code:code(m), name:m.name, unitId:m.ship_id, unitName:unit?.name || m.ship_id, unitKind:unit?.kind === 'installation' ? 'installation' : 'ship', type:m.areas.join(' / '), description:`${m.name}. Interval assessment through ${m.end}. Start: ${pct(oddsAtStart)}. ${m.coverage_issues.join('; ')}`,
     date:m.start, daysOut:daysUntil(m.start, d.state.cursor), odds, oddsAtStart,
     baselineDelta: Number.isFinite(odds) && Number.isFinite(baseline) ? Math.round((odds - baseline) * 100) : null,
     status:oddsStatus(odds),
@@ -111,6 +112,11 @@ async function getMissions():Promise<T.MissionsPayload> {
   const feeds=d.sources.sources.map((s:any)=>({id:s.file,label:`${s.real_system}: ${s.status} / ${s.usage}`,asOf:s.as_of,ageHours:Math.max(0,(Date.parse(d.state.cursor)-Date.parse(s.as_of))/3600000),stale:s.status!=='loaded'}));
   return {ship:{name:unit.name,hull:unit.hull,kind:unit.kind || 'ship',homeport:'Synthetic exercise',deployInDays:missions[0]?.daysOut || 0},missions,history:{},freshness:{feeds,oldestHours:Math.max(0,...feeds.map((f:any)=>f.ageHours).filter(Number.isFinite)),staleCount:feeds.filter((f:any)=>f.stale).length},stopped:paused,generatedAt:d.state.cursor};
 }
+/** Every unit's missions, ships and installations together, for the fleet-wide Mission Overview. */
+async function getFleetMissions():Promise<T.Mission[]> {
+  const d=await dashboard(); displayedVersion=d.state.version; exerciseCursor=d.state.cursor;
+  return missionRows(d,null);
+}
 async function getShip():Promise<T.ShipPayload> {
   const ship=selectedShip, d=await dashboard(), missions=missionRows(d,ship), focus=[...missions].sort((a,b)=>a.odds-b.odds)[0];
   const unit=d.state.ships.find((s:any)=>s.ship_id===ship), raw=d.forecast.missions.filter((m:any)=>m.ship_id===ship);
@@ -133,16 +139,48 @@ async function mutate(path:string,body:any={}) {
   if(displayedVersion===undefined) throw new ApiError(409,'Load the current assessment first.','STALE_VERSION');
   return backend(path,{...body,base_version:displayedVersion});
 }
+const MOVES = 0.005;
+const points = (p:number) => `${p >= 0 ? '+' : '−'}${Math.round(Math.abs(p) * 100)}`; // abs first: Math.round(-0.5) is -0
+/** Effects on other units in words: costs first, then units the package also helps. mission_p_delta sums a unit's
+ * event changes; capability_delta is its material score. */
+function donorText(d:any, effects:Record<string, {mission_p_delta:number; capability_delta:number}>):string {
+  const name = (u:string) => d.state.ships.find((s:any) => s.ship_id === u)?.name || u;
+  const part = (label:string, x:number) => Math.abs(x) >= MOVES ? `${label} ${points(x)} pts` : '';
+  const rows = Object.entries(effects || {}).map(([u, v]) => ({ u, events: v.mission_p_delta, material: v.capability_delta }));
+  const say = (r:typeof rows[number]) => `${name(r.u)}: ${[part('events', r.events), part('material', r.material)].filter(Boolean).join(', ')}`;
+  const costs = rows.filter((r) => r.events <= -MOVES || r.material <= -MOVES);
+  const gains = rows.filter((r) => !costs.includes(r) && (r.events >= MOVES || r.material >= MOVES));
+  return [costs.length ? `Cost to other units: ${costs.map(say).join('; ')}.` : 'No cost to other units.',
+    gains.length ? `Also helps ${gains.map(say).join('; ')}.` : ''].filter(Boolean).join(' ');
+}
 async function getFixes(missionId:string):Promise<T.FixesPayload> {
   const d=await dashboard(), ranking=await backend('fixes/'+selectedShip);
-  const fixes=ranking.candidates.map((f:any):T.Fix=>{const m=f.missions.find((x:any)=>x.event_id===missionId) || f.missions.find((x:any)=>x.ship_id===selectedShip);return {id:f.fix_id,missionId:m.event_id,rank:f.rank,title:f.title,action:f.title,rationale:f.why.join('; ')+' Donor effects: '+JSON.stringify(f.donor_effects),owner:'Human review required',effort:'Medium',confidence:m.p_after,targets:f.gates,recordIds:[],oddsBefore:m.p_before,oddsAfter:m.p_after,otherMissions:f.missions.filter((x:any)=>x.event_id!==m.event_id).map((x:any)=>({missionId:x.event_id,code:x.ship_id+' / '+code(d.forecast.missions.find((r:any)=>r.event_id===x.event_id)),before:x.p_before,after:x.p_after})),externalApproval:'Exercise only. Interval comparison; review donor consequences.',decision:'pending'};});
+  // Rankings compare options on their own larger common-random-number run, so their baseline differs from the headline
+  // estimate by sampling noise. Show each option's change on top of the headline number so the page agrees with itself.
+  const headline=(id:string)=>probability(d.forecast.missions.find((r:any)=>r.event_id===id)?.p_assessed ?? null);
+  const anchor=(id:string, before:number, p:number)=>{const h=headline(id);return Number.isFinite(h)?Math.max(0,Math.min(1,h+(p-before))):p;};
+  const fixes=ranking.candidates.map((f:any):T.Fix=>{
+    const m=f.missions.find((x:any)=>x.event_id===missionId) || f.missions.find((x:any)=>x.ship_id===selectedShip);
+    const after=anchor(m.event_id,m.p_before,m.p_after);
+    return {id:f.fix_id,missionId:m.event_id,rank:f.rank,title:f.title,action:f.title,rationale:`${f.why.join('; ').replace(/\.$/,'')}. ${donorText(d,f.donor_effects)}`,owner:'Human review required',effort:'Medium',
+      confidence:after,targets:f.gates,recordIds:[],oddsBefore:anchor(m.event_id,m.p_before,m.p_before),oddsAfter:after,
+      otherMissions:f.missions.filter((x:any)=>x.event_id!==m.event_id && Math.abs(x.p_after-x.p_before)>=MOVES)
+        .map((x:any)=>({missionId:x.event_id,code:x.ship_id+' / '+code(d.forecast.missions.find((r:any)=>r.event_id===x.event_id)),before:anchor(x.event_id,x.p_before,x.p_before),after:anchor(x.event_id,x.p_before,x.p_after)})),
+      externalApproval:'Exercise only. Interval comparison; review donor consequences.',decision:'pending'};
+  });
   if(ranking.warning) throw new ApiError(422,ranking.warning,'COVERAGE');
-  fixes.forEach((fix:T.Fix)=>shownFixes.set(fix.id,{fix,version:d.state.version}));
-  return {missionId,fixes,decided:[],note:ranking.note};
+  // A tab shows the options that move its own event. Options that only help another event are named, not listed.
+  const helpful=fixes.filter((f:T.Fix)=>f.oddsAfter-f.oddsBefore>=MOVES);
+  const elsewhere=[...new Set<string>(fixes.flatMap((f:T.Fix)=>f.otherMissions.filter(o=>o.after-o.before>=MOVES).map(o=>o.code)))];
+  const note=helpful.length ? ranking.note : fixes.length
+    ? `None of the ${fixes.length} ranked options changes this event.${elsewhere.length ? ` They help ${elsewhere.join(', ')}; pick that event above.` : ''}`
+    : ranking.note;
+  helpful.forEach((fix:T.Fix)=>shownFixes.set(fix.id,{fix,version:d.state.version}));
+  return {missionId,fixes:helpful,decided:[],note};
 }
 const event=(e:any,i:number):T.DemoEvent=>({id:e.event_id,seq:i+1,type:({casrep:'CASREP',supply:'SUPPLY',personnel:'PERSONNEL',schedule:'SCHEDULE',facility:'FACILITY'} as any)[e.kind] || 'SCHEDULE',title:e.title,summary:e.title,recordId:e.refs[0]?sourceId({file:e.refs[0].split('#')[0]}):'',arrivedAt:e.played?e.known_at:undefined});
 export const api = {
-  getMissions,getShip,getFixes,
+  getMissions,getFleetMissions,getShip,getFixes,
   getGraph:async(focus='all')=>graph(await dashboard(),focus),
   getNode:async(id:string,focus='all'):Promise<T.NodeDetail>=>{const d=await dashboard(),g=graph(d,focus);let node=g.nodes.find(n=>n.id===id);if(!node){const s=(await getShip()).systems.find(s=>s.id===id);if(!s)throw new ApiError(404,'Dependency not in selected ship','NOT_FOUND');node={id,kind:'equipment',label:s.name,subtitle:s.tag,status:s.status,p:NaN,reason:s.reason,metric:'Unknown',missions:[],recordIds:s.sourceIds,dataAgeHours:0,stale:false,contradictionCount:0,nextDominoFor:[]};}return {node,why:[node.reason],records:await Promise.all(node.recordIds.map(record)),contradictions:[],dependsOn:g.edges.filter(e=>e.source===id).map(e=>g.nodes.find(n=>n.id===e.target)!),dependents:g.edges.filter(e=>e.target===id).map(e=>g.nodes.find(n=>n.id===e.source)!),perMission:g.missions.filter(m=>node!.missions.includes(m.id)).map(m=>({missionId:m.id,code:m.code,p:node!.p,status:node!.status}))};},
   getRecord:async(id:string):Promise<T.RecordDetail>=>({record:await record(id),linkedNodes:[],contradictions:[]}),
@@ -152,7 +190,7 @@ export const api = {
   runScenario:async(req:T.ScenarioRequest):Promise<T.ScenarioResult>=>{
     const p=await backend('captain/preview',{base_version:displayedVersion,ship_id:selectedShip,changes:req.changes});
     return {id:'Preview v'+p.base_version,changes:req.changes,description:['Isolated backend preview; no shared state changed. Hypothetical casualties assume a seven-day repair estimate.'],missionDeltas:deltas(p.before,p.after),nodeChanges:[]};},
-  getBrief:async(id:string):Promise<T.Brief>=>{const d=await dashboard(),m=missionRows(d).find(m=>m.id===id) || missionRows(d)[0],b=await backend('brief',{ship_id:selectedShip});return {missionId:m.id,title:`${m.code} / ${selectedShip} readiness brief`,classification:'SYNTHETIC EXERCISE',generatedAt:d.state.cursor,bottomLine:`${m.code}: ${pct(m.odds)} across sampled event interval`,odds:m.odds,status:m.status,sections:[{heading:'Backend assessment',paragraphs:[{text:b.text,cites:sources(b.citations)}]}],citations:await Promise.all(sources(b.citations).map(record))};},
+  getBrief:async(id:string):Promise<T.Brief>=>{const d=await dashboard(),m=missionRows(d).find(m=>m.id===id) || missionRows(d)[0],b=await backend('brief',{ship_id:selectedShip});const unit=d.state.ships.find((s:any)=>s.ship_id===selectedShip);return {missionId:m.id,title:`${m.code} / ${selectedShip} readiness brief`,unit:unit?`${unit.name} (${unit.hull})`:selectedShip,classification:'SYNTHETIC EXERCISE',generatedAt:d.state.cursor,bottomLine:`${m.code}: ${pct(m.odds)} across sampled event interval`,odds:m.odds,status:m.status,sections:[{heading:'Backend assessment',paragraphs:[{text:b.text,cites:sources(b.citations)}]}],citations:await Promise.all(sources(b.citations).map(record))};},
   getLog:async():Promise<T.LogEntry[]>=>{const l=await backend('log');return l.changes.map((c:any)=>({id:String(c.seq),ts:c.wall_time,type:'system',actor:c.actor,message:c.kind+': '+JSON.stringify(c.payload),refs:[]})).reverse();},
   stop:async(req:T.StopRequest):Promise<T.StopResult>=>{paused=req.stopped;return {stopped:paused,at:new Date().toISOString()};},
   logAction:async(type:T.LogType,message:string,refs:string[]=[]):Promise<T.LogEntry>=>({id:'local',ts:new Date().toISOString(),type,actor:'Browser (not persisted)',message,refs}),

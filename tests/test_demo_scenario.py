@@ -101,10 +101,23 @@ def test_fix_options_all_help_and_carry_no_redundant_steps(baseline, log_path):
                             or q["donor_cost"] < c["donor_cost"] - MIN_GAIN), (q["title"], c["title"])
 
 
-def test_no_op_steps_are_not_offered_and_empty_ranking_explains_why(baseline, log_path):
-    """At reset the CIC trainer is already refreshed in port before it lapses and wholesale has no pump stock."""
+def test_no_op_steps_are_not_offered_and_empty_ranking_explains_why(baseline, log_path, monkeypatch):
+    """At reset the CIC trainer is already refreshed in port before it lapses, so scheduling it is not offered, and an
+    expedite is offered only where wholesale holds stock. A ranking with nothing to offer says why instead of going blank."""
+    from missiontwin import fixes
     s = Scenario(baseline, log_path=log_path)
+    world = build_world(s)
     r = rank_fixes(s, "KESSLER", runs=1000)
-    kinds = {x["kind"] for c in r["candidates"] for x in c["steps"]}
-    assert not kinds & {"expedite", "schedule_training"}
-    assert r["candidates"] == [] and "1 point" in r["note"]
+    steps = [x for c in r["candidates"] for x in c["steps"]]
+    assert r["candidates"], "the starting HF casualty leaves KESSLER something to weigh at reset"
+    assert not any(x["kind"] == "schedule_training" for x in steps)
+    for x in steps:
+        if x["kind"] == "expedite":
+            item = next(i for i in world.ships["KESSLER"].items if i.key == x["item_key"])
+            assert any(w["on_hand_qty"] > 0 for w in world.wholesale[item.part_niin] if w["holder"] in ("NAVSUP_WSS", "DLA"))
+    idle = rank_fixes(s, "VARNELL", runs=200)
+    assert idle["candidates"] == [] and idle["note"] == "No option is available for VARNELL's current blockers."
+    monkeypatch.setattr(fixes, "MIN_GAIN", 0.5)
+    none_help = rank_fixes(s, "KESSLER", runs=200)
+    assert none_help["candidates"] == [] and f"{none_help['evaluated']} options evaluated" in none_help["note"]
+    assert "50 point or more" in none_help["note"]

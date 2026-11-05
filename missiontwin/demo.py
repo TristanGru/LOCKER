@@ -32,6 +32,10 @@ def main():
         parser.error('Source preflight failed: ' + '; '.join(health['configuration_errors'] +
                      [s + ': ' + '; '.join(gaps) for s, gaps in health['coverage'].items() if gaps]))
     state.fc()
+    # Rank every unit's options now, so the first Fixes view in a demo opens without a wait.
+    print('Ranking fix options for every unit...', flush=True)
+    for unit in state.baseline.profile.ship_ids:
+        state.ranking(unit)
     print(f'LOCKER offline demo: http://127.0.0.1:{args.port} | source {state.baseline.source_revision}', flush=True)
     print('Exercise-only decisions. No real source writes or external model calls.', flush=True)
     uvicorn.run(create_app(state), host='127.0.0.1', port=args.port)
