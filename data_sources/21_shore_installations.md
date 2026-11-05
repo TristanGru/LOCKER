@@ -70,6 +70,8 @@ One row per hazard and asset. Rows sharing a `hazard_id` share random draws, so 
 | EIA Form 861 via PUDL | Virginia Electric & Power SAIFI and CAIDI, five-year mean with major events | Utility-wide customer average, not a feeder or base |
 
 | OpenStreetMap via Overpass | Pier 1-14 footprints, runways and aprons for the 3D layout, in `norfolk_outline.json` (built by `scripts/build_shore_osm_outline.py`). (c) OpenStreetMap contributors, ODbL | OSM has no coastline way along this waterfront, so the shoreline is approximated through pier roots. Buildings, power and utility features are deliberately not requested |
+| OpenStreetMap via Overpass | NSA Hampton Roads site boundary (the Lafayette River Annex landuse polygon), in `nsahr_outline.json` (built by `scripts/build_shore_nsahr_outline.py`), in its own local frame. (c) OpenStreetMap contributors, ODbL | Boundary only; the two NSA Hampton Roads facility positions inside it are invented |
+| USDA NAIP via USGS The National Map | Aerial photo under each 3D layout, `web/public/shore/<site>_naip.jpg` (built by `scripts/build_shore_imagery.py --site norfolk` or `--site nsahr`). Public domain | Ground texture only; nothing in the mock is read from the photo |
 
 **Reviewed, not used:**
 

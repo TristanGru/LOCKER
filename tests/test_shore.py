@@ -253,6 +253,26 @@ def test_pier_pins_sit_on_their_traced_piers(data_dir):
         assert min(p[1] for p in points) <= z <= max(p[1] for p in points)
 
 
+def test_nsahr_layout_is_a_public_boundary_with_its_pins_inside(data_dir):
+    profile = json.loads((data_dir / 'squadron' / 'shore_profile.json').read_text(encoding='utf-8'))
+    layout = profile['layouts']['NSAHR']
+    assert 'OpenStreetMap' in layout['attribution'] and 'Lafayette River Annex' in layout['query']
+    assert not any(word in layout['query'] for word in ('building', 'power', 'substation', 'pipeline'))
+    assert not layout['piers'] and not layout['shoreline'] and len(layout['boundary']) >= 4
+    ring = layout['boundary']
+
+    def inside(x, z):
+        hit = False
+        for (x1, z1), (x2, z2) in zip(ring, ring[1:] + ring[:1]):
+            if (z1 > z) != (z2 > z) and x < x1 + (z - z1) * (x2 - x1) / (z2 - z1):
+                hit = not hit
+        return hit
+
+    for mount in ('msub', 'lgate'):
+        x, _, z = profile['mounts'][mount]
+        assert inside(x, z), mount
+
+
 def test_berths_follow_ship_positions(client):
     connection, state = client
     berths = {b['ship_id']: b for b in connection.get('/api/state').json()['berths']}
