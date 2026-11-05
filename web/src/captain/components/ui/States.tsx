@@ -1,23 +1,28 @@
 import { motion } from 'framer-motion';
 import { AlertTriangle, Inbox, RotateCw, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useEffect } from 'react';
 import clsx from '../../lib/clsx';
+import { pendingLoads } from '../../state/pendingLoads';
+import { LogoMark } from '../layout/Logo';
 
-/** Plain loading state: a thin indeterminate bar and a label. */
+/** Loading state: the sweeping LOCKER radar (same mark as the masthead and start-up screen) and a label. */
 export function Loading({ label = 'Loading', className }: { label?: string; className?: string }) {
   return (
     <div role="status" className={clsx('flex flex-col items-center justify-center gap-3 py-16 text-ink-muted', className)}>
-      <div className="relative h-[3px] w-48 overflow-hidden bg-line">
-        <motion.div
-          className="absolute inset-y-0 w-1/3 bg-accent"
-          initial={{ x: '-100%' }}
-          animate={{ x: '300%' }}
-          transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      </div>
+      <LogoMark className="h-16 w-16" />
       <span className="text-sm font-medium">{label}…</span>
     </div>
   );
+}
+
+/** Placeholder for a lazily loaded part of a screen; counts as "still loading" so the start-up screen waits for it. */
+export function PendingSkeleton({ className }: { className?: string }) {
+  useEffect(() => {
+    pendingLoads.start();
+    return () => pendingLoads.finish();
+  }, []);
+  return <Skeleton className={className} />;
 }
 
 export function Skeleton({ className }: { className?: string }) {

@@ -1,17 +1,18 @@
 import { LogOut, ShieldCheck } from 'lucide-react';
 import { useEffect } from 'react';
-import { api, backend, dashboard } from '../../api/api';
+import { api, dashboard } from '../../api/api';
 import { useAuth } from '../../state/auth';
 import { useStore } from '../../state/store';
 import { useApi } from '../../state/useApi';
+import { ControlsMenu } from './ControlsMenu';
 import { FreshnessIndicator } from './FreshnessIndicator';
 import { LogoMark } from './Logo';
 import { StopButton } from './StopControl';
 import { ThemeToggle } from './ThemeToggle';
 
 export function Header() {
-  const { setStopped, ship, changeShip, focus, setFocus, bump } = useStore();
-  const { user, isFleet, signOut } = useAuth();
+  const { setStopped, ship, changeShip, focus, setFocus } = useStore();
+  const { user, signOut } = useAuth();
   const { data: snapshot } = useApi(dashboard);
   const { data } = useApi(() => api.getMissions());
   const ashore = snapshot?.state.ships.find((s: any) => s.ship_id === ship)?.kind === 'installation';
@@ -43,17 +44,7 @@ export function Header() {
       <div className="ml-auto flex shrink-0 items-center gap-3">
         <ThemeToggle />
         <FreshnessIndicator freshness={data?.freshness ?? null} />
-        <details className="relative text-sm text-ink-muted"><summary className="cursor-pointer hover:text-ink">Sources / controls</summary><div className="absolute right-0 z-50 mt-3 max-h-[75vh] w-[min(90vw,42rem)] overflow-auto theme-surface rounded border border-line bg-abyss-900 p-5 text-ink shadow-[0_18px_40px_-18px_rgba(0,0,0,0.5)]">
-          <p>Synthetic exercise • event-interval readiness</p><p>Source revision: {snapshot?.state.source_revision}</p>
-          <p>Refresh: {snapshot?.sources.last_attempt.status} {snapshot?.sources.last_attempt.error}</p>
-          {isFleet && <><button className="m-2 underline" onClick={async()=>{if(!confirm('Validate and refresh sources? Active decisions block changed imports.'))return;try{await backend('sources/refresh',{base_version:snapshot.state.version});}catch(e){alert(String(e));}finally{bump();}}}>Refresh sources</button>
-          <button className="m-2 underline" onClick={async()=>{if(!confirm('Refresh sources and reset playback/decisions if changed?'))return;try{await backend('sources/refresh',{base_version:snapshot.state.version,reset_scenario:true});}catch(e){alert(String(e));}finally{bump();}}}>Refresh with reset</button></>}
-          <button className="m-2 underline" onClick={async()=>{try{await backend('undo',{base_version:snapshot.state.version});bump();}catch(e){alert(String(e));}}}>Undo last change</button>
-          <p>Thresholds: Ready {snapshot?.forecast.bands.green*100}% / Watch {snapshot?.forecast.bands.yellow*100}%. Unknown evidence is not a probability.</p>
-          {snapshot?.sources.sources.map((s:any)=><p className="my-2 border-b border-line" key={s.file}>{s.file}: {s.status} / {s.usage}<br/>{s.explanation}</p>)}
-          <h3>Reported baseline (not forecast probabilities)</h3><pre className="whitespace-pre-wrap">{JSON.stringify(snapshot?.forecast.reported_baseline[ship],null,2)}</pre>
-          {isFleet && <a href="/?legacy=1" className="underline">Advanced workspace: full source review, assumptions and action preview/apply</a>}
-        </div></details>
+        <ControlsMenu snapshot={snapshot} ship={ship} />
         <StopButton />
         <div className="flex items-center gap-1.5 border-l border-line pl-3" aria-label="Signed in account" title={`${user.title} (${user.detail})`}>
           <ShieldCheck className="h-4 w-4 shrink-0 text-accent" aria-hidden />

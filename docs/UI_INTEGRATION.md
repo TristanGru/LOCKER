@@ -14,13 +14,13 @@ The default frontend now uses the layout and components imported from Sakie's fr
 - `/api/captain/preview` translates typed UI edits into validated canonical actions on a disposable scenario fork. Multi-change previews do not change version, log or sources. New hypothetical casualties explicitly assume a seven-day repair estimate; source CASREP cancellation is not a what-if action.
 - Fix approval uses the version of the displayed comparison. STOP is explicitly a local browser pause, not an operational/server-wide stop.
 
-## Advanced workspace retained during migration
+## Advanced workspace removed
 
-`/?legacy=1` provides the previous connected workspace. It is linked from Sources / controls and retains the complete assumption editor, structured action preview/apply, report-fact review, source comparison and detailed timeline. Existing browser regression tests explicitly target this route; new captain tests exercise the new default route.
+The previous connected workspace at `/?legacy=1` (assumption editor, structured action preview/apply, report-fact review, source comparison, detailed timeline) has been removed along with its browser tests (`dashboard.spec.ts`, `sources.spec.ts`). The captain UI is the only front end; its browser tests are in `web/tests/captain.spec.ts`. The backend endpoints those screens used are unchanged and still covered by the Python test suite.
 
 ## Shore
 
-**Shore Overview** is a separate tab for labeled mock naval installations, with a 3D base layout and list fallback. The advanced workspace stays ship-only. See [shore implementation](SHORE.md).
+**Shore Overview** is a separate tab for labeled mock naval installations, with a 3D base layout and list fallback. See [shore implementation](SHORE.md).
 
 ## Remaining integration work — not claimed complete
 

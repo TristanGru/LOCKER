@@ -6,7 +6,7 @@ import type { ShipPayload, Status } from '../api/types';
 import { AttentionPanel } from '../components/ship/AttentionPanel';
 import { SystemsTable } from '../components/ship/SystemsTable';
 import { Panel } from '../components/ui/Panel';
-import { EmptyState, ErrorState, Skeleton } from '../components/ui/States';
+import { EmptyState, ErrorState, PendingSkeleton, Skeleton } from '../components/ui/States';
 import clsx from '../lib/clsx';
 import { useStore } from '../state/store';
 import { useApi } from '../state/useApi';
@@ -157,7 +157,7 @@ function Body({ ship, filter, setFilter, onOpen }: { ship: ShipPayload; filter: 
         actions={<span className="text-xs text-ink-muted">{ship.hullType} · procedural model, approximate</span>}
         bodyClassName="!p-0"
       >
-        <Suspense fallback={<Skeleton className="m-5 h-[34rem]" />}>
+        <Suspense fallback={<PendingSkeleton className="m-5 h-[34rem]" />}>
           {ashore ? <BaseModel3D unit={ship} onOpen={onOpen} /> : <ShipModel3D ship={ship} onOpen={onOpen} />}
         </Suspense>
       </Panel>

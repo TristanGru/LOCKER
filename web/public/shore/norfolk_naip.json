@@ -1,0 +1,25 @@
+{
+  "image": "norfolk_naip.jpg",
+  "source": "USDA Farm Service Agency NAIP orthoimagery via USGS The National Map",
+  "service": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer/exportImage",
+  "license": "Public domain (U.S. Government work)",
+  "attribution": "Imagery: USDA NAIP via USGS",
+  "retrieved": "2026-11-05T18:14:06Z",
+  "bbox_wgs84": {
+    "west": -76.33874170059856,
+    "south": 36.92035573122531,
+    "east": -76.26592179139664,
+    "north": 36.97515271289976
+  },
+  "scene": {
+    "x_north": -320.0,
+    "x_south": 290.0,
+    "z_east": -560.056,
+    "z_west": 87.768
+  },
+  "pixels": [
+    2400,
+    1806
+  ],
+  "note": "Ground texture only. Facilities, failures and staff in the mock remain invented."
+}
