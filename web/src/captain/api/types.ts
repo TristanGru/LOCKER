@@ -166,6 +166,12 @@ export interface ShipSystem {
   sourceIds: string[];
   isNextDomino: boolean;
   dominoVia: string | null; // the part or sailor behind it, when the domino is not the system itself
+  /** Worst requirement probability behind the status (NaN when evidence is insufficient). */
+  p?: number;
+  /** Events that require this system, with that event's requirement odds. */
+  missions?: { id: string; code: string; p: number }[];
+  /** The items (parts, casualties, work orders) that drive the requirement, worst first. */
+  evidence?: { title: string; detail: string; p: number }[];
 }
 
 export interface ShipDepartment {
@@ -277,6 +283,8 @@ export interface FixesPayload {
   missionId: string;
   fixes: Fix[];
   decided: Fix[];
+  /** Options shown earlier that an approved fix made unnecessary (no longer raise the odds). */
+  superseded: Fix[];
   /** Backend explanation when every evaluated option was pruned. */
   note?: string;
 }
