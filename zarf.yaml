@@ -1,17 +1,36 @@
-# Zarf package for air-gapped install via UDS (R6). Build: docker build -t missiontwin:0.1.0 . && zarf package create .
-# Deploy: zarf package deploy zarf-package-missiontwin-*.tar.zst   (needs a cluster, e.g. k3d / UDS Core)
 kind: ZarfPackageConfig
 metadata:
-  name: missiontwin
-  description: "MissionTwin readiness domino map (SYNTHETIC demo data only)"
-  version: 0.1.0
+  name: locker
+  version: "###ZARF_PKG_TMPL_VERSION###"
+  description: LOCKER offline demo
+
 components:
-  - name: missiontwin
+  - name: locker
     required: true
+
+    actions:
+      # Runs during `zarf package create` -- build + export happen automatically
+      onCreate:
+        before:
+          - cmd: docker build --platform linux/amd64 -t zarf.internal/locker:###ZARF_PKG_TMPL_VERSION### .
+          - cmd: docker save -o locker-image.tar zarf.internal/locker:###ZARF_PKG_TMPL_VERSION###
+      # Runs during `zarf package deploy` -- fail the deploy if the pod never comes up
+      onDeploy:
+        after:
+          - wait:
+              cluster:
+                kind: deployment
+                name: locker
+                namespace: locker
+                condition: Available
+
+    imageArchives:
+      - path: locker-image.tar
+        images:
+          - zarf.internal/locker:###ZARF_PKG_TMPL_VERSION###
+
     manifests:
-      - name: missiontwin
-        namespace: missiontwin
+      - name: locker
+        namespace: locker
         files:
-          - deploy/k8s.yaml
-    images:
-      - missiontwin:0.1.0
+          - k8s/app.yaml

@@ -11,6 +11,18 @@ from missiontwin.ingest import load_baseline  # noqa: E402
 from missiontwin.llm import LLMClient  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def isolate_model_environment(monkeypatch):
+    """A developer's live .env must never make regression tests contact a provider.
+
+    Individual transport/configuration tests can explicitly override these values.
+    """
+    monkeypatch.setenv('LLM_BASE_URL', '')
+    monkeypatch.setenv('LLM_API_KEY', '')
+    monkeypatch.setenv('LLM_MODEL', 'unconfigured')
+    monkeypatch.setenv('MISSIONTWIN_DEMO_MODE', '0')
+
+
 @pytest.fixture(scope="session")
 def data_dir(tmp_path_factory):
     """Golden path: run the real generators into a temp dir (never the committed copy)."""

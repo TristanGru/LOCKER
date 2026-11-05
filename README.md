@@ -4,7 +4,9 @@ LOCKER connects synthetic maintenance, supply, personnel, training, and event da
 
 Backend setup and architecture: [MissionTwin backend](docs/BACKEND.md). AI configuration and forecast API: [DEV 2 guide](docs/DEV2.md). Synthetic exercise dataset: [data guide](data_sources/Synthetic%20Data/README.md). Naval station support: [shore implementation](docs/SHORE.md).
 
-Planned next increment: [Captain decision assistant implementation plan](docs/CAPTAIN_DECISION_ASSISTANT_PLAN.md) — a mission-specific decision brief, an existing OpenAI-compatible LLM endpoint, and optional Keystone-style browser semantic retrieval. This is a roadmap, not shipped functionality.
+Ship and Shore Overview now include floating Ask Davy chat with LLM-written summaries, inline source/calculation citations, session-only follow-ups, and optional local MiniLM/Transformers.js search. See [overview assistant setup, usage and current limits](docs/OVERVIEW_ASSISTANT.md); model assets require a one-time explicit bundle step.
+
+Mission Overview and Davy's Dominoes have the separate [Ask Davey prototype](#ask-davey-prototype). The [Captain decision assistant plan](docs/CAPTAIN_DECISION_ASSISTANT_PLAN.md) covers work beyond these two assistants.
 
 **Synthetic exercise only. Not an operational readiness authority.** There is no authentication or real-system connector. Do not expose this local demo to an untrusted network or load operational/personnel data into it.
 
@@ -22,7 +24,7 @@ npm ci
 cd ..
 ```
 
-Then one command builds, preflights the dataset, and starts the guaranteed offline demo:
+Then one command builds, preflights the dataset, and starts the demo with offline ingestion. Ask Davey also stays offline unless you enable its separate live switch:
 
 ```powershell
 .\.venv\Scripts\python.exe -m missiontwin.demo
@@ -50,6 +52,16 @@ The server enforces this, not the browser. Every `/api` request must carry the s
 The default route now uses Sakie's layout with a top-level ship selector, DDG-only cutaway/interior viewer, and named missions (TIDEWATCH, SEASHIELD, DEEP LANTERN and IRON HORIZON, read from each event's `codename` in `squadron/events_missions.json`). Its data comes from the Python backend, not the browser mock. **Sources / controls** exposes source refresh and undo.
 
 The previous advanced workspace is retained at **`/?legacy=1`** for the full assumption editor, report-fact review and structured preview/apply workflow. The walkthrough below describes that advanced workspace where screen names differ. See [UI integration status and remaining merge work](docs/UI_INTEGRATION.md).
+
+## Ask Davey prototype
+
+Open **Mission Overview** or **Davy's Dominoes** and select the floating **Ask Davey · AI** button. It opens a compact popup above the button. Opening the popup or choosing a suggested question makes no model request; analysis starts when you press **Ask**. Davey searches currently eligible requisitions, maintenance records, CASREPs, and daily reports for the selected ship and mission, then combines those passages with the engine's forecast claims. Answers show their generation source, exercise time, citations, and source uncertainty.
+
+Mission Overview and Davy's Dominoes use the same floating chat presentation as the Ship and Shore assistants, with forecast warnings, report evidence, and graph suggestions. They keep separate chats. Switching pages closes the popup; reopen it to see that page's chat. **New conversation** clears the active page's chat. Mission scope follows the selected unit in the header and is shown in the popup. **Show in Dominoes** carries a Mission Overview graph suggestion into Dominoes for review while leaving the chat history on Mission Overview.
+
+The default demo shows **Rules-based fallback** warnings from the readiness engine. To enable the live OpenAI response, copy [.env.example](.env.example) to an ignored `.env`, add your Platform key as `LLM_API_KEY`, and set `LOCKER_DAVEY_LIVE=1`. The example selects `gpt-4o-mini`, which supports [Chat Completions Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=chat). Start or restart the demo normally. `MISSIONTWIN_DEMO_MODE=1` keeps ingestion, action parsing, and briefs offline; Davey's separate opt-in permits a model call only after a submitted question. The key stays in server configuration and is never sent to the browser.
+
+Live answers can identify **emerging concerns** and propose report-supported nodes and connections in Dominoes. These are labeled **AI-proposed** and can be inspected, marked reviewed, dismissed, or restored. Review changes only the visible overlay; it never changes readiness or applies an action. If the exercise or source snapshot changes, the answer is marked outdated and its evidence links are disabled until you ask again. A live answer requires a configured key and endpoint; this implementation was verified with a mocked OpenAI-compatible transport, without a real account call. See the [brainstorm](docs/ASK_DAVEY_BRAINSTORM.md) and [implementation plan](docs/ASK_DAVEY_IMPLEMENTATION_PLAN.md) for the selected walkthrough and limits.
 
 ## Five-minute presenter walkthrough
 
@@ -107,6 +119,10 @@ The GitHub Actions workflow runs backend and isolated browser checks. It is supp
 | `MISSIONTWIN_DATA` | Input directory for the configured adapter |
 | `MISSIONTWIN_ADAPTER` | `directory` (default) or `json-export` |
 | `MISSIONTWIN_DEMO_MODE=1` | Guaranteed offline extraction/actions/briefs; forced by the launcher |
+| `LLM_BASE_URL` | OpenAI API base URL for live Davey (example: `https://api.openai.com/v1`) |
+| `LLM_MODEL` | Structured-output model for live Davey (example: `gpt-4o-mini`) |
+| `LLM_API_KEY` | Server-side OpenAI Platform API key; keep it in ignored `.env` or the process environment |
+| `LOCKER_DAVEY_LIVE=1` | Allow a live Davey call after explicit submit; default is cached/fallback only |
 | `MISSIONTWIN_ACTIVITY_LOG` | Optional activity-log path; see `missiontwin/domain.py` for the default |
 | `MISSIONTWIN_SESSION_SECRET` | Optional key for signing session cookies. Without it each server start makes a new key, which signs everyone out |
 | `LOCKER_URL` | Target URL for standalone browser tests |

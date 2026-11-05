@@ -323,7 +323,8 @@ class Scenario:
                 raise ValueError(f"events play in order; next is {nxt['event_id']}")
             payload = {"event_id": nxt["event_id"], "title": nxt["title"]}
         at_day = self.b.profile.day_of(self.cursor_dt()) if kind != "play_event" else self.b.profile.day_of(nxt["known_at"])
-        c = {"seq": len(self.changes) + 1, "kind": kind, "payload": payload, "actor": actor, "at_day": round(at_day, 4),
+        # seq stays unique after a withdraw removes a change from the middle of the log
+        c = {"seq": max((x["seq"] for x in self.changes), default=0) + 1, "kind": kind, "payload": payload, "actor": actor, "at_day": round(at_day, 4),
              "scenario_time": iso(self.b.profile.dt_of(at_day)), "wall_time": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")}
         self.changes.append(c)
         self.version += 1
@@ -337,6 +338,16 @@ class Scenario:
         self.version += 1
         self._log({"op": "undo", "seq": c["seq"], "kind": c["kind"], **({"actor": actor} if actor else {})})
         return c
+
+    def withdraw(self, seq: int, actor: str | None = None) -> dict | None:
+        """Remove one change by seq (not only the newest). State is replayed from the remaining changes."""
+        for i, c in enumerate(self.changes):
+            if c["seq"] == seq:
+                self.changes.pop(i)
+                self.version += 1
+                self._log({"op": "withdraw", "seq": c["seq"], "kind": c["kind"], **({"actor": actor} if actor else {})})
+                return c
+        return None
 
     def reset(self, actor: str | None = None):
         self.changes = []

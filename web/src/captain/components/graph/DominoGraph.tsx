@@ -10,16 +10,19 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useEffect, useMemo, useRef } from 'react';
-import type { GraphPayload } from '../../api/types';
+import type { DaveyProposedLink, DaveyProposedNode, GraphPayload } from '../../api/types';
 import type { Cascade } from '../../state/store';
 import { STATUS } from '../../theme/status';
 import { NodeCard, type CardNode } from './NodeCard';
+import { ProposedNodeCard, type ProposedCardNode } from './ProposedNodeCard';
 import { SummaryCard, type SummaryNode } from './SummaryCard';
+import { filterView, type FilterKey } from './filters';
 import { chainOf, condense, layoutGraph, type LayoutItem } from './layout';
 
-const nodeTypes: NodeTypes = { card: NodeCard, summary: SummaryCard };
+const nodeTypes: NodeTypes = { card: NodeCard, summary: SummaryCard, proposed: ProposedNodeCard };
 const CASCADE_STEP = 0.55; // seconds between domino "rows"
 const CASCADE_WINDOW_MS = 6000;
+const NO_FILTERS: Set<FilterKey> = new Set();
 
 export function DominoGraph({
   graph,
@@ -29,37 +32,51 @@ export function DominoGraph({
   onClear,
   onExpand,
   cascade,
+  proposedNodes = [],
+  proposedLinks = [],
+  reviewed = new Set<string>(),
+  onProposedSelect,
+  filters = NO_FILTERS,
 }: {
   graph: GraphPayload;
   showAll: boolean;
+  /** Active legend filters; empty = no filter. Filtering always works from the full graph (Ready items unfold). */
+  filters?: Set<FilterKey>;
   selectedId: string | null;
   onSelect: (id: string) => void;
   onClear: () => void;
   onExpand: () => void;
   cascade: Cascade | null;
+  proposedNodes?: DaveyProposedNode[];
+  proposedLinks?: DaveyProposedLink[];
+  reviewed?: Set<string>;
+  onProposedSelect?: (id: string) => void;
 }) {
   const rf = useReactFlow();
 
-  const view = useMemo(
-    () => (showAll ? { nodes: graph.nodes, edges: graph.edges, summaries: [] } : condense(graph.nodes, graph.edges)),
-    [graph.nodes, graph.edges, showAll],
-  );
+  const view = useMemo(() => {
+    if (filters.size) return filterView(graph.nodes, graph.edges, filters);
+    const v = showAll ? { nodes: graph.nodes, edges: graph.edges, summaries: [] } : condense(graph.nodes, graph.edges);
+    return { ...v, context: new Set<string>() };
+  }, [graph.nodes, graph.edges, showAll, filters]);
 
   const layoutEdges = useMemo(
     () => [
       ...view.edges.map((e) => ({ source: e.source, target: e.target })),
       ...view.summaries.map((s) => ({ source: s.parentId, target: s.id })),
+      ...proposedLinks.map((link) => ({ source: link.dependent_id, target: link.dependency_id })),
     ],
-    [view],
+    [view, proposedLinks],
   );
 
   const positions = useMemo(() => {
     const items: LayoutItem[] = [
       ...view.nodes.map((n) => ({ id: n.id, kind: n.kind, status: n.status })),
       ...view.summaries.map((s) => ({ id: s.id, kind: s.kind, status: 'ready' as const })),
+      ...proposedNodes.map((proposal) => ({ id: proposal.id, kind: 'proposed' as const, status: 'unknown' as const })),
     ];
     return layoutGraph(items, layoutEdges);
-  }, [view, layoutEdges]);
+  }, [view, layoutEdges, proposedNodes]);
 
   const chain = useMemo(() => (selectedId ? chainOf(selectedId, layoutEdges) : null), [selectedId, layoutEdges]);
   const missionCodes = useMemo(() => Object.fromEntries(graph.missions.map((m) => [m.id, m.code])), [graph.missions]);
@@ -87,6 +104,7 @@ export function DominoGraph({
         node: n,
         selected: n.id === selectedId,
         dimmed: Boolean(chain && !chain.has(n.id)),
+        context: view.context.has(n.id),
         delay: delays.get(n.id) ?? 0,
         missionCodes,
         daysOut: n.kind === 'mission' ? daysOut[n.id] : undefined,
@@ -99,8 +117,12 @@ export function DominoGraph({
       draggable: false,
       data: { labels: s.labels, noun: s.noun, size: s.kind, dimmed: Boolean(chain && !chain.has(s.id)) },
     }));
-    return [...cards, ...sums];
-  }, [view, positions, selectedId, chain, delays, missionCodes, daysOut]);
+    const suggestions: ProposedCardNode[] = proposedNodes.map((proposal) => ({
+      id:proposal.id,type:'proposed',position:positions.get(proposal.id) ?? {x:0,y:0},draggable:false,
+      data:{proposal,selected:proposal.id===selectedId,dimmed:Boolean(chain&&!chain.has(proposal.id)),reviewed:reviewed.has(proposal.id)},
+    }));
+    return [...cards, ...sums, ...suggestions];
+  }, [view, positions, selectedId, chain, delays, missionCodes, daysOut, proposedNodes, reviewed]);
 
   const statusOf = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n.status])), [graph.nodes]);
 
@@ -108,7 +130,7 @@ export function DominoGraph({
     const real: Edge[] = view.edges.map((e) => {
       const target = statusOf.get(e.target) ?? 'ready';
       const inChain = chain ? chain.has(e.source) && chain.has(e.target) : false;
-      const color = inChain ? '#22d3ee' : e.critical ? STATUS[target].hex : 'rgba(140,180,220,0.3)';
+      const color = inChain ? 'rgb(var(--accent))' : e.critical ? STATUS[target].hex : 'rgba(140,180,220,0.3)';
       return {
         id: e.id,
         source: e.source,
@@ -132,8 +154,14 @@ export function DominoGraph({
       focusable: false,
       style: { stroke: 'rgba(52,211,153,0.35)', strokeWidth: 1.5, strokeDasharray: '5 5', opacity: chain && !chain.has(s.id) ? 0.15 : 1 },
     }));
-    return [...real, ...folded];
-  }, [view, statusOf, chain]);
+    const suggested:Edge[]=proposedLinks.map(link=>({
+      id:link.id,source:link.dependent_id,target:link.dependency_id,type:'default',
+      label:'AI-proposed',labelStyle:{fill:'#22d3ee',fontSize:11,fontWeight:700},
+      labelBgStyle:{fill:'#061322',fillOpacity:0.95},labelBgPadding:[6,3],
+      style:{stroke:'#22d3ee',strokeWidth:2,strokeDasharray:'6 5',opacity:chain&&!(chain.has(link.dependent_id)&&chain.has(link.dependency_id))?0.25:1},
+    }));
+    return [...real, ...folded, ...suggested];
+  }, [view, statusOf, chain, proposedLinks]);
 
   // Keep the selected card visible beside the detail panel (which covers the right side).
   useEffect(() => {
@@ -144,14 +172,15 @@ export function DominoGraph({
       const w = n.measured?.width ?? 300;
       const h = n.measured?.height ?? 150;
       const { zoom } = rf.getViewport();
-      const panelPx = Math.min(32 * parseFloat(getComputedStyle(document.documentElement).fontSize), window.innerWidth * 0.92);
+      const drawerWidth = document.getElementById('ask-davey-drawer')?.getBoundingClientRect().width;
+      const panelPx = drawerWidth ?? Math.min(32 * parseFloat(getComputedStyle(document.documentElement).fontSize), window.innerWidth * 0.92);
       rf.setCenter(n.position.x + w / 2 + panelPx / 2 / zoom, n.position.y + h / 2, { zoom, duration: 500 });
     }, 80);
     return () => clearTimeout(t);
   }, [selectedId, rf]);
 
   // Re-fit when the focus, view mode or set of nodes changes (not on every status change).
-  const idsKey = `${graph.focus}|${showAll}|${nodes.map((n) => n.id).join(',')}`;
+  const idsKey = `${graph.focus}|${showAll}|${[...filters].join('+')}|${nodes.map((n) => n.id).join(',')}`;
   const lastKey = useRef('');
   useEffect(() => {
     if (lastKey.current === idsKey) return;
@@ -174,7 +203,8 @@ export function DominoGraph({
       nodesDraggable={false}
       nodesConnectable={false}
       edgesFocusable={false}
-      onNodeClick={(_, n) => (n.type === 'summary' ? onExpand() : onSelect(n.id))}
+      onNodeClick={(_, n) => (n.type === 'summary' ? onExpand() : n.type === 'proposed' ? onProposedSelect?.(n.id) : onSelect(n.id))}
+      onEdgeClick={(_, edge) => {if(edge.id.startsWith('proposal-link:'))onProposedSelect?.(edge.id);}}
       onPaneClick={onClear}
       proOptions={{ hideAttribution: true }}
       className="locker-flow"

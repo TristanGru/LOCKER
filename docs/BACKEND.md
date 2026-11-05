@@ -30,6 +30,8 @@ cd web && npm install && npm run dev                  # http://localhost:5173 (p
 | `missiontwin/engine.py` | Event-sourced scenario (R4), seeded vectorized Monte Carlo with common random numbers, deterministic planned case (R1), next domino, memo cache (R13) |
 | `missiontwin/fixes.py` | Fix candidates (borrow, cannibalize, wholesale/program office, expedite, crew loan, training, schedule shift, and pairs) ranked by net squadron missions in green, then own-ship uplift, then donor cost |
 | `missiontwin/llm.py` | Optional OpenAI-compatible LLM: fact extraction (span-verified), plain English to JSON action, brief rewrite. Content-hash cache (R9), timeout + fallback (R5), PII redaction + guard |
+| `missiontwin/davey_evidence.py` | Exercise-time-eligible source excerpts and question-specific retrieval for Ask Davey |
+| `missiontwin/davey.py` | Question-triggered answers, forecast/evidence validation, state binding, and review-only graph proposals |
 | `missiontwin/brief.py` | Deterministic brief with a citation on every claim |
 | `missiontwin/api.py` | FastAPI. Shared scenario, every write carries `base_version`, stale write returns 409 (R8) |
 
@@ -41,6 +43,7 @@ Provider setup, the DEV 2 API contract, evaluation, and offline replay are docum
 Copy `.env.example` to `.env`, then fill in `LLM_BASE_URL`, `LLM_MODEL`, and `LLM_API_KEY` if required.
 The app and commands load `.env` automatically; process environment variables take precedence.
 Without an endpoint, CASREPs and daily reports use clearly labeled deterministic extraction and briefs use the template.
+Ask Davey has a separate `LOCKER_DAVEY_LIVE=1` opt-in for question-triggered analysis; see the [prototype setup](../README.md#ask-davey-prototype).
 
 ```powershell
 .\.venv\Scripts\python.exe -m missiontwin.llm warm --report logs/llm-live-eval.json
@@ -81,11 +84,7 @@ These numbers come from the engine and the assumptions ledger. Nothing is tuned 
 
 ## Packaging (R6)
 
-```
-docker build -t missiontwin:0.1.0 .
-zarf package create .            # one component: image + deploy/k8s.yaml (1 replica)
-```
-Not yet verified on this machine (no Docker here). Confirm packaging expectations with Defense Unicorns staff on site.
+`powershell -ExecutionPolicy Bypass -File .\release.ps1 <version>` builds the image and Zarf package from `zarf.yaml` and `k8s/app.yaml` (1 replica), then deploys it. See [Deploy.md](../Deploy.md). Confirm packaging expectations with Defense Unicorns staff on site.
 
 ## Status and next steps
 

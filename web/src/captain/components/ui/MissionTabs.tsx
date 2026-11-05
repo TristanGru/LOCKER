@@ -15,7 +15,7 @@ export function MissionTabs({
   allowAll?: boolean;
 }) {
   return (
-    <div role="tablist" aria-label="Mission" className="flex flex-wrap gap-1 rounded-2xl border border-line bg-abyss-900/70 p-1">
+    <div role="tablist" aria-label="Mission" className="flex flex-wrap overflow-hidden rounded border border-line-strong bg-abyss-900">
       {missions.map((m) => {
         const meta = STATUS[m.status];
         const Icon = meta.icon;
@@ -27,8 +27,9 @@ export function MissionTabs({
             aria-selected={active}
             onClick={() => onChange(m.id)}
             className={clsx(
-              'flex items-center gap-2 rounded-xl px-4 py-2.5 text-left transition',
-              active ? 'bg-accent/15 shadow-[inset_0_0_0_1px_rgba(34,211,238,0.6)]' : 'hover:bg-ink/[0.06]',
+              // Segmented control: active segment carries a navy underline, not a glow.
+              'flex items-center gap-2 border-r border-line px-4 py-2 text-left transition-colors last:border-r-0',
+              active ? 'bg-abyss-800 shadow-[inset_0_-3px_0_rgb(var(--accent))]' : 'hover:bg-abyss-800',
             )}
           >
             <Icon className={clsx('h-4 w-4', meta.text)} aria-label={meta.label} />
@@ -47,8 +48,8 @@ export function MissionTabs({
           aria-selected={value === 'all'}
           onClick={() => onChange('all')}
           className={clsx(
-            'rounded-xl px-4 py-2.5 text-sm font-bold transition',
-            value === 'all' ? 'bg-accent/15 text-ink shadow-[inset_0_0_0_1px_rgba(34,211,238,0.6)]' : 'text-ink-muted hover:bg-ink/[0.06]',
+            'px-4 py-2 text-sm font-bold transition-colors',
+            value === 'all' ? 'bg-abyss-800 text-ink shadow-[inset_0_-3px_0_rgb(var(--accent))]' : 'text-ink-muted hover:bg-abyss-800',
           )}
         >
           All missions

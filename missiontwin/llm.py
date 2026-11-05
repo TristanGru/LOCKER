@@ -1,7 +1,8 @@
-"""LLM wrapper: three bounded jobs, all optional.
+"""LLM wrapper: three legacy jobs plus question-triggered Ask Davey, all optional.
 
 (a) extract facts from free-text daily reports (span-verified), (b) plain English -> JSON Action,
 (c) draft the readiness brief. The engine never takes a number from the LLM.
+Ask Davey uses a separate strict-schema request path after an explicit question.
 
 - OpenAI-compatible endpoint: LLM_BASE_URL, LLM_API_KEY, LLM_MODEL. Any self-hosted server works
   (vLLM, Ollama, llama.cpp, a model on UDS). The AI engineer owns the model choice.
@@ -22,6 +23,7 @@ import os
 import re
 import sys
 import tempfile
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Optional
@@ -33,8 +35,8 @@ from collections import Counter
 from .domain import CACHE_DIR, ROOT, MONTHS, UTC, parse_dtg
 from .models import ActionAdapter, ExtractedFact, LLMFactsOut, action_schema
 
-PROMPT_VERSION = "2026-11-05.2"
-TIMEOUTS = {"extract": 30.0, "extract_casrep": 30.0, "nl_action": 15.0, "brief": 15.0}
+PROMPT_VERSION = "2026-11-05.3"
+TIMEOUTS = {"extract": 30.0, "extract_casrep": 30.0, "nl_action": 15.0, "brief": 15.0, "overview": 10.0, "overview_chat": 30.0}
 FALLBACK_BADGE = "LLM unavailable, using fallback"
 OFFLINE_BADGE = "Offline: no LLM endpoint configured"
 
@@ -112,14 +114,25 @@ class LLMClient:
         body = {"model": self.model, "messages": messages, "temperature": 0, "max_tokens": 4096,
                 "response_format": {"type": "json_object"}}
         last = None
-        for _ in range(2):  # 1 retry
+        failures = 0
+        while failures < 2:  # 1 retry; at most two explicit parameter adaptations.
             try:
                 with httpx.Client(timeout=timeout, transport=self.transport) as c:
                     r = c.post(f"{self.base_url}/chat/completions", headers=headers, json=body)
+                    if r.status_code == 400:
+                        error = r.json().get('error', {})
+                        unsupported = error.get('code') in {'unsupported_parameter', 'unsupported_value'}
+                        if unsupported and error.get('param') == 'max_tokens' and 'max_tokens' in body:
+                            body['max_completion_tokens'] = body.pop('max_tokens')
+                            continue
+                        if unsupported and error.get('param') == 'temperature' and 'temperature' in body:
+                            body.pop('temperature')  # Reasoning models may require their default.
+                            continue
                     r.raise_for_status()
                     return r.json()["choices"][0]["message"]["content"]
             except Exception as e:  # timeout, connection, HTTP, shape
                 last = e
+                failures += 1
         raise LLMUnavailable(f"{type(last).__name__}: {last}")
 
     def run(self, task: str, messages: list[dict], input_bytes: bytes, validate: Callable[[dict], object],
@@ -148,6 +161,87 @@ class LLMClient:
         except OSError as e:
             raise LLMUnavailable(f"cannot persist model response: {e}") from e
         return out, "llm"
+
+    def run_structured(self, task: str, messages: list[dict], input_bytes: bytes,
+                       schema: dict, validate: Callable[[dict], object], extra: str = "",
+                       timeout: float = 30.0) -> tuple[object, str]:
+        """Run a strict-schema Chat Completions task within one total deadline.
+
+        Davey uses this separate path so older extraction/brief requests keep their
+        existing transport contract. Domain validation is applied to cache hits too.
+        """
+        import httpx
+
+        key = self.cache_key(task, input_bytes, extra)
+        hit = self.cache_get(key) if not self.refresh else None
+        if hit is not None:
+            try:
+                return validate(hit), "cache"
+            except (ValidationError, ValueError, KeyError, TypeError):
+                pass
+        if not self.configured:
+            raise LLMUnavailable("Davey live model is not enabled")
+
+        prompt = "\n".join(str(m["content"]) for m in messages)
+        pii_guard(prompt, self.forbidden_names)
+        self.sent_prompts.append(prompt)
+        body = {"model": self.model, "messages": messages, "store": False,
+                "max_completion_tokens": 3000,
+                "response_format": {"type": "json_schema", "json_schema": {
+                    "name": "ask_davey", "strict": True, "schema": schema}}}
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        deadline = time.monotonic() + timeout
+        last_error = "model request failed"
+        for attempt in range(2):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            try:
+                # Split the remaining wall-clock budget across HTTP phases so a
+                # slow connect followed by a slow read cannot each use 30 seconds.
+                connect_budget = min(2.0, remaining / 8)
+                write_budget = min(1.0, remaining / 16)
+                pool_budget = min(1.0, remaining / 16)
+                request_timeout = httpx.Timeout(connect=connect_budget,
+                                                read=remaining - connect_budget - write_budget - pool_budget,
+                                                write=write_budget, pool=pool_budget)
+                with httpx.Client(timeout=request_timeout, transport=self.transport) as client:
+                    response = client.post(f"{self.base_url}/chat/completions", headers=headers, json=body)
+                if time.monotonic() >= deadline:
+                    raise LLMUnavailable("model deadline exceeded")
+                if response.status_code >= 400:
+                    last_error = f"model returned HTTP {response.status_code}"
+                    if response.status_code not in (429, 500, 502, 503, 504):
+                        break
+                    continue
+                payload = response.json()
+                choice = payload["choices"][0]
+                message = choice["message"]
+                if message.get("refusal"):
+                    raise LLMUnavailable("model refused this request")
+                if choice.get("finish_reason") != "stop" or not message.get("content"):
+                    raise LLMUnavailable("model response was incomplete")
+                data = json.loads(message["content"])
+                out = validate(data)
+            except LLMUnavailable:
+                raise
+            except (httpx.HTTPError, OSError) as error:
+                last_error = type(error).__name__
+                if attempt:
+                    break
+            except (json.JSONDecodeError, ValidationError, ValueError, KeyError, TypeError, IndexError) as error:
+                raise LLMUnavailable(f"invalid model response: {type(error).__name__}") from error
+            else:
+                # A valid model result remains usable if the optional disk cache fails.
+                # Never retry a completed request because persisting it failed.
+                try:
+                    self.cache_put(key, task, input_bytes, data)
+                except OSError:
+                    pass
+                return out, "llm"
+        raise LLMUnavailable(last_error)
 
     def fallback_badge(self) -> str:
         return FALLBACK_BADGE if self.base_url else OFFLINE_BADGE

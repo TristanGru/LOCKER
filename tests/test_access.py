@@ -115,3 +115,25 @@ def test_sign_out_ends_the_session(app):
     assert co.get("/api/session").json() == {"user": None}
     assert copied.get("/api/state").status_code == 401  # the server revoked the token, not just the browser cookie
     assert TestClient(app).get("/api/state").headers["x-frame-options"] == "DENY"
+
+
+def test_assistants_and_fix_undo_respect_unit_access(app):
+    """Ask Davy, the overview assistant and chat, and per-fix undo apply the same per-unit rules."""
+    app, _ = app
+    fleet, co = signed_in(app), signed_in(app, "co.kessler")
+    ident = co.get("/api/scenario/version").json()
+    ask = {"question": "What threatens this event?", "ship_id": "VARNELL", "event_id": None, "node_id": None,
+           "expected_version": ident["version"], "expected_source_revision": ident["source_revision"],
+           "expected_epoch": ident["epoch"], "expected_scenario_digest": ident["scenario_digest"],
+           "expected_cursor": ident["cursor"], "expected_source_health_at": ident["source_health_at"] or "",
+           "request_id": "access-test-0001"}
+    assert co.post("/api/davey/ask", json=ask).status_code == 403
+    overview = {"unit_id": "VARNELL", "base_version": ident["version"], "source_revision": ident["source_revision"]}
+    assert co.post("/api/overview-assistant/conversations", json=overview).status_code == 403
+    assert co.post("/api/overview-assistant/brief", json=overview).status_code == 403
+
+    # A CO cannot withdraw a decision the fleet staff made, even on the CO's own ship.
+    fix = fleet.get("/api/fixes/KESSLER").json()["candidates"][0]["fix_id"]
+    v = fleet.post("/api/fixes/decide", json={"base_version": version(fleet), "fix_id": fix, "decision": "reject"}).json()["version"]
+    assert co.post("/api/fixes/undo", json={"base_version": v, "fix_id": fix}).status_code == 403
+    assert fleet.post("/api/fixes/undo", json={"base_version": v, "fix_id": fix}).status_code == 200

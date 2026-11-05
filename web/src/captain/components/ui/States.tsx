@@ -3,20 +3,19 @@ import { AlertTriangle, Inbox, RotateCw, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import clsx from '../../lib/clsx';
 
-/** Radar-sweep loading state. */
+/** Plain loading state: a thin indeterminate bar and a label. */
 export function Loading({ label = 'Loading', className }: { label?: string; className?: string }) {
   return (
-    <div role="status" className={clsx('flex flex-col items-center justify-center gap-5 py-16 text-ink-muted', className)}>
-      <div className="relative h-20 w-20">
-        <div className="absolute inset-0 rounded-full border border-accent/30" />
-        <div className="absolute inset-[22%] rounded-full border border-accent/20" />
-        <div
-          className="absolute inset-0 animate-sweep rounded-full"
-          style={{ background: 'conic-gradient(from 0deg, rgba(34,211,238,0.55), rgba(34,211,238,0) 28%)' }}
+    <div role="status" className={clsx('flex flex-col items-center justify-center gap-3 py-16 text-ink-muted', className)}>
+      <div className="relative h-[3px] w-48 overflow-hidden bg-line">
+        <motion.div
+          className="absolute inset-y-0 w-1/3 bg-accent"
+          initial={{ x: '-100%' }}
+          animate={{ x: '300%' }}
+          transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
         />
-        <div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent" />
       </div>
-      <span className="label-caps animate-blink">{label}…</span>
+      <span className="text-sm font-medium">{label}…</span>
     </div>
   );
 }

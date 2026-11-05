@@ -1,5 +1,5 @@
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
-import { BarChart3, Check, CheckCircle2, History, Network, OctagonX, ShieldCheck, SlidersHorizontal, X } from 'lucide-react';
+import { Ban, BarChart3, Check, CheckCircle2, History, Network, OctagonX, RotateCcw, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/api';
@@ -17,15 +17,19 @@ import { useApi } from '../state/useApi';
 import { STATUS, oddsStatus, pct } from '../theme/status';
 
 interface Toast {
-  kind: 'approved' | 'rejected' | 'modified' | 'error';
+  kind: 'approved' | 'rejected' | 'modified' | 'undone' | 'error';
   text: string;
+  /** Decision the toast offers to undo. */
+  undo?: Fix;
 }
 
 export function Fixes() {
   const { focus, setFocus, stopped, bump, setCascade } = useStore();
   const navigate = useNavigate();
-  const missionId = focus === 'all' ? 'M1' : focus;
   const missionsQ = useApi(() => api.getMissions());
+  // With no event chosen, open on the one most at risk (lowest odds) so the first screen shows real options.
+  const atRisk = [...(missionsQ.data?.missions ?? [])].sort((a, b) => (Number.isFinite(a.odds) ? a.odds : 2) - (Number.isFinite(b.odds) ? b.odds : 2))[0];
+  const missionId = focus === 'all' ? atRisk?.id ?? 'all' : focus;
   const fixesQ = useApi(() => api.getFixes(missionId), [missionId]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
@@ -40,6 +44,8 @@ export function Fixes() {
   const mission = missions.find((m) => m.id === missionId);
   const pending = fixesQ.data?.fixes ?? [];
   const decided = fixesQ.data?.decided ?? [];
+  const superseded = fixesQ.data?.superseded ?? [];
+  const approved = decided.find((f) => f.decision === 'approved');
   const best = pending[0];
 
   async function decide(fix: Fix, decision: DecisionKind, extra: { note?: string; paramValue?: number } = {}) {
@@ -52,12 +58,32 @@ export function Fixes() {
         setToast({
           kind: 'approved',
           text: `Approved "${fix.title}". ${moved.map((d) => `${d.code} ${pct(d.before)} → ${pct(d.after)}`).join(', ') || 'No change to mission odds.'}`,
+          undo: { ...fix, decision: 'approved' },
         });
       } else if (decision === 'reject') {
-        setToast({ kind: 'rejected', text: `Rejected "${fix.title}". Logged${extra.note ? ` with reason: ${extra.note}` : ''}.` });
+        setToast({ kind: 'rejected', text: `Rejected "${fix.title}". Logged${extra.note ? ` with reason: ${extra.note}` : ''}.`, undo: { ...fix, decision: 'rejected' } });
       } else {
         setToast({ kind: 'modified', text: `Updated "${fix.title}": now ${pct(r.fix.oddsBefore)} → ${pct(r.fix.oddsAfter)}. Approve it when ready.` });
       }
+      bump();
+    } catch (e) {
+      setToast({ kind: 'error', text: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  /** Withdraw an approval or rejection: the fix goes back into the ranked list and the odds are recomputed. */
+  async function undo(fix: Fix) {
+    setBusyId(fix.id);
+    try {
+      const r = await api.undoDecision(fix.id);
+      const moved = r.missionDeltas.filter((d) => Math.abs(d.after - d.before) >= 0.005);
+      setCascade(null);
+      setToast({
+        kind: 'undone',
+        text: `Undid ${fix.decision === 'approved' ? 'approval' : 'rejection'} of "${fix.title}". It is back in the list for a decision.${moved.length ? ' ' + moved.map((d) => `${d.code} ${pct(d.before)} → ${pct(d.after)}`).join(', ') + '.' : ''}`,
+      });
       bump();
     } catch (e) {
       setToast({ kind: 'error', text: e instanceof Error ? e.message : String(e) });
@@ -89,14 +115,21 @@ export function Fixes() {
               toast.kind === 'approved' && 'border-ready/50 bg-ready-soft text-ink',
               toast.kind === 'rejected' && 'border-line-strong bg-ink/[0.05] text-ink',
               toast.kind === 'modified' && 'border-accent/50 bg-accent/10 text-ink',
+              toast.kind === 'undone' && 'border-accent/50 bg-accent/10 text-ink',
               toast.kind === 'error' && 'border-risk/60 bg-risk-soft text-ink',
             )}
           >
             {toast.kind === 'approved' && <CheckCircle2 className="h-5 w-5 text-ready" aria-hidden />}
-            {toast.kind === 'rejected' && <X className="h-5 w-5 text-ink-muted" aria-hidden />}
+            {toast.kind === 'rejected' && <Ban className="h-5 w-5 text-ink-muted" aria-hidden />}
+            {toast.kind === 'undone' && <RotateCcw className="h-5 w-5 text-accent" aria-hidden />}
             {toast.kind === 'modified' && <SlidersHorizontal className="h-5 w-5 text-accent" aria-hidden />}
             {toast.kind === 'error' && <OctagonX className="h-5 w-5 text-risk" aria-hidden />}
             <span className="flex-1">{toast.text}</span>
+            {toast.undo && (
+              <button className="btn-ghost !py-1.5" disabled={stopped || busyId === toast.undo.id} onClick={() => undo(toast.undo!)}>
+                <RotateCcw className="h-4 w-4" aria-hidden /> Undo
+              </button>
+            )}
             {toast.kind === 'approved' && (
               <button className="btn-ghost !py-1.5" onClick={() => navigate('/dominoes')}>
                 <Network className="h-4 w-4" aria-hidden /> See it on the graph
@@ -123,10 +156,24 @@ export function Fixes() {
             ))}
 
           {fixesQ.data && pending.length === 0 && (
-            <EmptyState icon={ShieldCheck} title={decided.length ? 'Every fix has a decision' : fixesQ.data.note ? `No fix found that helps ${mission?.code ?? 'this mission'}` : `No fixes needed for ${mission?.code ?? 'this mission'}`} className="glass">
-              {decided.length
-                ? 'All recommended fixes for this mission were approved or rejected. New ones appear if the picture changes.'
-                : fixesQ.data.note ?? 'Nothing linked to this mission is pulling its odds down enough to fix right now.'}
+            <EmptyState
+              icon={ShieldCheck}
+              title={
+                approved
+                  ? `Covered by your approval`
+                  : decided.length
+                    ? 'Every fix has a decision'
+                    : fixesQ.data.note
+                      ? `No fix found that helps ${mission?.code ?? 'this mission'}`
+                      : `No fixes needed for ${mission?.code ?? 'this mission'}`
+              }
+              className="glass"
+            >
+              {approved
+                ? `"${approved.title}" handles what was pulling ${mission?.code ?? 'this mission'} down, so the remaining options would not raise its odds any further.${superseded.length ? ` ${superseded.length} other option${superseded.length === 1 ? ' is' : 's are'} listed as no longer needed.` : ''} New fixes appear if the picture changes.`
+                : decided.length
+                  ? 'All recommended fixes for this mission were approved or rejected. New ones appear if the picture changes.'
+                  : fixesQ.data.note ?? 'Nothing linked to this mission is pulling its odds down enough to fix right now.'}
             </EmptyState>
           )}
 
@@ -198,18 +245,45 @@ export function Fixes() {
                       </span>
                     ) : (
                       <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-ink/10">
-                        <X className="h-4 w-4 text-ink-muted" aria-hidden />
+                        <Ban className="h-4 w-4 text-ink-muted" aria-hidden />
                       </span>
                     )}
-                    <span className="min-w-0">
+                    <span className="min-w-0 flex-1">
                       <span className="block text-sm font-semibold text-ink">{f.title}</span>
                       <span className={clsx('text-xs font-semibold uppercase tracking-wider', f.decision === 'approved' ? 'text-ready' : 'text-ink-dim')}>
                         {f.decision === 'approved' ? 'Approved by CO' : 'Rejected by CO'}
                       </span>
                     </span>
+                    <button
+                      className="btn-ghost shrink-0 !px-2.5 !py-1 text-xs"
+                      disabled={stopped || busyId === f.id}
+                      onClick={() => undo(f)}
+                      title={stopped ? 'Stopped. Resume to undo.' : `Undo this ${f.decision === 'approved' ? 'approval' : 'rejection'}`}
+                      aria-label={`Undo ${f.decision === 'approved' ? 'approval' : 'rejection'} of ${f.title}`}
+                    >
+                      <RotateCcw className={clsx('h-3.5 w-3.5', busyId === f.id && 'animate-spin')} aria-hidden /> Undo
+                    </button>
                   </motion.li>
                 ))}
               </ul>
+            )}
+            {superseded.length > 0 && (
+              <div className="mt-4 border-t border-line pt-3">
+                <div className="label-caps mb-2">No longer needed ({superseded.length})</div>
+                <ul className="space-y-2">
+                  {superseded.map((f) => (
+                    <li key={f.id} className="flex items-start gap-3 rounded-xl border border-dashed border-line px-3 py-2.5 opacity-80">
+                      <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-ink/10">
+                        <ShieldCheck className="h-4 w-4 text-ink-muted" aria-hidden />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-ink">{f.title}</span>
+                        <span className="text-xs text-ink-dim">Covered by the approved fix: it would add nothing more.</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </Panel>
         </div>

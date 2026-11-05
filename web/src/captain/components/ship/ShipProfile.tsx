@@ -103,7 +103,7 @@ function DeckPin({ s, index, onOpen }: { s: Placed; index: number; onOpen: (id: 
         className={clsx(
           'absolute left-1/2 flex -translate-x-1/2 flex-col items-center whitespace-nowrap rounded-lg border bg-abyss-900/95 px-2.5 py-1 text-left shadow-glass backdrop-blur-md transition group-hover:brightness-125',
           up ? 'bottom-[calc(100%+0.7rem)]' : 'top-[calc(100%+0.7rem)]',
-          s.isNextDomino ? 'border-risk shadow-[0_0_22px_-6px_rgba(251,77,93,0.9)]' : meta.border,
+          s.isNextDomino ? 'border-risk' : meta.border,
         )}
       >
         {s.isNextDomino && (
@@ -132,7 +132,7 @@ function BelowPin({ s, index, onOpen }: { s: ShipSystem; index: number; onOpen: 
       transition={{ delay: 0.3 + index * 0.05 }}
       className={clsx(
         'flex min-w-0 items-center gap-2.5 rounded-xl border bg-abyss-900/60 px-3 py-2 text-left transition hover:bg-ink/[0.06]',
-        s.isNextDomino ? 'border-risk shadow-[0_0_22px_-8px_rgba(251,77,93,0.9)]' : meta.border,
+        s.isNextDomino ? 'border-risk' : meta.border,
       )}
       aria-label={`${s.name} (${s.location}): ${meta.label}${s.isNextDomino ? ', next domino' : ''}`}
     >
