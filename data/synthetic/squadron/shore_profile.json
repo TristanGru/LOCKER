@@ -373,6 +373,12 @@
                           "min_working": 1
                         }
                       ]
+                    },
+                    {
+                      "eic": "MSUB-TRL",
+                      "name": "Trailer and running gear",
+                      "critical": false,
+                      "parts": []
                     }
                   ],
                   "weight": 0.7

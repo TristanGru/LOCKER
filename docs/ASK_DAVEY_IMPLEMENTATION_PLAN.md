@@ -35,7 +35,7 @@ These defaults can be refined after the live walkthrough:
 | Dominoes context | Selected ship, focused mission or all missions, and an explicitly selected node when relevant |
 | Mission assessment | Use the engine's full event-interval assessment and active dates; distinguish start-time estimates |
 | Conversation lifetime | Separate in-memory chats for Mission Overview and Davy's Dominoes in the current browser tab; navigation restores each page's own chat |
-| Clear chat | The popup's **Clear chat** control clears only the active page's chat, draft, and review state without requesting analysis |
+| Clear chat | The popup's **New conversation** control clears only the active page's chat, draft, and review state without requesting analysis |
 | Review controls | Mark reviewed and dismiss; these affect the suggestion display only |
 | Scope changes | A different ship or mission starts a new context; previous answers are not silently reused as current evidence |
 | Report search | Exact identifiers plus lexical search over eligible accepted records; no vector database required initially |
@@ -44,9 +44,9 @@ These defaults can be refined after the live walkthrough:
 
 ## 2. Page experience
 
-Place the fixed **Ask Davey** button in the shared shell on `/missions` and `/dominoes`, with a small **AI** label. The compact popup opens above it, empty or to the existing thread for its current context. Suggested questions fill the input; the submit button initiates requests. Do not display an automatic new-warning badge.
+Place the fixed **Ask Davey** button in the shared shell on `/missions` and `/dominoes`, with a small **AI** label. Match the Ship and Shore assistant's floating popup layout and conversation bubbles while keeping predictive warnings, forecast claims, and reviewable Dominoes suggestions. The popup opens above the button, empty or to the existing thread for its current context. Suggested questions fill the input; submission initiates requests. Do not display an automatic new-warning badge.
 
-Each page identifies its chat in the popup. Switching pages closes the popup; reopening it restores that page's own questions and answers. **Clear chat** resets the active page's conversation. A Mission Overview suggestion explicitly sent with **Show in Dominoes** appears on the Dominoes graph for review, while its answer stays in the Mission Overview chat. The Dominoes popup labels the traced suggestion's origin.
+Each page identifies its chat in the popup. Switching pages closes the popup; reopening it restores that page's own questions and answers. **New conversation** resets the active page's conversation. Mission scope follows the selected unit in the header; the popup names that unit and the mission it answered, since Mission Overview shows all units. A Mission Overview suggestion explicitly sent with **Show in Dominoes** appears on the Dominoes graph for review, while its answer stays in the Mission Overview chat. The Dominoes popup labels the traced suggestion's origin.
 
 The popup shows the selected ship and mission scope, the question, loading status, and the answer. Separate **Forecasted warnings** from **Emerging concerns / Needs verification**. Each warning offers evidence inspection, an explanation, and **Trace in Dominoes** where a valid graph relationship exists.
 

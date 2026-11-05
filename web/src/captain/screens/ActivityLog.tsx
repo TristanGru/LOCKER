@@ -97,12 +97,12 @@ export function ActivityLog() {
             aria-selected={filter === f.id}
             onClick={() => setFilter(f.id)}
             className={clsx(
-              'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition',
+              'inline-flex items-center gap-2 rounded-sm border px-4 py-2 text-sm font-semibold transition',
               filter === f.id ? 'border-accent/70 bg-accent/15 text-accent' : 'border-line text-ink-muted hover:border-line-strong hover:text-ink',
             )}
           >
             {f.label}
-            <span className="num rounded-full bg-ink/[0.08] px-1.5 text-xs">{counts[f.id] ?? 0}</span>
+            <span className="num rounded-sm bg-ink/[0.08] px-1.5 text-xs">{counts[f.id] ?? 0}</span>
           </button>
         ))}
       </div>
@@ -144,7 +144,7 @@ function Row({ entry: e, index }: { entry: LogEntry; index: number }) {
         <div className="text-[0.7rem] text-ink-dim">{e.id}</div>
       </div>
       <div>
-        <span className={clsx('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold', meta.cls)}>
+        <span className={clsx('inline-flex items-center gap-1.5 rounded-sm border px-2.5 py-1 text-xs font-bold', meta.cls)}>
           <Icon className="h-3.5 w-3.5" aria-hidden /> {meta.label}
         </span>
         <div className="mt-1 flex items-center gap-1 text-xs text-ink-dim">

@@ -71,7 +71,7 @@ Suggested questions discussed or derived from the selected early-warning workflo
 - What evidence supports this proposed connection?
 - What should I verify next?
 
-The current mission or selected graph node was proposed as the assistant's context. The prototype uses the selected ship and mission, chooses the most urgent mission when scope is set to all, and retains a short answer history for each page. The popup labels the active page's chat and provides **Clear chat** for that page. Explicitly tracing a Mission Overview suggestion shows it on the Dominoes graph without copying the Mission Overview conversation into the Dominoes chat.
+The current mission or selected graph node was proposed as the assistant's context. The prototype uses the selected unit and mission, chooses that unit's most urgent mission when scope is set to all, and retains a short answer history for each page. The popup labels the active page's chat and provides **New conversation** to clear that page's chat. Explicitly tracing a Mission Overview suggestion shows it on the Dominoes graph without copying the Mission Overview conversation into the Dominoes chat.
 
 ### Trigger constraints
 

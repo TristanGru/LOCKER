@@ -1,5 +1,6 @@
-import { ArrowLeft, ArrowRight, BookOpen, Check, ExternalLink, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, Check, ExternalLink, MessageSquare, Send, Sparkles, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { api, daveyEvidence } from '../../api/api';
 import type { DaveyAnswer, DaveyClaim, DaveyEvidence, Mission } from '../../api/types';
 import { useDavey, type DaveyTab } from '../../state/davey';
@@ -55,6 +56,7 @@ export function AskDavey() {
     setDrafts(current=>({...current,[davey.tab]:typeof next==='function'?next(current[davey.tab]):next}));
   }
   const [missions,setMissions]=useState<Mission[]>([]);
+  const [scopeUnitName,setScopeUnitName]=useState('');
   const [evidenceId,setEvidenceId]=useState<string|null>(null);
   const [evidence,setEvidence]=useState<DaveyEvidence|null>(null);
   const [evidenceError,setEvidenceError]=useState<string|null>(null);
@@ -67,7 +69,8 @@ export function AskDavey() {
   useEffect(()=>{
     if(!davey.open)return;
     let active=true;
-    api.getMissions().then(result=>{if(active)setMissions(result.missions);}).catch(()=>{if(active)setMissions([]);});
+    api.getMissions().then(result=>{if(active){setMissions(result.missions);setScopeUnitName(result.ship.name);}})
+      .catch(()=>{if(active){setMissions([]);setScopeUnitName('');}});
     return()=>{active=false;};
   },[davey.open,ship]);
   useEffect(()=>{
@@ -132,6 +135,8 @@ export function AskDavey() {
   }
 
   const answer=davey.answer;
+  const unitLabel=scopeUnitName||ship;
+  const answerMission=missions.find(item=>item.id===answer?.event_id)?.code||answer?.event_id;
   const tracedSuggestionId=davey.graph.sourceTab==='missions'?davey.graph.selectedSuggestionId:null;
   const fromMission=Boolean(tracedSuggestionId);
   const suggestionAnswer=fromMission?davey.graph.answer:answer;
@@ -141,27 +146,29 @@ export function AskDavey() {
   const suggestionReviewed=fromMission?davey.graph.reviewed:davey.reviewed;
   const prior=davey.history.slice(0,-1);
 
-  return <>
-    <button ref={triggerRef} type="button" onClick={davey.open?davey.closeDrawer:davey.openDrawer} aria-label="Ask Davey" aria-expanded={davey.open} aria-controls="ask-davey-drawer"
-      className="fixed bottom-6 right-6 z-30 inline-flex items-center gap-2 rounded-full border border-accent/60 bg-abyss-800 px-5 py-3 font-bold text-ink shadow-focus hover:bg-abyss-700">
-      <Sparkles className="h-5 w-5 text-accent" aria-hidden /> Ask Davey <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[0.65rem] uppercase tracking-wider text-accent">AI</span>
+  return createPortal(<>
+    <button ref={triggerRef} type="button" onClick={davey.open?davey.closeDrawer:davey.openDrawer} aria-label={davey.open?'Minimize Ask Davey':'Ask Davey'} aria-expanded={davey.open} aria-controls={davey.open?'ask-davey-drawer':undefined}
+      className="fixed right-4 z-[70] flex items-center gap-2 rounded-full border border-line bg-abyss-800 px-5 py-3 font-semibold text-ink shadow-xl transition hover:-translate-y-0.5 hover:bg-abyss-700 focus-visible:outline focus-visible:outline-2 print:hidden sm:right-6"
+      style={{bottom:'calc(var(--chrome-bottom, 0px) + 1rem)'}}>
+      {davey.open?<X className="h-5 w-5" aria-hidden />:<MessageSquare className="h-5 w-5" aria-hidden />} {davey.open?'Minimize':'Ask Davey'} <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[0.65rem] uppercase tracking-wider text-accent">AI</span>
     </button>
-    {davey.open&&<aside id="ask-davey-drawer" role="dialog" aria-label="Ask Davey" className="fixed bottom-[5.5rem] right-6 z-40 flex h-[32rem] max-h-[70dvh] w-[28rem] max-w-[90vw] flex-col overflow-hidden rounded-2xl border border-line-strong bg-abyss-900 shadow-[0_20px_60px_rgba(0,0,0,0.7)]">
-      <header className="flex items-center gap-2 border-b border-line px-5 py-4">
-        <Sparkles className="h-5 w-5 text-accent" aria-hidden />
-        <div className="min-w-0 flex-1"><h2 className="font-bold text-ink">Ask Davey</h2><p className="truncate text-xs text-ink-muted">{tabLabel} chat · AI early warning</p></div>
-        <button type="button" onClick={clearCurrentChat} className="btn-ghost shrink-0 !px-2 !py-1.5 text-xs" aria-label={`Clear ${tabLabel} chat`} title={`Clear ${tabLabel} chat`}><Trash2 className="h-3.5 w-3.5" aria-hidden /> Clear chat</button>
-        <button type="button" onClick={davey.closeDrawer} className="btn-ghost shrink-0 !p-2" aria-label="Close Ask Davey"><X className="h-5 w-5" aria-hidden /></button>
+    {davey.open&&<aside id="ask-davey-drawer" role="dialog" aria-label="Ask Davey" aria-modal="false" className="fixed right-4 z-[70] flex h-[38rem] w-[min(35rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-line bg-abyss-800 text-ink shadow-2xl print:hidden sm:right-6"
+      style={{bottom:'calc(var(--chrome-bottom, 0px) + 5rem)',maxHeight:'calc(100dvh - var(--chrome-top, 0px) - var(--chrome-bottom, 0px) - 6rem)'}}>
+      <header className="flex items-center gap-2 border-b border-line bg-abyss-800 px-5 py-3">
+        <MessageSquare className="h-5 w-5" aria-hidden />
+        <div className="min-w-0 flex-1"><h2 className="font-bold text-ink">Ask Davey</h2><p className="truncate text-xs text-ink-muted">{tabLabel} chat · Predictive early warning</p></div>
+        <button type="button" onClick={clearCurrentChat} className="inline-flex shrink-0 items-center gap-1 rounded border border-line px-2 py-1 text-xs font-semibold hover:bg-ink/10" aria-label={`Clear ${tabLabel} chat`} title={`Clear ${tabLabel} chat`}><Trash2 className="h-3.5 w-3.5" aria-hidden /> New conversation</button>
+        <button type="button" onClick={davey.closeDrawer} className="shrink-0 rounded-lg p-2 hover:bg-ink/10 focus-visible:outline focus-visible:outline-2" aria-label="Close Ask Davey"><X className="h-5 w-5" aria-hidden /></button>
       </header>
-      <div className="border-b border-line px-5 py-3 text-sm text-ink-muted">
-        <label className="flex items-center gap-2">Mission scope <select aria-label="Davey mission scope" value={focus} onChange={event=>setFocus(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-line bg-abyss-950 px-2 py-1.5 text-ink">
-          <option value="all">Most urgent mission</option>
+      <div className="border-b border-line bg-abyss-800 px-5 py-3 text-sm text-ink-muted">
+        <label className="flex items-center gap-2">Mission scope <select aria-label="Davey mission scope" value={focus} onChange={event=>setFocus(event.target.value)} className="min-w-0 flex-1 rounded border border-line bg-abyss-800 px-2 py-1.5 text-ink">
+          <option value="all">Most urgent on {unitLabel}</option>
           {missions.map(mission=><option key={mission.id} value={mission.id}>{mission.code}</option>)}
         </select></label>
-        <p className="mt-2 text-xs">{ship} · Davey searches currently available reports when you submit a question.</p>
+        <p className="mt-2 text-xs">Assessing {unitLabel}. Davey searches current reports and modeled mission risks when you submit a question.</p>
         {davey.contextNodeId&&<p className="mt-2 flex items-center gap-2 text-xs"><span className="min-w-0 flex-1 truncate" title={davey.contextNodeId}>Focused graph item: {davey.contextNodeId}</span><button type="button" onClick={davey.clearContextNode} className="text-accent hover:underline">Clear</button></p>}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+      <div aria-label="Conversation transcript" aria-live="polite" className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
         {evidenceId ? <div>
           <button type="button" onClick={closeEvidence} className="mb-4 inline-flex items-center gap-1 text-sm text-accent"><ArrowLeft className="h-4 w-4" aria-hidden /> Back to answer</button>
           {evidenceError&&<p role="alert" className="rounded-lg border border-risk/50 p-3 text-sm text-risk">{evidenceError}</p>}
@@ -189,27 +196,32 @@ export function AskDavey() {
             <p className="mt-3 text-xs text-ink-muted">Reviewing a suggestion does not change readiness or the modeled graph.</p>
           </article>
         </div> : <>
-          {!answer&&<div className="rounded-xl border border-line bg-abyss-800 p-4">
-            <h3 className="font-semibold text-ink">What should Davey check?</h3>
-            <p className="mt-2 text-sm text-ink-muted">Ask about future constraints, recent reports, or a repair dependency. Analysis starts when you submit.</p>
+          {!answer&&<div className="rounded-xl border border-line p-4">
+            <h3 className="flex items-center gap-2 font-semibold text-ink"><Sparkles className="h-4 w-4 text-accent" aria-hidden /> What should Davey check?</h3>
+            <p className="mt-2 text-sm text-ink-muted">Ask what could change this mission's outlook next. Davey compares the forecast with currently available reports and flags what needs verification.</p>
           </div>}
-          {prior.map(item=><div key={item.answer_id} className="mt-4 rounded-xl border border-line bg-abyss-800/60 p-3 text-sm">
-            <p className="font-semibold text-ink">You: {item.question}</p><p className="mt-1 line-clamp-2 text-ink-muted">Davey: {item.answer}</p>
+          {prior.map(item=><div key={item.answer_id} className="mt-4 space-y-2 text-sm">
+            <article aria-label="Your message" className="ml-6 rounded-xl border border-line bg-ink/5 p-3"><p className="text-xs font-bold">You</p><p className="mt-1">{item.question}</p></article>
+            <article aria-label="Assistant message" className="mr-1 rounded-xl border border-line p-3"><p className="text-xs font-bold">Davey · {item.generation.label}</p><p className="mt-1 line-clamp-3 text-ink-muted">{item.answer}</p></article>
           </div>)}
-          {answer&&<article className="mt-4 space-y-4">
+          {answer&&<div className="mt-4 space-y-3">
             {davey.stale&&<div role="status" className="rounded-lg border border-watch/70 bg-watch-soft p-3 text-sm text-watch">This answer describes an earlier mission or exercise state. Submit a new question for the current picture.</div>}
-            <div className="rounded-xl border border-line bg-abyss-800 p-4">
+            <article aria-label="Your message" className="ml-6 rounded-xl border border-line bg-ink/5 p-3 text-sm">
+              <p className="text-xs font-bold">You</p><p className="mt-1">You asked: {answer.question}</p>
+            </article>
+            <article aria-label="Assistant message" className="mr-1 rounded-xl border border-line p-4">
               <div className="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
+                <strong className="text-ink">Davey · Predictive assessment</strong>
                 <span className="rounded-full border border-accent/50 px-2 py-0.5 text-accent">{answer.generation.label}</span>
+                <span>{answerMission} · {unitLabel}</span>
                 <span>Exercise {new Date(answer.identity.exercise_cursor).toLocaleString()}</span>
                 <span>Answered {new Date(answer.generation.generated_at).toLocaleString()}</span>
               </div>
-              <p className="mt-3 text-xs font-semibold text-ink-muted">You asked: {answer.question}</p>
-              <p className="mt-2 text-sm leading-relaxed text-ink">{answer.answer}</p>
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-ink">{answer.answer}</p>
               <ClaimChips ids={answer.answer_claim_ids} answer={answer}/>
               {!davey.stale&&<EvidenceButtons ids={answer.answer_evidence_ids} answer={answer} onOpen={id=>void openEvidence(id)}/>}
               {answer.generation.reason&&<p className="mt-3 text-xs text-ink-muted">{answer.generation.reason}</p>}
-            </div>
+            </article>
             {answer.warnings.map((warning,index)=><div key={`${warning.kind}-${index}`} className="rounded-xl border border-line bg-abyss-800 p-4">
               <p className={`label-caps ${warning.kind==='emerging'?'text-watch':'text-accent'}`}>{warning.kind==='emerging'?'Emerging concern · Needs verification':'Forecasted warning'}</p>
               <h3 className="mt-2 text-base font-bold text-ink">{warning.title}</h3>
@@ -236,18 +248,20 @@ export function AskDavey() {
             {answer.coverage.coverage_issues.length>0&&<p className="text-xs text-watch">Coverage gaps: {answer.coverage.coverage_issues.join('; ')}</p>}
             {answer.coverage.stale_linked_files.length>0&&<p className="text-xs text-watch">Stale linked sources: {answer.coverage.stale_linked_files.join(', ')}</p>}
             {answer.coverage.last_refresh_status==='failed'&&<p className="text-xs text-watch">The last source refresh failed; this answer uses the retained source snapshot.</p>}
-          </article>}
-          {!davey.loading&&<div className="mt-5 space-y-2"><p className="label-caps">Suggested questions</p>{SUGGESTED[davey.tab].map(prompt=><button key={prompt} type="button" onClick={()=>{setDraft(prompt);inputRef.current?.focus();}} className="block w-full rounded-lg border border-line px-3 py-2 text-left text-sm text-ink-muted hover:border-accent hover:text-ink">{prompt}</button>)}</div>}
+          </div>}
+          {!davey.loading&&<div className="mt-5"><p className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-muted">Suggested predictive questions</p><div className="flex flex-wrap gap-2">{SUGGESTED[davey.tab].map(prompt=><button key={prompt} type="button" onClick={()=>{setDraft(prompt);inputRef.current?.focus();}} className="rounded-full border border-line px-3 py-1.5 text-left text-xs text-ink-muted hover:border-accent hover:text-ink">{prompt}</button>)}</div></div>}
         </>}
       </div>
-      <form onSubmit={submit} className="border-t border-line bg-abyss-900 p-4">
+      <form onSubmit={submit} className="border-t border-line bg-abyss-800 p-4">
         {davey.error&&<p role="alert" className="mb-3 rounded-lg border border-risk/50 px-3 py-2 text-sm text-risk">{davey.error}</p>}
         {davey.loading&&<p role="status" className="mb-2 text-sm text-accent">Analyzing the selected mission and reports...</p>}
         <label className="sr-only" htmlFor="davey-question">Ask Davey a question</label>
         <div className="flex items-end gap-2"><textarea ref={inputRef} id="davey-question" value={draft} onChange={event=>setDraft(event.target.value)}
-          maxLength={600} rows={2} placeholder="Ask about a mission risk or report..." className="min-w-0 flex-1 resize-none rounded-xl border border-line bg-abyss-950 px-3 py-2 text-sm text-ink outline-none focus:border-accent" />
-          <button type="submit" disabled={davey.loading||draft.trim().length<3} className="btn-accent flex h-10 items-center gap-1 px-3 disabled:opacity-50"><Send className="h-4 w-4" aria-hidden /> Ask</button></div>
+          onKeyDown={event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.nativeEvent.isComposing){event.preventDefault();event.currentTarget.form?.requestSubmit();}}}
+          maxLength={600} rows={2} placeholder="Ask what could affect this mission next..." className="min-w-0 flex-1 resize-none rounded border border-line bg-abyss-800 px-3 py-2 text-sm text-ink outline-none focus:border-accent" />
+          <button type="submit" disabled={davey.loading||draft.trim().length<3} className="rounded border border-line px-4 py-2 font-semibold text-ink hover:bg-ink/10 disabled:opacity-50"><Send className="mr-1 inline h-4 w-4" aria-hidden /> Ask</button></div>
+        <p className="mt-2 text-xs text-ink-muted">Enter asks · Shift+Enter adds a line. Davey checks current reports and forecast claims when you submit.</p>
       </form>
     </aside>}
-  </>;
+  </>,document.body);
 }

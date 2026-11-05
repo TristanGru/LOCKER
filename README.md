@@ -4,7 +4,9 @@ LOCKER connects synthetic maintenance, supply, personnel, training, and event da
 
 Backend setup and architecture: [MissionTwin backend](docs/BACKEND.md). AI configuration and forecast API: [DEV 2 guide](docs/DEV2.md). Synthetic exercise dataset: [data guide](data_sources/Synthetic%20Data/README.md). Naval station support: [shore implementation](docs/SHORE.md).
 
-Ask Davey's first prototype is available on Mission Overview and Davy's Dominoes. The broader [Captain decision assistant plan](docs/CAPTAIN_DECISION_ASSISTANT_PLAN.md) remains a roadmap.
+Ship and Shore Overview now include floating Ask Davy chat with LLM-written summaries, inline source/calculation citations, session-only follow-ups, and optional local MiniLM/Transformers.js search. See [overview assistant setup, usage and current limits](docs/OVERVIEW_ASSISTANT.md); model assets require a one-time explicit bundle step.
+
+Mission Overview and Davy's Dominoes have the separate [Ask Davey prototype](#ask-davey-prototype). The [Captain decision assistant plan](docs/CAPTAIN_DECISION_ASSISTANT_PLAN.md) covers work beyond these two assistants.
 
 **Synthetic exercise only. Not an operational readiness authority.** There is no authentication or real-system connector. Do not expose this local demo to an untrusted network or load operational/personnel data into it.
 
@@ -44,7 +46,7 @@ The previous advanced workspace is retained at **`/?legacy=1`** for the full ass
 
 Open **Mission Overview** or **Davy's Dominoes** and select the floating **Ask Davey · AI** button. It opens a compact popup above the button. Opening the popup or choosing a suggested question makes no model request; analysis starts when you press **Ask**. Davey searches currently eligible requisitions, maintenance records, CASREPs, and daily reports for the selected ship and mission, then combines those passages with the engine's forecast claims. Answers show their generation source, exercise time, citations, and source uncertainty.
 
-Mission Overview and Davy's Dominoes keep separate chats. Switching pages closes the popup; reopen it to see that page's chat. **Clear chat** resets the active page's conversation. **Show in Dominoes** carries a Mission Overview graph suggestion into Dominoes for review while leaving the chat history on Mission Overview.
+Mission Overview and Davy's Dominoes use the same floating chat presentation as the Ship and Shore assistants, with forecast warnings, report evidence, and graph suggestions. They keep separate chats. Switching pages closes the popup; reopen it to see that page's chat. **New conversation** clears the active page's chat. Mission scope follows the selected unit in the header and is shown in the popup. **Show in Dominoes** carries a Mission Overview graph suggestion into Dominoes for review while leaving the chat history on Mission Overview.
 
 The default demo shows **Rules-based fallback** warnings from the readiness engine. To enable the live OpenAI response, copy [.env.example](.env.example) to an ignored `.env`, add your Platform key as `LLM_API_KEY`, and set `LOCKER_DAVEY_LIVE=1`. The example selects `gpt-4o-mini`, which supports [Chat Completions Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=chat). Start or restart the demo normally. `MISSIONTWIN_DEMO_MODE=1` keeps ingestion, action parsing, and briefs offline; Davey's separate opt-in permits a model call only after a submitted question. The key stays in server configuration and is never sent to the browser.
 

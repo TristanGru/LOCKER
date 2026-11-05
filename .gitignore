@@ -15,10 +15,15 @@ playwright-report/
 
 # App runtime output (activity log is the app's own, never a source record)
 logs/
+cache/llm/
 data/normalized/
 data/demo-refresh/
 data/demo-json/
 .artifacts/
+
+# Locally bundled overview embedding model/runtime (rebuild with scripts/bundle_overview_embeddings.py)
+web/public/models/
+web/public/wasm/
 
 # Secrets and local config
 .env

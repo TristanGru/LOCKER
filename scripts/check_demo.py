@@ -57,10 +57,16 @@ def main():
             except (urllib.error.URLError, TimeoutError) as error:
                 raise RuntimeError('Isolated API failed initial dashboard:\n' + log.read_text(encoding='utf-8')) from error
             print(f'Acceptance API: {env["LOCKER_URL"]} (temporary sources and activity log)', flush=True)
-            browser = [npm, 'run', 'test:e2e']
             if len(sys.argv) > 1:
-                browser.extend(['--', *sys.argv[1:]])
-            subprocess.run(browser, cwd=ROOT / 'web', env=env, check=True)
+                browser = [npm, 'run', 'test:e2e', '--', *sys.argv[1:]]
+                subprocess.run(browser, cwd=ROOT / 'web', env=env, check=True)
+            else:
+                # Release browser WebGL and local embedding workers between specs;
+                # otherwise they can compete with the API's fix ranking work.
+                for spec in sorted((ROOT / 'web/tests').glob('*.spec.ts')):
+                    print(f'Browser acceptance: {spec.name}', flush=True)
+                    subprocess.run([npm, 'run', 'test:e2e', '--', spec.name],
+                                   cwd=ROOT / 'web', env=env, check=True)
         finally:
             process.terminate()
             try:

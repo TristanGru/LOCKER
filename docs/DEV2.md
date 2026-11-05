@@ -13,7 +13,7 @@ Copy `.env.example` to `.env` in the repository root, only if `.env` does not al
 | `LOCKER_DAVEY_LIVE` | `1` permits Ask Davey to call the configured model after a submitted question, even while legacy jobs are offline |
 
 The app and CLI load `.env` automatically. Process environment variables take precedence. `.env` is ignored by Git.
-Legacy extraction needs `/chat/completions`, JSON-object response format, `temperature: 0`, and `max_tokens`.
+Legacy extraction uses `/chat/completions` and JSON-object response format. The client starts with `temperature: 0` and `max_tokens`; for explicit provider parameter errors it adapts to `max_completion_tokens` and/or omits `temperature` for models that require their default. It keeps JSON-output validation.
 Ask Davey uses strict JSON-schema output and a separate live switch; see the [Ask Davey setup](../README.md#ask-davey-prototype). The example configuration selects OpenAI for Davey. No live-model results are bundled.
 
 ## Prepare and verify the offline demo

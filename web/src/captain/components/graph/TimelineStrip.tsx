@@ -79,7 +79,21 @@ export function TimelineStrip({
       return { ...m, lane };
     });
   const lanesUsed = markers.length === 0 ? 0 : Math.max(...markers.map((m) => m.lane)) + 1;
-  const height = lanesUsed === 0 ? '5.6rem' : lanesUsed === 1 ? '7.55rem' : '9.2rem';
+  const baseRem = lanesUsed === 0 ? 5.6 : lanesUsed === 1 ? 7.55 : 9.2;
+
+  // Mission labels get the same greedy lanes: a label that would overlap its neighbour moves up a row.
+  const missionEnds = [-Infinity, -Infinity, -Infinity];
+  const missionLane = new Map<string, number>();
+  for (const m of [...missions].sort((a, b) => a.daysOut - b.daysOut)) {
+    const w = m.code.length * 8.6 + 92;
+    const center = frac(m.daysOut) * width;
+    let lane = missionEnds.findIndex((end) => center - w / 2 > end + 8);
+    if (lane === -1) lane = missionEnds.indexOf(Math.min(...missionEnds));
+    missionEnds[lane] = center + w / 2;
+    missionLane.set(m.id, lane);
+  }
+  const LIFT = 2.6; // rem added above the axis for each extra row of mission labels
+  const lift = Math.max(0, ...missionLane.values()) * LIFT;
 
   return (
     <div className="glass relative px-6 pb-2 pt-3" aria-label="30-day timeline">
@@ -87,7 +101,8 @@ export function TimelineStrip({
         <span className="label-caps">Next 30 days</span>
         <span className="text-xs text-ink-dim">Missions above · flagged part ETAs and departures below</span>
       </div>
-      <motion.div ref={ref} className="relative" initial={false} animate={{ height }} transition={{ duration: 0.4 }}>
+      <motion.div ref={ref} className="relative" initial={false} animate={{ height: `${baseRem + lift}rem` }} transition={{ duration: 0.4 }}>
+       <div className="absolute inset-x-0 bottom-0" style={{ top: `${lift}rem` }}>
         {/* axis */}
         <div className="absolute left-0 right-0 top-[4.4rem] h-px bg-line-strong" />
         {Array.from({ length: DAYS + 1 }, (_, d) => (
@@ -102,10 +117,12 @@ export function TimelineStrip({
           <span className="h-4 w-px bg-accent" />
         </div>
 
-        {missions.map((m) => {
+        {/* Higher rows first, so a lower label paints over the stems that pass behind it. */}
+        {[...missions].sort((a, b) => (missionLane.get(b.id) ?? 0) - (missionLane.get(a.id) ?? 0)).map((m) => {
           const meta = STATUS[m.status];
           const Icon = meta.icon;
           const dim = focus !== 'all' && focus !== m.id;
+          const row = missionLane.get(m.id) ?? 0;
           return (
             <motion.button
               key={m.id}
@@ -114,16 +131,19 @@ export function TimelineStrip({
               initial={false}
               animate={{ left: x(m.daysOut), opacity: dim ? 0.45 : 1 }}
               transition={{ type: 'spring', stiffness: 120, damping: 18 }}
-              className="group absolute top-0 flex -translate-x-1/2 flex-col items-center"
+              className="group absolute flex -translate-x-1/2 flex-col items-center"
+              style={{ top: `-${row * LIFT}rem` }}
               title={`${m.code}: ${pct(m.odds)} ready, D+${m.daysOut}`}
             >
-              <span className={clsx('flex items-center gap-1.5 whitespace-nowrap rounded-lg border px-2.5 py-1 text-sm font-bold transition group-hover:brightness-125', meta.border, meta.bg, meta.text)}>
-                <Icon className="h-4 w-4" aria-hidden />
-                {m.code}
-                <span className="num font-semibold text-ink">{pct(m.odds)}</span>
+              <span className="rounded-lg bg-abyss-800">
+                <span className={clsx('flex items-center gap-1.5 whitespace-nowrap rounded-lg border px-2.5 py-1 text-sm font-bold transition group-hover:brightness-125', meta.border, meta.bg, meta.text)}>
+                  <Icon className="h-4 w-4" aria-hidden />
+                  {m.code}
+                  <span className="num font-semibold text-ink">{pct(m.odds)}</span>
+                </span>
               </span>
               <span className="num mt-0.5 text-[0.68rem] text-ink-dim">D+{m.daysOut}</span>
-              <span className="h-[0.9rem] w-0.5" style={{ background: meta.hex }} />
+              <span className="w-0.5" style={{ background: meta.hex, height: `${0.9 + row * LIFT}rem` }} />
               <span className="h-3 w-3 rotate-45 border-2" style={{ borderColor: meta.hex, background: '#060b14' }} />
             </motion.button>
           );
@@ -155,6 +175,7 @@ export function TimelineStrip({
             </motion.div>
           );
         })}
+       </div>
       </motion.div>
     </div>
   );

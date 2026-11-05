@@ -27,7 +27,7 @@ export function AttentionPanel({ ship }: { ship: ShipPayload }) {
       <h2 className="label-caps !text-ink-muted">Needs attention</h2>
 
       {d ? (
-        <section className="relative overflow-hidden rounded-2xl border border-risk bg-risk/10 p-5 shadow-[0_0_40px_-18px_rgba(251,77,93,0.9)]">
+        <section className="relative overflow-hidden rounded-2xl border border-risk bg-risk/10 p-5">
           <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-risk">
             <Crosshair className="h-4 w-4 animate-pulse" aria-hidden /> Next domino · {d.missionCode}
           </div>
