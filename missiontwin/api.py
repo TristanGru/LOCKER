@@ -24,7 +24,7 @@ from .ingest import find_contradictions, load_baseline, read_pdf_pages
 from .llm import LLMClient, llm_brief, nl_to_action
 from .models import ACTION_TYPES, ActionAdapter, BriefBody, ChangeBody, FixDecisionBody, ParseBody, VersionBody, RefreshBody, CaptainPreviewBody, action_schema
 from .visualization import registry
-from .normalize import NORMALIZED_ROOT, REFERENCE_ROOT
+from .normalize import NORMALIZED_ROOT, REFERENCE_ROOT, normalize
 from .sources import load_snapshot, source_health, utc_now
 
 
@@ -142,6 +142,24 @@ class AppState:
             raise HTTPException(422, "Unknown event identity")
 
 
+def reference_report(root: Path | None = None) -> dict | None:
+    """The review-only import report for the reference package, without its quarantine detail.
+
+    data/normalized is derived output and gitignored, so a fresh checkout (CI, a new clone) has none. It is
+    built once from the checked-in reference package (deterministic, well under a second) instead of the
+    profile silently showing no review information. None if the reference package cannot be normalized.
+    """
+    root = root or NORMALIZED_ROOT
+    path = root / "import_report.json"
+    if not path.exists():
+        try:
+            normalize(output=root)
+        except (OSError, ValueError, KeyError):
+            return None
+    report = json.loads(path.read_text(encoding="utf-8"))
+    return {key: value for key, value in report.items() if key != "quarantine"}
+
+
 def create_app(state: AppState | None = None) -> FastAPI:
     app = FastAPI(title="MissionTwin", version="0.1.0", description=BANNER)
     holder = {"s": state}
@@ -241,10 +259,7 @@ def create_app(state: AppState | None = None) -> FastAPI:
 
     @app.get("/api/data-contract")
     def data_contract():
-        report_path = NORMALIZED_ROOT / "import_report.json"
-        report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.exists() else None
-        if report:
-            report = {key: value for key, value in report.items() if key != "quarantine"}
+        report = reference_report()
         return {'active_profile': S().baseline.profile.name, 'active_path': str(S().data_dir),
                 "reference": report, "catalog": S().baseline.catalog}
 

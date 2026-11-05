@@ -131,3 +131,15 @@ def test_perf_budgets(baseline, tmp_path):
     print(f"\nforecast 10k runs: {t_fc:.2f}s; ranking {len(r['candidates'])} candidates x 2000 runs: {t_rank:.2f}s")
     assert t_fc < 2.0
     assert t_rank < 10.0
+
+
+def test_reference_review_report_is_built_on_a_fresh_checkout(client, tmp_path, monkeypatch):
+    """data/normalized is gitignored: CI and new clones have none, and the review profile must still explain itself."""
+    import missiontwin.api as api
+    missing = tmp_path / "normalized"
+    monkeypatch.setattr(api, "NORMALIZED_ROOT", missing)
+    c, _ = client
+    reference = c.get("/api/data-contract").json()["reference"]
+    assert reference and reference["activation"] == "REVIEW_ONLY" and "quarantine" not in reference
+    assert (missing / "import_report.json").exists()
+    assert c.get("/api/data-contract").json()["reference"] == reference  # second request reads the built report
