@@ -6,6 +6,28 @@ import { buildPins, disposePins, layoutLabels, type PinSet } from '../ship3d/pin
 import type { Mount } from '../ship3d/types';
 
 export type BaseView = 'overhead' | 'iso' | 'waterfront';
+export type Ground = 'photo' | 'plain';
+
+/** Extent of the aerial photo in scene units (web/public/shore/*.json, written by scripts/build_shore_imagery.py). */
+interface PhotoMeta {
+  image: string;
+  attribution: string;
+  scene: { x_north: number; x_south: number; z_east: number; z_west: number };
+}
+
+/** Pin every vertex to its spot on the photo: image left = west (max z), top = north (min x). */
+function photoUV(geo: THREE.BufferGeometry, s: PhotoMeta['scene']) {
+  const pos = geo.attributes.position;
+  const uv = new Float32Array(pos.count * 2);
+  for (let i = 0; i < pos.count; i++) {
+    uv[i * 2] = (s.z_west - pos.getZ(i)) / (s.z_west - s.z_east);
+    uv[i * 2 + 1] = (s.x_south - pos.getX(i)) / (s.x_south - s.x_north);
+  }
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}
+
+/** Hand-drawn layout pieces the photo replaces (it shows the real roads, aprons, runways and buildings). */
+const PHOTO_HIDES = /^(waterfront_road|quay\d|apron\d|runway|context_)/;
 export type MountPoints = Record<string, [number, number, number]>;
 
 /** Camera offsets from the view target, for the traced waterfront and for the small stylized layout. */
@@ -278,6 +300,10 @@ export class BaseScene {
   private lastFrame = 0;
   private animate = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   private target: THREE.Vector3;
+  /** Aerial-photo ground (Norfolk layout only): photo over the land slab plus a photo layer at water level. */
+  private photo: { mat: THREE.MeshStandardMaterial; water: THREE.Mesh; land: THREE.Mesh | null; plainMat: THREE.Material | null; attribution: string } | null = null;
+  private ground: Ground = 'photo';
+  private disposed = false;
   /** Selected facility: the camera flies to it, its pin pulses and the other labels fade. */
   private selected: string | null = null;
   private tween: { p0: THREE.Vector3; p1: THREE.Vector3; t0: THREE.Vector3; t1: THREE.Vector3; start: number; dur: number } | null = null;
@@ -291,6 +317,7 @@ export class BaseScene {
     private layout: BaseLayout | null,
     private onPick: (id: string) => void,
     private onError: (error: unknown) => void,
+    onPhoto?: (attribution: string) => void,
   ) {
     const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -342,6 +369,7 @@ export class BaseScene {
       } else if (o.name === 'land') o.receiveShadow = true;
     });
     this.scene.add(this.layoutGroup, this.shipGroup);
+    if (layout) void this.loadPhoto(onPhoto);
     for (const [id, [x, y, z]] of Object.entries(points)) this.mounts[id] = mk(x, y + 4, z, 'up', y - 0.5);
 
     this.resize();
@@ -407,6 +435,58 @@ export class BaseScene {
     ship.position.set(pier.center[0] - Math.sin(pier.axis) * offset * side, 0, pier.center[1] + Math.cos(pier.axis) * offset * side);
     ship.rotation.y = Math.PI / 2 - pier.axis;
     this.shipGroup.add(ship);
+  }
+
+  /** Public-domain aerial photo under the traced layout. Bundled with the app; absent file = plain ground. */
+  private async loadPhoto(onPhoto?: (attribution: string) => void) {
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}shore/norfolk_naip.json`);
+      if (!res.ok) return;
+      const meta = (await res.json()) as PhotoMeta;
+      const tex = await new THREE.TextureLoader().loadAsync(`${import.meta.env.BASE_URL}shore/${meta.image}`);
+      if (this.disposed) {
+        tex.dispose();
+        return;
+      }
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
+      const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95, metalness: 0 });
+      const s = meta.scene;
+      // water-level layer across the whole photo (land slab sits above it)
+      const waterMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0.05, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+      const geo = new THREE.PlaneGeometry(s.x_south - s.x_north, s.z_west - s.z_east);
+      geo.rotateX(-Math.PI / 2);
+      geo.translate((s.x_north + s.x_south) / 2, 0.08, (s.z_east + s.z_west) / 2);
+      photoUV(geo, s);
+      const water = new THREE.Mesh(geo, waterMat);
+      water.name = 'photo_ground';
+      water.receiveShadow = true;
+      this.scene.add(water);
+      const land = (this.layoutGroup.getObjectByName('land') as THREE.Mesh | undefined) ?? null;
+      if (land) photoUV(land.geometry, s);
+      this.photo = { mat, water, land, plainMat: land ? (land.material as THREE.Material) : null, attribution: meta.attribution };
+      this.applyGround();
+      onPhoto?.(meta.attribution);
+    } catch {
+      /* no photo: keep the plain ground */
+    }
+  }
+
+  setGround(ground: Ground) {
+    this.ground = ground;
+    this.applyGround();
+  }
+
+  private applyGround() {
+    const p = this.photo;
+    if (!p) return;
+    const on = this.ground === 'photo';
+    p.water.visible = on;
+    if (p.land) p.land.material = on ? p.mat : (p.plainMat ?? p.mat);
+    this.layoutGroup.traverse((o) => {
+      if (PHOTO_HIDES.test(o.name)) o.visible = !on;
+    });
+    this.dirty = true;
   }
 
   setView(view: BaseView) {
@@ -546,6 +626,13 @@ export class BaseScene {
   };
 
   dispose() {
+    this.disposed = true;
+    if (this.photo) {
+      this.photo.mat.map?.dispose();
+      this.photo.mat.dispose();
+      (this.photo.water.material as THREE.Material).dispose();
+      this.photo.water.geometry.dispose();
+    }
     this.renderer.setAnimationLoop(null);
     this.ro.disconnect();
     this.io.disconnect();
