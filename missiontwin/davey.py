@@ -335,16 +335,8 @@ class DaveyService:
                       {**state.baseline.name_index, "forbidden": tuple(state.client.forbidden_names)}), previous
 
     def _client(self):
-        client = copy.copy(self.state.client)
-        client.sent_prompts = []  # Do not retain each full Davey evidence packet on the shared client.
-        client.demo_mode = os.environ.get("LOCKER_DAVEY_LIVE", "") != "1"
-        if not client.demo_mode:
-            client.base_url = client.base_url or "https://api.openai.com/v1"
-            client.api_key = client.api_key or os.environ.get("OPENAI_API_KEY", "")
-            client.model = client.model if client.model not in ("", "unconfigured") else "gpt-4o-mini"
-            if not client.api_key and client.base_url.startswith("https://api.openai.com/"):
-                raise LLMUnavailable("OpenAI API key is not configured")
-        return client
+        from .assistant_policy import assistant_client
+        return assistant_client(self.state.client)
 
     def _generate(self, packet: Packet, body: DaveyAskBody, previous: dict | None) -> tuple[dict, list[Evidence], dict, str, str]:
         redacted_question, _ = redact(body.question, body.ship_id, packet.name_index)
@@ -388,7 +380,7 @@ class DaveyService:
             return result, evidence, coverage, source, ""
         except (LLMUnavailable, OSError):
             reason = ("Live analysis is off; showing calculated warnings only."
-                      if os.environ.get("LOCKER_DAVEY_LIVE", "") != "1"
+                      if not self._client().configured
                       else "Live analysis is unavailable or could not be verified; showing calculated warnings only.")
             return _fallback(packet, evidence), evidence, coverage, "fallback", reason
 
@@ -450,8 +442,8 @@ class DaveyService:
                           "forecast_claims": list(packet.claims), "warnings": result["warnings"],
                           "proposed_nodes": proposals, "proposed_links": links,
                           "evidence": [e.public() for e in evidence], "coverage": coverage,
-                          "generation": {"mode": mode, "label": {"llm": "Live LLM", "cache": "Cached AI",
-                                                           "fallback": "Rules-based fallback"}[mode],
+                          "generation": {"mode": mode, "label": {"llm": "Live LLM", "cache": "Cached LLM",
+                                                           "fallback": "Deterministic fallback"}[mode],
                                          "generated_at": datetime.now(UTC).isoformat(),
                                          "reason": reason if mode == "fallback" else ""}}
                 self.answers[answer_id] = (time.monotonic(), answer)

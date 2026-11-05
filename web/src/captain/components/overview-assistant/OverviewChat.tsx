@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../../state/store';
+import type { DaveyAnswer } from '../../api/types';
 
 type Support = { id: string; title?: string; file?: string; loc?: string; kind: string; basis?: string; lineage?: string; stale?: boolean; as_of?: string; identity: any; values: Record<string, unknown>; input_references?: any[]; input_evidence?: Support[]; model_inputs?: any[]; calculation?: any };
 type Citation = { number: number; support_id: string; support: Support };
@@ -25,7 +26,7 @@ function Source({ support }: { support: Support }) {
   </div>;
 }
 
-export function OverviewChat({filter,domain}:{filter:string;domain:string}) {
+export function OverviewChat({filter,domain,view='overview',eventId=null,nodeId=null,onAnswer,onReset}:{filter:string;domain:string;view?:'overview'|'missions'|'dominoes';eventId?:string|null;nodeId?:string|null;onAnswer?:(answer:DaveyAnswer|null)=>void;onReset?:()=>void}) {
   const { ship, version } = useStore();
   const [focus,setFocus] = useState('');
   const [session,setSession] = useState<Session|null>(null);
@@ -34,6 +35,8 @@ export function OverviewChat({filter,domain}:{filter:string;domain:string}) {
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState('');
   const [lastQuestion,setLastQuestion] = useState('');
+  const [capability,setCapability] = useState('Checking generation availability');
+  const lastRequestId=useRef<string|null>(null);
   const [citation,setCitation] = useState<Citation|null>(null);
   const [semantic,setSemantic] = useState(true);
   const [mode,setMode] = useState('Local evidence search is enabled automatically');
@@ -42,17 +45,24 @@ export function OverviewChat({filter,domain}:{filter:string;domain:string}) {
   const serial = useRef(0);
   const sourceButton = useRef<string>('');
   const sourceBack = useRef<HTMLButtonElement|null>(null);
-  const key = `locker-chat:${ship}:${domain}:${filter}:${focus}`;
+  const key = `locker-chat:${ship}:${domain}:${filter}:${focus}:${view}:${eventId}:${nodeId}`;
   const active = useRef(key); active.current=key;
   const sessionRef = useRef(session); sessionRef.current=session;
   useEffect(()=>{setFocus('');setQuestion('');},[ship,domain]);
+  useEffect(()=>{
+    const latest=session?.messages.filter(m=>m.role==='assistant').at(-1) as (Message & {domain_answer?:DaveyAnswer})|undefined;
+    if(session&&!session.stale)onAnswer?.(latest?.domain_answer??null);
+  },[session,onAnswer]);
   useEffect(()=>{ if(citation) sourceBack.current?.focus(); else if(sourceButton.current) document.getElementById(sourceButton.current)?.focus(); },[citation]);
   async function initialize(fresh=false) {
+    if(fresh)onReset?.();
     const scope=key, seq=++serial.current;
     abort.current?.abort(); abort.current=new AbortController();
     const signal=abort.current.signal;
     setBusy(true);setError('');setCitation(null);
     try {
+      const status=await request('status',undefined,undefined,signal);
+      setCapability(status.mode==='live-capable'?'Live generation available on submit':status.mode==='offline'?'Offline: validated cache or deterministic fallback':'Generation is not configured');
       const saved=sessionStorage.getItem(scope);
       if(saved && !fresh) {
         const restored = await request('conversations/'+saved,undefined,undefined,signal).catch(e=>{if(signal.aborted)throw e;return null;});
@@ -62,7 +72,7 @@ export function OverviewChat({filter,domain}:{filter:string;domain:string}) {
         }
       }
       const state=await fetch('/api/scenario/version',{signal}).then(r=>r.json());
-      const body={unit_id:ship,base_version:state.version,source_revision:state.source_revision,focus:focus||null,status_filter:filter};
+      const body={unit_id:ship,base_version:state.version,source_revision:state.source_revision,focus:focus||null,status_filter:filter,view,event_id:eventId,node_id:nodeId};
       const data=await request('conversations',body,undefined,signal);
       if(scope!==active.current || seq!==serial.current)return;
       setPacket(data.packet);
@@ -86,11 +96,12 @@ export function OverviewChat({filter,domain}:{filter:string;domain:string}) {
     const timer=setInterval(()=>{request('conversations/'+session.id).then(data=>{if(active.current===key)setSession(data);}).catch(()=>{});},2000);
     return()=>clearInterval(timer);
   },[session?.busy,session?.id,key]);
-  async function send(text=question) {
+  async function send(text=question,retry=false) {
     if(!session || session.stale || busy || session.busy || !text.trim())return;
     const scope=key, seq=++serial.current;
     abort.current?.abort();abort.current=new AbortController();const signal=abort.current.signal;
     setBusy(true);setError('');setLastQuestion(text);setQuestion('');
+    if(!retry||!lastRequestId.current)lastRequestId.current=crypto.randomUUID();
     try {
       let semanticIds:string[]=[];
       if(semantic && packet) {
@@ -113,18 +124,18 @@ export function OverviewChat({filter,domain}:{filter:string;domain:string}) {
         }
       }
       if(signal.aborted || scope!==active.current)return;
-      const result=await request(`conversations/${session.id}/messages`,{packet_id:session.packet_id,question:text,semantic_ids:semanticIds},undefined,signal);
+      const result=await request(`conversations/${session.id}/messages`,{packet_id:session.packet_id,question:text,semantic_ids:semanticIds,request_id:lastRequestId.current},undefined,signal);
       if(scope===active.current && seq===serial.current)setSession(result);
     } catch(e) {if(!signal.aborted && scope===active.current)setError(String(e));}
     finally {if(scope===active.current && seq===serial.current)setBusy(false);}
   }
   function cancel() {abort.current?.abort();worker.current?.terminate();worker.current=null;setBusy(false);setError('Response display canceled. Reopen or refresh the conversation to check whether the server finished.');}
   return <section aria-label="Overview assistant" className="space-y-3 p-4">
-    <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-bold">Command brief · {domain==='installation'?'Shore':'Ship'}</h2><button className="rounded border px-2 py-1 text-sm" disabled={busy} onClick={()=>void initialize(true)}>New conversation</button></div>
+    <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-bold">Command brief · {view==='missions'?'Mission':view==='dominoes'?'Dominoes':domain==='installation'?'Shore':'Ship'}</h2><button className="rounded border px-2 py-1 text-sm" disabled={busy} onClick={()=>void initialize(true)}>New conversation</button></div>
     <p className="text-xs text-ink-muted">Read-only synthetic exercise · {ship} · Filter: {filter}. Conversations remain in server memory only.</p>
-    <label className="block text-sm">System / capability focus <select className="max-w-full rounded border bg-abyss-800 p-1" value={focus} onChange={e=>setFocus(e.target.value)}><option value="">Whole unit</option>{packet?.summary.systems.map((s:any)=><option key={s.eic} value={s.eic}>{s.name}</option>)}</select></label>
+    {view==='overview' && <label className="block text-sm">System / capability focus <select className="max-w-full rounded border bg-abyss-800 p-1" value={focus} onChange={e=>setFocus(e.target.value)}><option value="">Whole unit</option>{packet?.summary.systems.map((s:any)=><option key={s.eic} value={s.eic}>{s.name}</option>)}</select></label>}
     {session?.stale && <p role="alert">These messages are historical: sources or scenario changed. Start a new conversation before asking about current state.</p>}
-    {session && <p className="text-xs text-ink-muted">Exercise {session.identity.cursor} · Source {session.identity.source_revision}</p>}
+    {session && <p className="text-xs text-ink-muted">Exercise {session.identity.cursor} · Source {session.identity.source_revision}{view!=='overview'&&` · Mission ${session.identity.event_id}`}</p>}
     {citation ? <div className="space-y-3 rounded border p-3" aria-label="Citation evidence"><button ref={sourceBack} className="underline" onClick={()=>setCitation(null)}>Back to conversation</button><h3 className="font-bold">Source [{citation.number}]</h3><Source support={citation.support}/></div> : <>
       <div aria-label="Conversation transcript" aria-live="polite" className="space-y-3">
         {!session?.messages.length && <p>Ask for a concise summary, the reason behind a status, or the loaded evidence supporting it.</p>}
@@ -134,11 +145,12 @@ export function OverviewChat({filter,domain}:{filter:string;domain:string}) {
           {message.fallback_reason && <p className="text-xs text-ink-muted">Fallback reason: {message.fallback_reason.replaceAll('_',' ')}. These are verified template facts, not generated prose.</p>}
         </article>)}
       </div>
-      <div className="flex flex-wrap gap-2">{['Summarize this '+(domain==='installation'?'installation':'ship'),'Explain the leading concern','Which linked ships or shore capabilities are affected?','Show the supporting records'].map(prompt=><button key={prompt} className="rounded-full border px-2 py-1 text-xs" disabled={busy||!session||session.stale||session.busy} onClick={()=>void send(prompt)}>{prompt}</button>)}</div>
+      <div className="flex flex-wrap gap-2">{[view==='overview'?'Summarize this '+(domain==='installation'?'installation':'ship'):view==='missions'?'Summarize this mission':'Explain this dependency','Explain the leading concern',view==='overview'?'Which linked ships or shore capabilities are affected?':'What evidence supports this mission assessment?','Show the supporting records'].map(prompt=><button key={prompt} className="rounded-full border px-2 py-1 text-xs" disabled={busy||!session||session.stale||session.busy} onClick={()=>void send(prompt)}>{prompt}</button>)}</div>
     </>}
     {(busy||session?.busy) && <p role="status">Preparing a grounded response… No unvalidated text is streamed.</p>}
-    {error && <div role="alert"><p className="text-sm">{error}</p><button className="underline" disabled={busy} onClick={()=>lastQuestion?void send(lastQuestion):void initialize()}>Retry</button></div>}
+    {error && <div role="alert"><p className="text-sm">{error}</p><button className="underline" disabled={busy} onClick={()=>lastQuestion?void send(lastQuestion,true):void initialize()}>Retry</button></div>}
     <form onSubmit={e=>{e.preventDefault();void send();}} className="space-y-2"><textarea aria-label="Ask about this unit" rows={2} maxLength={1500} value={question} onChange={e=>setQuestion(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send();}}} className="w-full resize-y rounded border bg-abyss-800 p-2" placeholder="Ask a follow-up… Enter sends, Shift+Enter adds a line"/><div className="flex gap-2"><button className="rounded border px-4 py-2" disabled={busy||!session||session.stale||session.busy||!question.trim()}>Send</button>{busy&&<button type="button" className="rounded border px-3" onClick={cancel}>Cancel response</button>}</div></form>
+    <p className="text-xs text-ink-muted">{capability}.</p>
     <p className="text-xs text-ink-muted" role="status">{mode}.</p>
     <details><summary className="cursor-pointer text-xs">Advanced search settings</summary><label className="mt-2 block text-xs"><input type="checkbox" checked={semantic} onChange={e=>{setSemantic(e.target.checked);setMode(e.target.checked?'Local evidence search is enabled automatically':'Using standard record search');}}/> Use local semantic search</label><p className="mt-1 text-xs text-ink-muted">MiniLM runs locally through Transformers.js. Search falls back automatically if unavailable. Selected redacted context may be sent to your configured generation endpoint.</p></details>
     {packet&&<details><summary className="cursor-pointer text-sm">Loaded sources · {packet.evidence.length} eligible records</summary>{packet.evidence.slice(0,300).map((e:any)=><details key={e.id} className="border-b py-2"><summary>{e.file} · {e.loc}</summary><pre className="whitespace-pre-wrap break-all text-xs">{JSON.stringify(e.fields,null,2)}</pre></details>)}</details>}
