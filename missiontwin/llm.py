@@ -45,6 +45,30 @@ class LLMUnavailable(Exception):
     pass
 
 
+def adapt_chat_request(body, response):
+    """Adapt only explicitly unsupported transport options, never invalid schemas."""
+    if response.status_code != 400:
+        return False
+    try:
+        error = response.json().get('error', {})
+        if error.get('code') not in {'unsupported_parameter', 'unsupported_value'}:
+            return False
+        param = error.get('param', '')
+        if param == 'max_tokens' and 'max_tokens' in body:
+            body['max_completion_tokens'] = body.pop('max_tokens')
+        elif param == 'max_completion_tokens' and 'max_completion_tokens' in body and 'max_tokens' not in body:
+            body['max_tokens'] = body.pop('max_completion_tokens')
+        elif param == 'temperature' and 'temperature' in body:
+            body.pop('temperature')
+        elif param in {'response_format', 'response_format.type', 'response_format.json_schema'} and body.get('response_format', {}).get('type') == 'json_schema':
+            body['response_format'] = {'type': 'json_object'}
+        else:
+            return False
+        return True
+    except (ValueError, TypeError, AttributeError):
+        return False
+
+
 class LLMClient:
     def __init__(self, base_url: str | None = None, api_key: str | None = None, model: str | None = None,
                  cache_dir: Path = CACHE_DIR, demo_mode: bool | None = None, transport=None):
@@ -103,7 +127,7 @@ class LLMClient:
                 temp_path.unlink(missing_ok=True)
 
     # ---------------------------------------------------------- transport
-    def _post(self, messages: list[dict], timeout: float) -> str:
+    def _post(self, messages: list[dict], timeout: float, response_schema=None) -> str:
         import httpx
         text = "\n".join(m["content"] for m in messages)
         pii_guard(text, self.forbidden_names)
@@ -112,31 +136,53 @@ class LLMClient:
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
         body = {"model": self.model, "messages": messages, "temperature": 0, "max_tokens": 4096,
-                "response_format": {"type": "json_object"}}
+                "response_format": {"type": "json_object"}, "store": False}
+        if response_schema is not None:
+            def strict_schema(node):
+                if isinstance(node, dict):
+                    node.pop('default', None)
+                    if node.get('type') == 'object':
+                        node['additionalProperties'] = False
+                        node['required'] = list(node.get('properties', {}))
+                    for value in node.values(): strict_schema(value)
+                elif isinstance(node, list):
+                    for value in node: strict_schema(value)
+            schema = json.loads(json.dumps(response_schema))
+            strict_schema(schema)
+            body['response_format'] = {'type': 'json_schema', 'json_schema': {
+                'name': 'ask_davy', 'strict': True, 'schema': schema}}
         last = None
         failures = 0
-        while failures < 2:  # 1 retry; at most two explicit parameter adaptations.
+        adaptations = 0
+        deadline = time.monotonic() + timeout
+        while failures < 2 and time.monotonic() < deadline:
             try:
-                with httpx.Client(timeout=timeout, transport=self.transport) as c:
+                remaining = max(0.01, deadline - time.monotonic())
+                connect = min(2.0, remaining / 8)
+                write = pool = min(1.0, remaining / 16)
+                phase_timeout = httpx.Timeout(connect=connect, write=write, pool=pool,
+                                             read=max(0.01, remaining-connect-write-pool))
+                with httpx.Client(timeout=phase_timeout, transport=self.transport) as c:
                     r = c.post(f"{self.base_url}/chat/completions", headers=headers, json=body)
-                    if r.status_code == 400:
-                        error = r.json().get('error', {})
-                        unsupported = error.get('code') in {'unsupported_parameter', 'unsupported_value'}
-                        if unsupported and error.get('param') == 'max_tokens' and 'max_tokens' in body:
-                            body['max_completion_tokens'] = body.pop('max_tokens')
-                            continue
-                        if unsupported and error.get('param') == 'temperature' and 'temperature' in body:
-                            body.pop('temperature')  # Reasoning models may require their default.
-                            continue
+                    if adaptations < 3 and adapt_chat_request(body, r):
+                        adaptations += 1
+                        continue
                     r.raise_for_status()
-                    return r.json()["choices"][0]["message"]["content"]
+                    choice = r.json()['choices'][0]
+                    if choice['message'].get('refusal') or choice.get('finish_reason') not in (None, 'stop'):
+                        raise LLMUnavailable('provider refused or truncated the response')
+                    if time.monotonic() > deadline:
+                        raise LLMUnavailable('provider timeout')
+                    return choice['message']['content']
+            except LLMUnavailable:
+                raise
             except Exception as e:  # timeout, connection, HTTP, shape
                 last = e
                 failures += 1
-        raise LLMUnavailable(f"{type(last).__name__}: {last}")
+        raise LLMUnavailable(f"{type(last).__name__}: provider request failed")
 
     def run(self, task: str, messages: list[dict], input_bytes: bytes, validate: Callable[[dict], object],
-            extra: str = "", cacheable: Callable[[object], bool] | None = None) -> tuple[object, str]:
+            extra: str = "", cacheable: Callable[[object], bool] | None = None, response_schema=None) -> tuple[object, str]:
         """Returns (validated_output, source) where source is 'cache' or 'llm'. Raises LLMUnavailable."""
         key = self.cache_key(task, input_bytes, extra)
         hit = self.cache_get(key) if not self.refresh else None
@@ -149,7 +195,8 @@ class LLMClient:
                 pass
         if not self.configured:
             raise LLMUnavailable("not configured" if not self.base_url else "demo mode: cache only")
-        raw = self._post(messages, TIMEOUTS[task])
+        raw = (self._post(messages, TIMEOUTS[task], response_schema)
+               if response_schema is not None else self._post(messages, TIMEOUTS[task]))
         try:
             data = json.loads(raw)
             out = validate(data)
@@ -194,7 +241,9 @@ class LLMClient:
             headers["Authorization"] = f"Bearer {self.api_key}"
         deadline = time.monotonic() + timeout
         last_error = "model request failed"
-        for attempt in range(2):
+        adaptations = 0
+        attempt = 0
+        while attempt < 2:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break
@@ -211,8 +260,12 @@ class LLMClient:
                     response = client.post(f"{self.base_url}/chat/completions", headers=headers, json=body)
                 if time.monotonic() >= deadline:
                     raise LLMUnavailable("model deadline exceeded")
+                if adaptations < 3 and adapt_chat_request(body, response):
+                    adaptations += 1
+                    continue
                 if response.status_code >= 400:
                     last_error = f"model returned HTTP {response.status_code}"
+                    attempt += 1
                     if response.status_code not in (429, 500, 502, 503, 504):
                         break
                     continue
@@ -229,7 +282,8 @@ class LLMClient:
                 raise
             except (httpx.HTTPError, OSError) as error:
                 last_error = type(error).__name__
-                if attempt:
+                attempt += 1
+                if attempt >= 2:
                     break
             except (json.JSONDecodeError, ValidationError, ValueError, KeyError, TypeError, IndexError) as error:
                 raise LLMUnavailable(f"invalid model response: {type(error).__name__}") from error
