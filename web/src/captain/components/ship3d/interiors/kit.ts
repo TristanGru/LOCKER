@@ -3,6 +3,8 @@ import { mulberry } from '../geom';
 
 /** Seeded so LED patterns don't flicker between frames. Advances as rooms are built. */
 const rn = mulberry(99);
+/** The same seeded stream, for room builders that need a repeatable pattern. */
+export const rnd = () => rn();
 
 export interface IMats {
   steel: THREE.MeshStandardMaterial;
@@ -58,10 +60,10 @@ export function makeMats(): IMats {
     rubber: m('rubber', 0x1d2024, { roughness: 0.95 }),
     orange: m('orange', 0xdb8c30),
     glass: m('glass', 0x22333f, { roughness: 0.1, metalness: 0.3 }),
-    lamp: m('lamp', 0xffffff, { emissive: 0xfff3d6, emissiveIntensity: 2.4 }),
-    scrT: m('screen_teal', 0x0a2a30, { emissive: 0x3fd9e8, emissiveIntensity: 1.4 }),
-    scrB: m('screen_blue', 0x0a1a30, { emissive: 0x4a8cff, emissiveIntensity: 1.4 }),
-    scrA: m('screen_amber', 0x2a1a05, { emissive: 0xffb23a, emissiveIntensity: 1.3 }),
+    lamp: m('lamp', 0xffffff, { emissive: 0xfff3d6, emissiveIntensity: 1.6 }),
+    scrT: m('screen_teal', 0x0a2a30, { emissive: 0x3fd9e8, emissiveIntensity: 1.5, emissiveMap: screenTex('trace') }),
+    scrB: m('screen_blue', 0x0a1a30, { emissive: 0x4a8cff, emissiveIntensity: 1.5, emissiveMap: screenTex('plot') }),
+    scrA: m('screen_amber', 0x2a1a05, { emissive: 0xffb23a, emissiveIntensity: 1.4, emissiveMap: screenTex('text') }),
     ledG: m('led_green', 0x000000, { emissive: 0x38ff7a, emissiveIntensity: 2.5 }),
     ledR: m('led_red', 0x000000, { emissive: 0xff4a3a, emissiveIntensity: 2.5 }),
     ledA: m('led_amber', 0x000000, { emissive: 0xffb23a, emissiveIntensity: 2.5 }),
@@ -87,6 +89,36 @@ function canvasTex(w: number, h: number, draw: (c: CanvasRenderingContext2D, w: 
   tx.colorSpace = THREE.SRGBColorSpace;
   tx.anisotropy = 4;
   return tx;
+}
+
+/** Grey-scale display content; the material's emissive colour tints it. */
+function screenTex(kind: 'trace' | 'plot' | 'text') {
+  return canvasTex(256, 160, (c, w, h) => {
+    c.fillStyle = '#1a1a1a';
+    c.fillRect(0, 0, w, h);
+    c.strokeStyle = '#3c3c3c';
+    c.lineWidth = 1;
+    for (let x = 0; x <= w; x += 32) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, h); c.stroke(); }
+    for (let y = 0; y <= h; y += 32) { c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); }
+    c.fillStyle = '#d0d0d0';
+    c.strokeStyle = '#ffffff';
+    c.lineWidth = 3;
+    if (kind === 'trace') {
+      c.beginPath();
+      for (let x = 0; x <= w; x += 4) c.lineTo(x, h * 0.5 + Math.sin(x / 14) * 26 + Math.sin(x / 5) * 6);
+      c.stroke();
+    } else if (kind === 'plot') {
+      for (const r of [28, 56, 74]) { c.beginPath(); c.arc(w * 0.38, h / 2, r, 0, Math.PI * 2); c.stroke(); }
+      c.beginPath(); c.moveTo(w * 0.38, h / 2); c.lineTo(w * 0.38 + 70, h / 2 - 34); c.stroke();
+      for (let i = 0; i < 9; i++) c.fillRect(w * 0.38 + Math.cos(i * 2.3) * (20 + i * 6) - 3, h / 2 + Math.sin(i * 2.3) * (16 + i * 5) - 3, 6, 6);
+      for (let i = 0; i < 6; i++) c.fillRect(w * 0.74, 16 + i * 22, 40 + ((i * 37) % 30), 8);
+    } else {
+      for (let i = 0; i < 7; i++) c.fillRect(14, 14 + i * 20, 60 + ((i * 53) % 150), 9);
+    }
+    c.strokeStyle = '#8a8a8a';
+    c.lineWidth = 4;
+    c.strokeRect(2, 2, w - 4, h - 4);
+  });
 }
 
 const texDeck = (rx: number, ry: number) =>
@@ -143,6 +175,11 @@ const texWall = (rx: number, ry: number, base: string) =>
       c.moveTo(0, h / 2);
       c.lineTo(w, h / 2);
       c.stroke();
+      const grime = c.createLinearGradient(0, h * 0.78, 0, h);
+      grime.addColorStop(0, 'rgba(40,36,30,0)');
+      grime.addColorStop(1, 'rgba(40,36,30,.22)');
+      c.fillStyle = grime;
+      c.fillRect(0, h * 0.78, w, h * 0.22);
       c.fillStyle = 'rgba(0,0,0,.3)';
       for (let x = 8; x < w; x += 24) {
         c.fillRect(x, 4, 3, 3);
@@ -177,6 +214,26 @@ export const texGrate = (rx: number, ry: number) =>
     rx,
     ry,
   );
+
+/** Compartment marker ("bull's-eye"): deck-frame-position-use, stencilled in a yellow disc. */
+const bullseyeTex = (txt: string) =>
+  canvasTex(256, 256, (c, w, h) => {
+    c.clearRect(0, 0, w, h);
+    c.fillStyle = '#e3c230';
+    c.beginPath();
+    c.arc(w / 2, h / 2, w / 2 - 6, 0, Math.PI * 2);
+    c.fill();
+    c.strokeStyle = '#14181c';
+    c.lineWidth = 8;
+    c.stroke();
+    c.fillStyle = '#14181c';
+    c.font = '800 40px Inter, Arial, sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(txt, w / 2, h / 2 - 22);
+    c.font = '700 26px Inter, Arial, sans-serif';
+    c.fillText('FR ' + txt.split('-')[1], w / 2, h / 2 + 26);
+  });
 
 const signTex = (txt: string, bg: string, fg: string) =>
   canvasTex(512, 128, (c, w, h) => {
@@ -259,7 +316,43 @@ export function shell(p: IMats, W: number, L: number, H: number, wall: string, a
     G.add(mesh);
   }
   for (const z of [-L / 2, L / 2]) Bx(G, W, 0.28, 0.04, p.dark, 0, 0.14, z + (z < 0 ? 0.02 : -0.02));
-  G.add(new THREE.AmbientLight(0xffffff, amb));
+  for (const x of [-W / 2, W / 2]) Bx(G, 0.04, 0.28, L, p.dark, x + (x < 0 ? 0.02 : -0.02), 0.14, 0);
+  // Sky-and-deck fill instead of flat ambient: overheads stay bright, the deck and the undersides of equipment fall off.
+  G.add(new THREE.HemisphereLight(0xe6edf2, 0x3a4048, amb * 0.95));
+  G.add(new THREE.AmbientLight(0xffffff, amb * 0.12));
+
+  // Structure: frames on the long bulkheads and beams across the overhead, so the walls read as steel.
+  const frame = imat('frame', new THREE.Color(wall).multiplyScalar(0.8).getHex(), { roughness: 0.6, metalness: 0.2 });
+  for (let x = -W / 2 + 1.5; x < W / 2 - 0.4; x += 1.5) {
+    for (const z of [-L / 2, L / 2]) {
+      const s = z < 0 ? 1 : -1;
+      Bx(G, 0.05, H, 0.15, frame, x, H / 2, z + s * 0.075);
+      Bx(G, 0.15, H, 0.03, frame, x, H / 2, z + s * 0.165);
+    }
+    Bx(G, 0.05, 0.13, L, frame, x, H - 0.065, 0);
+    Bx(G, 0.15, 0.03, L, frame, x, H - 0.145, 0);
+  }
+
+  // Bulkhead fittings by the door: compartment marker, battle lanterns, sound-powered phone and a power panel.
+  const comp = `${H > 5 ? 4 : 2}-${100 + (Math.round(W * L * 7) % 240)}-0-${H > 5 ? 'E' : 'Q'}`;
+  const be = new THREE.Mesh(new THREE.CircleGeometry(0.32, 40), imat('bullseye', 0xffffff, { map: bullseyeTex(comp), transparent: true }));
+  be.position.set(-W / 2 + 2.6, 1.95, -L / 2 + 0.02);
+  G.add(be);
+  const lantern = (x: number, z: number) => {
+    const s = z < 0 ? 1 : -1;
+    Bx(G, 0.26, 0.22, 0.2, p.yel, x, 2.15, z + s * 0.12);
+    Cy(G, 0.075, 0.075, 0.04, p.lamp, x, 2.15, z + s * 0.24, 'z', 20);
+    Bx(G, 0.04, 0.3, 0.04, p.dark, x, 2.0, z + s * 0.03);
+  };
+  lantern(-W / 2 + 1.2, -L / 2);
+  lantern(W / 2 - 1.6, L / 2);
+  Bx(G, 0.32, 0.42, 0.12, p.rack, -W / 2 + 1.5, 1.45, L / 2 - 0.06);
+  Bx(G, 0.08, 0.26, 0.08, p.rubber, -W / 2 + 1.5, 1.45, L / 2 - 0.15);
+  Bx(G, 0.22, 0.04, 0.02, p.yel, -W / 2 + 1.5, 1.72, L / 2 - 0.12);
+  Bx(G, 0.62, 0.86, 0.14, p.rack, -W / 2 + 3.9, 1.35, -L / 2 + 0.07);
+  Bx(G, 0.5, 0.06, 0.02, p.white, -W / 2 + 3.9, 1.7, -L / 2 + 0.15);
+  for (let r = 0; r < 3; r++) for (let k = 0; k < 4; k++) Bx(G, 0.06, 0.1, 0.03, p.dark, -W / 2 + 3.72 + k * 0.12, 1.42 - r * 0.18, -L / 2 + 0.15);
+  Cy(G, 0.04, 0.04, H - 1.8, p.dark, -W / 2 + 4.12, 1.8 + (H - 1.8) / 2, -L / 2 + 0.1, 'y', 10);
 
   const door = new THREE.Group();
   Bx(door, 0.22, 2.3, 1.3, p.dark, 0, 1.15, 0);
@@ -286,15 +379,20 @@ export function shell(p: IMats, W: number, L: number, H: number, wall: string, a
   return G;
 }
 
+/** Overhead fluorescent fixtures hung below the beams, with a few point lights for pools of light. */
 export function roomLights(G: THREE.Group, p: IMats, W: number, L: number, H: number, n: number, pl = true) {
   const ud = G.userData as { pl?: number };
   for (let i = 0; i < n; i++) {
     const x = -W / 2 + (W * (i + 0.5)) / n;
-    for (const z of [-L * 0.24, L * 0.24]) Bx(G, 1.6, 0.07, 0.2, p.lamp, x, H - 0.06, z);
+    for (const z of [-L * 0.24, L * 0.24]) {
+      Bx(G, 1.7, 0.08, 0.3, p.rack, x, H - 0.21, z);
+      Bx(G, 1.55, 0.03, 0.2, p.lamp, x, H - 0.265, z);
+      for (const dx of [-0.7, 0.7]) Bx(G, 0.02, 0.17, 0.02, p.dark, x + dx, H - 0.085, z);
+    }
     if (pl && i % 2 === 0 && (ud.pl ?? 0) < 6) {
       ud.pl = (ud.pl ?? 0) + 1;
-      const l = new THREE.PointLight(0xfff1dd, 60, 22, 1.5);
-      l.position.set(x, H - 0.7, 0);
+      const l = new THREE.PointLight(0xfff0d8, 26, Math.max(10, H * 3), 1.8);
+      l.position.set(x, H - 0.6, 0);
       G.add(l);
     }
   }
@@ -370,10 +468,12 @@ export function disposeInterior(root: THREE.Object3D) {
     for (const m of list) {
       if (mats.has(m)) continue;
       mats.add(m);
-      const map = (m as THREE.MeshStandardMaterial).map;
-      if (map && !maps.has(map)) {
-        maps.add(map);
-        map.dispose();
+      const sm = m as THREE.MeshStandardMaterial;
+      for (const map of [sm.map, sm.emissiveMap]) {
+        if (map && !maps.has(map)) {
+          maps.add(map);
+          map.dispose();
+        }
       }
       m.dispose();
     }
