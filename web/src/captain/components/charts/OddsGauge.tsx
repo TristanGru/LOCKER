@@ -28,7 +28,7 @@ export function OddsGauge({ odds, status, size = 220 }: { odds: number; status: 
   const tick = (p: number) => {
     const a = polar(c, c, r - 13, START + SWEEP * p);
     const b = polar(c, c, r + 13, START + SWEEP * p);
-    return <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="rgba(230,238,248,0.45)" strokeWidth={1.5} />;
+    return <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="rgb(var(--ink))" strokeOpacity={0.45} strokeWidth={1.5} />;
   };
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -42,7 +42,7 @@ export function OddsGauge({ odds, status, size = 220 }: { odds: number; status: 
             </feMerge>
           </filter>
         </defs>
-        <path d={track} fill="none" stroke="rgba(140,180,220,0.12)" strokeWidth={14} strokeLinecap="round" />
+        <path d={track} fill="none" stroke="rgb(var(--line))" strokeWidth={14} strokeLinecap="round" />
         <motion.path
           d={track}
           fill="none"

@@ -22,7 +22,7 @@ export function Loading({ label = 'Loading', className }: { label?: string; clas
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={clsx('animate-pulse rounded-xl bg-white/[0.05]', className)} />;
+  return <div className={clsx('animate-pulse rounded-xl bg-ink/[0.06]', className)} />;
 }
 
 export function EmptyState({
@@ -44,7 +44,7 @@ export function EmptyState({
       animate={{ opacity: 1, y: 0 }}
       className={clsx('flex flex-col items-center justify-center gap-3 px-6 py-16 text-center', className)}
     >
-      <div className="grid h-16 w-16 place-items-center rounded-2xl border border-line bg-white/[0.03]">
+      <div className="grid h-16 w-16 place-items-center rounded-2xl border border-line bg-ink/[0.04]">
         <Icon className="h-8 w-8 text-ink-dim" aria-hidden />
       </div>
       <h3 className="text-xl font-semibold text-ink">{title}</h3>

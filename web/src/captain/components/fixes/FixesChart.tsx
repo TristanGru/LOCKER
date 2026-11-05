@@ -22,19 +22,19 @@ export function FixesChart({ fixes }: { fixes: Fix[] }) {
     <div style={{ height }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} layout="vertical" margin={{ top: 22, right: 56, bottom: 4, left: 4 }} barGap={3} barCategoryGap={14}>
-          <XAxis type="number" domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={(v) => `${v}%`} stroke="rgba(140,180,220,0.35)" tick={{ fill: '#6b7d95', fontSize: 12, fontFamily: 'JetBrains Mono' }} />
-          <YAxis type="category" dataKey="name" width={40} stroke="rgba(140,180,220,0.35)" tick={{ fill: '#e6eef8', fontSize: 14, fontWeight: 700, fontFamily: 'JetBrains Mono' }} />
-          <ReferenceLine x={82} stroke="rgba(52,211,153,0.6)" strokeDasharray="4 4" label={{ value: 'Ready 82%', position: 'top', fill: '#34d399', fontSize: 11 }} />
-          <ReferenceLine x={50} stroke="rgba(251,77,93,0.6)" strokeDasharray="4 4" label={{ value: 'At risk <50%', position: 'top', fill: '#fb4d5d', fontSize: 11 }} />
-          <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(140,180,220,0.06)' }} />
-          <Bar dataKey="before" name="Now" fill="rgba(148,163,184,0.35)" radius={[0, 4, 4, 0]} isAnimationActive={false}>
-            <LabelList dataKey="before" position="right" formatter={(v: number) => `${v}%`} style={{ fill: '#9fb0c6', fontSize: 12, fontFamily: 'JetBrains Mono' }} />
+          <XAxis type="number" domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={(v) => `${v}%`} stroke="rgb(var(--line))" tick={{ fill: 'rgb(var(--ink-dim))', fontSize: 12, fontFamily: 'JetBrains Mono' }} />
+          <YAxis type="category" dataKey="name" width={40} stroke="rgb(var(--line))" tick={{ fill: 'rgb(var(--ink))', fontSize: 14, fontWeight: 700, fontFamily: 'JetBrains Mono' }} />
+          <ReferenceLine x={82} stroke="rgb(var(--ready))" strokeDasharray="4 4" label={{ value: 'Ready 82%', position: 'top', fill: 'rgb(var(--ready))', fontSize: 11 }} />
+          <ReferenceLine x={50} stroke="rgb(var(--risk))" strokeDasharray="4 4" label={{ value: 'At risk <50%', position: 'top', fill: 'rgb(var(--risk))', fontSize: 11 }} />
+          <Tooltip content={<ChartTip />} cursor={{ fill: 'rgb(var(--ink) / 0.06)' }} />
+          <Bar dataKey="before" name="Now" fill="rgb(var(--stale) / 0.35)" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+            <LabelList dataKey="before" position="right" formatter={(v: number) => `${v}%`} style={{ fill: 'rgb(var(--ink-muted))', fontSize: 12, fontFamily: 'JetBrains Mono' }} />
           </Bar>
           <Bar dataKey="after" name="After fix" radius={[0, 4, 4, 0]} isAnimationActive={false}>
             {data.map((d) => (
               <Cell key={d.name} fill={STATUS[oddsStatus(d.after / 100)].hex} />
             ))}
-            <LabelList dataKey="after" position="right" formatter={(v: number) => `${v}%`} style={{ fill: '#e6eef8', fontSize: 13, fontWeight: 700, fontFamily: 'JetBrains Mono' }} />
+            <LabelList dataKey="after" position="right" formatter={(v: number) => `${v}%`} style={{ fill: 'rgb(var(--ink))', fontSize: 13, fontWeight: 700, fontFamily: 'JetBrains Mono' }} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>

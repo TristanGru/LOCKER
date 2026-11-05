@@ -41,7 +41,7 @@ export function MissionRow({ mission: m, history, index }: { mission: Mission; h
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       className={clsx(
-        'grid items-center gap-x-8 gap-y-4 rounded-2xl border bg-[#0c1624] px-6',
+        'grid items-center gap-x-8 gap-y-4 rounded-2xl border bg-abyss-800 px-6',
         emphasized ? 'border-risk/45 py-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.35fr)_minmax(0,1fr)]' : 'border-line py-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.15fr)_minmax(0,1fr)]',
       )}
       style={{ boxShadow: `inset 4px 0 0 0 ${meta.hex}` }}
@@ -93,7 +93,7 @@ export function MissionRow({ mission: m, history, index }: { mission: Mission; h
             onClick={go}
             className={clsx(
               'inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition',
-              action.solid ? 'bg-accent text-[#042028] hover:brightness-110' : 'border border-line-strong text-ink hover:border-ink-muted hover:bg-white/[0.04]',
+              action.solid ? 'bg-accent text-[color:var(--on-accent)] hover:brightness-110' : 'border border-line-strong text-ink hover:border-ink-muted hover:bg-ink/[0.06]',
             )}
           >
             {action.label} <ArrowRight className="h-4 w-4" aria-hidden />
@@ -111,10 +111,10 @@ function ThresholdBar({ odds, color }: { odds: number; color: string }) {
   const width = Number.isFinite(odds) ? Math.max(0, Math.min(100, Math.round(odds * 100))) : 0;
   return (
     <div className="relative mt-3 h-2.5" role="img" aria-label={`Interval readiness ${pct(odds)}. Watch ${pct(getBands().yellow)}, ready ${pct(getBands().green)}.`}>
-      <div className="absolute inset-0 rounded-full bg-white/[0.08]" />
+      <div className="absolute inset-0 rounded-full bg-ink/10" />
       <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${width}%`, background: color }} />
-      <span className="absolute -top-1 bottom-[-4px] w-px bg-white/55" style={{ left: `${getBands().yellow*100}%` }} />
-      <span className="absolute -top-1 bottom-[-4px] w-px bg-white/70" style={{ left: `${getBands().green*100}%` }} />
+      <span className="absolute -top-1 bottom-[-4px] w-px bg-ink/60" style={{ left: `${getBands().yellow*100}%` }} />
+      <span className="absolute -top-1 bottom-[-4px] w-px bg-ink/70" style={{ left: `${getBands().green*100}%` }} />
     </div>
   );
 }

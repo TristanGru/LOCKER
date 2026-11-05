@@ -44,7 +44,7 @@ export function DepartmentCard({
       </header>
 
       {/* stacked ready / watch / risk bar */}
-      <div className="mx-4 flex h-2 overflow-hidden rounded-full bg-white/[0.06]" role="img" aria-label={`${dept.counts.ready} ready, ${dept.counts.watch} watch, ${dept.counts.risk} at risk`}>
+      <div className="mx-4 flex h-2 overflow-hidden rounded-full bg-ink/[0.08]" role="img" aria-label={`${dept.counts.ready} ready, ${dept.counts.watch} watch, ${dept.counts.risk} at risk`}>
         {(['ready', 'watch', 'risk'] as const).map((s) =>
           dept.counts[s] ? (
             <motion.div key={s} initial={false} animate={{ width: `${(dept.counts[s] / dept.total) * 100}%` }} transition={{ duration: 0.6 }} style={{ background: STATUS[s].hex }} />
@@ -62,7 +62,7 @@ export function DepartmentCard({
       <ul className="mt-2 flex-1 divide-y divide-line border-t border-line">
         {rows.map((s) => (
           <li key={s.id}>
-            <button onClick={() => onOpen(s.id)} className="group flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-white/[0.04]">
+            <button onClick={() => onOpen(s.id)} className="group flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-ink/[0.06]">
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[0.92rem] font-medium text-ink" title={s.name}>
                   {s.name}

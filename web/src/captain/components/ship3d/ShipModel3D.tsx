@@ -1,11 +1,10 @@
-import { DoorOpen, ExternalLink, FlipHorizontal2, LogOut, Scissors, X } from 'lucide-react';
+import { ChevronDown, DoorOpen, ExternalLink, FlipHorizontal2, LogOut, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { HullType, ShipPayload, ShipSystem } from '../../api/types';
 import clsx from '../../lib/clsx';
 import { STATUS } from '../../theme/status';
 import { ShipProfile } from '../ship/ShipProfile';
 import { CUT_LEGEND } from './cutaway';
-import { HULLS, HULL_ORDER, hullDef } from './hulls';
 import { ShipScene, type CutState } from './ShipScene';
 import type { CutMode, ViewKind } from './types';
 
@@ -115,116 +114,232 @@ function Stage({ ship, onOpen, onFail }: { ship: ShipPayload; onOpen: (id: strin
   const cutAt = useCallback((id: string) => sceneRef.current?.cutAtSystem(id), []);
 
   const rows = useMemo(() => ship.systems.filter((s) => s.mount && s.deck !== 'none'), [ship.systems]);
-  const groups = useMemo(() => {
-    const out: Record<string, HullType[]> = {};
-    for (const t of HULL_ORDER) {
-      const d = HULLS[t];
-      if (d) (out[d.group] ||= []).push(t);
-    }
-    return out;
-  }, []);
+  const [menu, setMenu] = useState<FilterMenuId | null>(null);
 
   return (
-    <div className="flex flex-col lg:h-[38rem] lg:flex-row">
-      <div ref={hostRef} className="s3-stage relative h-[30rem] min-w-0 flex-1 overflow-hidden lg:h-auto lg:rounded-bl-2xl">
-        <div ref={overlayRef} className="s3-overlay" />
-        {!cut && !inside && (
-          <div className="pointer-events-none absolute left-4 top-4 flex max-w-[30rem] items-start gap-2 rounded-[10px] border border-accent/40 bg-[rgba(6,11,20,.8)] px-3.5 py-2 text-sm font-semibold leading-snug text-[#cfe8f3]">
-            <Scissors className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
-            <span>
-              Click a pin to cut the ship open at that system, or click the hull to cut anywhere. Drag to orbit, scroll to zoom.
-            </span>
-          </div>
-        )}
-        {cut && !inside && <CutPanel cut={cut} scene={sceneRef} onOpen={onOpen} />}
-        {inside && (
-          <div className="absolute bottom-4 left-4 right-4 flex justify-center" role="status">
-            <div className="pointer-events-auto max-w-[36rem] rounded-[14px] border border-[rgba(140,180,220,.26)] bg-[rgba(6,11,20,.92)] px-4 py-3">
-              <div className="text-[15px] font-semibold text-ink">{inside}</div>
-              <p className="mt-1 text-[13px] leading-snug text-ink-muted">Drag to look around. W A S D or the arrow keys walk. Hold Shift to move faster.</p>
-              <div className="mt-2">
-                <Btn small onClick={() => sceneRef.current?.leave()}>
-                  <LogOut className="mr-1 inline h-3 w-3" aria-hidden />
-                  Leave (Esc)
-                </Btn>
-              </div>
+    <div ref={hostRef} className="s3-stage relative h-[38rem] overflow-hidden">
+      <div ref={overlayRef} className="s3-overlay" />
+      <FilterBar
+        menu={menu}
+        setMenu={setMenu}
+        view={view}
+        onView={pick}
+        xray={xray}
+        setXray={setXray}
+        sea={sea}
+        setSea={setSea}
+        cutMode={cutMode}
+        setCutMode={setCutMode}
+        rows={rows}
+        mounts={mounts}
+        focusId={cut?.focusId}
+        onCut={cutAt}
+        showHint={!cut && !inside}
+      />
+      {cut && !inside && <CutPanel cut={cut} scene={sceneRef} onOpen={onOpen} />}
+      {inside && (
+        <div className="absolute bottom-4 left-4 right-4 z-30 flex justify-center" role="status">
+          <div className="on-stage pointer-events-auto max-w-[36rem] rounded-[14px] border border-[rgba(140,180,220,.26)] bg-[rgba(6,11,20,.92)] px-4 py-3">
+            <div className="text-[15px] font-semibold text-ink">{inside}</div>
+            <p className="mt-1 text-[13px] leading-snug text-ink-muted">Drag to look around. W A S D or the arrow keys walk. Hold Shift to move faster.</p>
+            <div className="mt-2">
+              <Btn small onClick={() => sceneRef.current?.leave()}>
+                <LogOut className="mr-1 inline h-3 w-3" aria-hidden />
+                Leave (Esc)
+              </Btn>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+      {!inside && <ModelLegend />}
+    </div>
+  );
+}
 
-      <aside className="flex w-full shrink-0 flex-col gap-3.5 overflow-auto border-t border-line bg-[#060b14] p-5 lg:w-[19rem] lg:border-l lg:border-t-0" aria-label="3D view controls">
-        <Block label={ship.name} sub="· DDG"><p className="text-sm text-ink-muted">Illustrative geometry. Status labels use backend event assessments; unmapped features are Unknown.</p></Block>
-        <Block label="View">
-          <Btn on={view === 'sky'} onClick={() => pick('sky')}>
-            Sky view
-          </Btn>
-          <Btn on={view === 'iso'} onClick={() => pick('iso')}>
-            Isometric
-          </Btn>
-          <Btn on={view === 'side'} onClick={() => pick('side')}>
-            Side
-          </Btn>
-        </Block>
-        <Block label="Hull">
-          <Btn on={xray} onClick={() => setXray((v) => !v)}>
-            X-ray (below deck)
-          </Btn>
-          <Btn on={sea} onClick={() => setSea((v) => !v)}>
-            Sea
-          </Btn>
-        </Block>
-        <Block label="Cut direction">
-          <Btn on={cutMode === 'x'} onClick={() => setCutMode('x')}>
-            Across
-          </Btn>
-          <Btn on={cutMode === 'z'} onClick={() => setCutMode('z')}>
-            Lengthwise
-          </Btn>
-        </Block>
-        <Block label="Cut-section key">
-          <div className="grid w-full grid-cols-2 gap-x-3 gap-y-1.5 text-[12.5px] text-[#c3d0e0]">
-            {CUT_LEGEND.map(([n, c]) => (
-              <span key={n} className="flex items-center gap-2">
-                <i className="h-3 w-3 shrink-0 rounded-[3px]" style={{ background: c }} aria-hidden />
-                {n}
-              </span>
-            ))}
-          </div>
-        </Block>
-        <Block label="Pins">
-          <ul className="flex w-full flex-col gap-1.5">
-            {rows.map((s) => {
-              const has = mounts.has(s.mount!);
-              const meta = STATUS[s.status];
-              return (
-                <li key={s.id}>
-                  <button
-                    type="button"
-                    disabled={!has}
-                    onClick={() => cutAt(s.id)}
-                    aria-label={has ? `${s.name}: ${meta.label}. Cut the ship open here.` : `${s.name}: no mount on this hull`}
-                    className={clsx(
-                      'flex w-full items-center gap-2.5 rounded-[10px] border border-line px-2.5 py-1.5 text-left text-sm transition',
-                      has ? 'hover:border-line-strong hover:bg-white/[0.03]' : 'cursor-default opacity-80',
-                      s.isNextDomino && has && 'border-risk/70',
-                      cut?.focusId === s.id && 'border-accent/60 bg-accent/[0.08]',
-                    )}
-                  >
-                    <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: has ? meta.hex : '#6b7d95' }} aria-hidden />
-                    <span className="min-w-0 flex-1 truncate text-ink" title={s.name}>
-                      {s.name}
-                    </span>
-                    <span className="shrink-0 text-[13px] font-bold" style={{ color: has ? meta.hex : '#9fb0c6' }}>
-                      {has ? meta.label : 'No mount on this hull'}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </Block>
-      </aside>
+type FilterMenuId = 'view' | 'display' | 'cut' | 'systems';
+
+const VIEWS: { id: ViewKind; label: string }[] = [
+  { id: 'sky', label: 'Sky view' },
+  { id: 'iso', label: 'Isometric' },
+  { id: 'side', label: 'Side' },
+];
+
+const CUTS: { id: CutMode; label: string }[] = [
+  { id: 'x', label: 'Across' },
+  { id: 'z', label: 'Lengthwise' },
+];
+
+function FilterBar({
+  menu,
+  setMenu,
+  view,
+  onView,
+  xray,
+  setXray,
+  sea,
+  setSea,
+  cutMode,
+  setCutMode,
+  rows,
+  mounts,
+  focusId,
+  onCut,
+  showHint,
+}: {
+  menu: FilterMenuId | null;
+  setMenu: (id: FilterMenuId | null) => void;
+  view: ViewKind;
+  onView: (view: ViewKind) => void;
+  xray: boolean;
+  setXray: (value: boolean | ((value: boolean) => boolean)) => void;
+  sea: boolean;
+  setSea: (value: boolean | ((value: boolean) => boolean)) => void;
+  cutMode: CutMode;
+  setCutMode: (mode: CutMode) => void;
+  rows: ShipSystem[];
+  mounts: Set<string>;
+  focusId?: string;
+  onCut: (id: string) => void;
+  showHint: boolean;
+}) {
+  const barRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!menu) return;
+    const onPointer = (event: MouseEvent) => {
+      if (!barRef.current?.contains(event.target as Node)) setMenu(null);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenu(null);
+    };
+    document.addEventListener('mousedown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [menu, setMenu]);
+
+  const displaySummary = [xray ? 'X-ray' : '', sea ? 'Sea' : ''].filter(Boolean).join(', ') || 'None';
+  const toggle = (id: FilterMenuId) => setMenu(menu === id ? null : id);
+
+  return (
+    <div ref={barRef} className="on-stage pointer-events-none absolute inset-x-0 top-0 z-30 bg-[rgba(6,11,20,.78)] backdrop-blur-sm">
+      <div className="pointer-events-auto flex flex-wrap items-center gap-2 px-3 py-2" role="toolbar" aria-label="3D model filters">
+        <Drop label="View" value={VIEWS.find((item) => item.id === view)?.label ?? 'View'} open={menu === 'view'} onClick={() => toggle('view')}>
+          {VIEWS.map((item) => (
+            <ChoiceRow key={item.id} selected={view === item.id} onClick={() => { onView(item.id); setMenu(null); }}>
+              {item.label}
+            </ChoiceRow>
+          ))}
+        </Drop>
+        <Drop label="Display" value={displaySummary} open={menu === 'display'} onClick={() => toggle('display')}>
+          <CheckRow checked={xray} onChange={(checked) => setXray(checked)} label="X-ray (below deck)" />
+          <CheckRow checked={sea} onChange={(checked) => setSea(checked)} label="Sea" />
+        </Drop>
+        <Drop label="Cut" value={CUTS.find((item) => item.id === cutMode)?.label ?? 'Cut'} open={menu === 'cut'} onClick={() => toggle('cut')}>
+          {CUTS.map((item) => (
+            <ChoiceRow key={item.id} selected={cutMode === item.id} onClick={() => { setCutMode(item.id); setMenu(null); }}>
+              {item.label}
+            </ChoiceRow>
+          ))}
+        </Drop>
+        <Drop label="Systems" value={rows.find((row) => row.id === focusId)?.name ?? 'All pins'} open={menu === 'systems'} onClick={() => toggle('systems')} align="end" panelClassName="max-h-72 w-80 overflow-auto">
+          {rows.map((system) => {
+            const mounted = mounts.has(system.mount!);
+            const meta = STATUS[system.status];
+            return (
+              <button
+                key={system.id}
+                type="button"
+                disabled={!mounted}
+                onClick={() => { onCut(system.id); setMenu(null); }}
+                className={clsx(
+                  'flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm',
+                  mounted ? 'hover:bg-white/10' : 'cursor-default opacity-60',
+                  focusId === system.id && 'bg-white/10',
+                )}
+              >
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: mounted ? meta.hex : '#9fb0c6' }} aria-hidden />
+                <span className="min-w-0 flex-1 truncate">{system.name}</span>
+                <span className="shrink-0 text-xs font-semibold" style={{ color: mounted ? meta.hex : '#c3d0e0' }}>
+                  {mounted ? meta.label : 'No mount'}
+                </span>
+              </button>
+            );
+          })}
+        </Drop>
+      </div>
+      {showHint && <p className="px-3 pb-2 text-xs text-[#c3d0e0]">Click a pin or the hull to cut. Drag to orbit, scroll to zoom.</p>}
+    </div>
+  );
+}
+
+function Drop({ label, value, open, onClick, align, panelClassName, children }: { label: string; value: string; open: boolean; onClick: () => void; align?: 'end'; panelClassName?: string; children: ReactNode }) {
+  return (
+    <div className={clsx('relative', align === 'end' && 'ml-auto')}>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="true"
+        onClick={onClick}
+        className="inline-flex max-w-[16rem] items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-2.5 py-1.5 text-sm hover:border-white/40"
+      >
+        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#9fb0c6]">{label}</span>
+        <span className="min-w-0 truncate font-semibold">{value}</span>
+        <ChevronDown className={clsx('h-4 w-4 shrink-0 transition', open && 'rotate-180')} aria-hidden />
+      </button>
+      {open && (
+        <div className={clsx('absolute top-full z-40 mt-1 min-w-[14rem] rounded-xl border border-white/15 bg-[rgba(6,11,20,.96)] p-1.5 shadow-glass', align === 'end' ? 'right-0' : 'left-0', panelClassName)}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChoiceRow({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button type="button" aria-pressed={selected} onClick={onClick} className={clsx('flex w-full rounded-lg px-2.5 py-1.5 text-left text-sm font-semibold', selected ? 'bg-white/15' : 'hover:bg-white/10')}>
+      {children}
+    </button>
+  );
+}
+
+function CheckRow({ checked, onChange, label }: { checked: boolean; onChange: (checked: boolean) => void; label: string }) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-semibold hover:bg-white/10">
+      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-4 w-4 accent-[#22d3ee]" />
+      {label}
+    </label>
+  );
+}
+
+const PIN_LEGEND: [string, string][] = [
+  ['Ready', '#34d399'],
+  ['Watch', '#fbbf24'],
+  ['At risk', '#fb4d5d'],
+  ['No mount', '#9fb0c6'],
+];
+
+function ModelLegend() {
+  return (
+    <div className="on-stage pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-wrap items-center gap-x-5 gap-y-2 bg-[rgba(6,11,20,.78)] px-3 py-2 text-xs backdrop-blur-sm" aria-label="3D model legend">
+      <LegendGroup title="Sections" items={CUT_LEGEND} shape="square" />
+      <LegendGroup title="Pins" items={PIN_LEGEND} shape="circle" />
+    </div>
+  );
+}
+
+function LegendGroup({ title, items, shape }: { title: string; items: [string, string][]; shape: 'square' | 'circle' }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <span className="font-semibold uppercase tracking-[0.12em] text-[#9fb0c6]">{title}</span>
+      {items.map(([name, color]) => (
+        <span key={name} className="inline-flex items-center gap-1.5">
+          <i className={clsx('h-2.5 w-2.5 shrink-0', shape === 'circle' ? 'rounded-full' : 'rounded-[3px]')} style={{ background: color }} aria-hidden />
+          {name}
+        </span>
+      ))}
     </div>
   );
 }
@@ -233,7 +348,7 @@ function Stage({ ship, onOpen, onFail }: { ship: ShipPayload; onOpen: (id: strin
 function CutPanel({ cut, scene, onOpen }: { cut: CutState; scene: RefObject<ShipScene | null>; onOpen: (id: string) => void }) {
   const meta = cut.status ? STATUS[cut.status] : null;
   return (
-    <div className="absolute right-4 top-4 w-[15.75rem] rounded-[14px] border border-[rgba(140,180,220,.26)] bg-[rgba(6,11,20,.92)] p-4" role="region" aria-label="Cut section">
+    <div className="on-stage absolute right-4 top-[4.75rem] z-20 w-[15.75rem] rounded-[14px] border border-[rgba(140,180,220,.26)] bg-[rgba(6,11,20,.92)] p-4" role="region" aria-label="Cut section">
       <div className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">Cut section · {cut.mode === 'x' ? 'across' : 'lengthwise'}</div>
       <div className="mt-2 flex flex-wrap gap-1.5">
         <Btn small onClick={() => scene.current?.enter()}>
@@ -270,18 +385,6 @@ function CutPanel({ cut, scene, onOpen }: { cut: CutState; scene: RefObject<Ship
         {meta ? ' · ' : ''}
         {cut.where}
       </div>
-    </div>
-  );
-}
-
-function Block({ label, sub, children }: { label: string; sub?: string; children: ReactNode }) {
-  return (
-    <div>
-      <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
-        {label}
-        {sub && <span className="ml-1 font-normal normal-case tracking-normal">{sub}</span>}
-      </div>
-      <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
 }

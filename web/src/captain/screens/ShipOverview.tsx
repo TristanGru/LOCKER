@@ -74,21 +74,21 @@ function Body({ ship, filter, setFilter, onOpen }: { ship: ShipPayload; filter: 
   return (
     <>
       {/* 1. summary row */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[1.35fr_1fr_1fr_1fr]">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={clsx('glass relative overflow-hidden p-5', STATUS[overallStatus].border)}>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1.35fr_1fr_1fr_1fr]">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={clsx('glass relative overflow-hidden px-4 py-3', STATUS[overallStatus].border)}>
           <div className="label-caps flex items-center gap-2">
-            <Gauge className="h-4 w-4" aria-hidden /> System status summary
+            <Gauge className="h-3.5 w-3.5" aria-hidden /> System status summary
           </div>
-          <div className="mt-1 flex items-end gap-4">
-            <span className="num text-[3.6rem] font-bold leading-none text-ink">
+          <div className="mt-1 flex items-baseline gap-3">
+            <span className="num text-[2.15rem] font-bold leading-none text-ink">
               {Math.round(ship.overall.readyShare * 100)}
               <span className="opacity-60">%</span>
             </span>
-            <span className="pb-1.5 text-sm text-ink-muted">
+            <span className="text-sm text-ink-muted">
               <span className="num font-semibold text-ink">{ship.overall.ready}</span> of <span className="num">{ship.overall.total}</span> systems Ready
             </span>
           </div>
-          <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-white/[0.06]">
+          <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-ink/[0.08]">
             {(['ready', 'watch', 'risk'] as const).map((s) =>
               ship.counts[s] ? <motion.div key={s} initial={false} animate={{ width: `${(ship.counts[s] / ship.overall.total) * 100}%` }} transition={{ duration: 0.6 }} style={{ background: STATUS[s].hex }} /> : null,
             )}
@@ -102,44 +102,42 @@ function Body({ ship, filter, setFilter, onOpen }: { ship: ShipPayload; filter: 
           return (
             <motion.button
               key={c.status}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 * (i + 1) }}
               onClick={() => setFilter(filter === c.status ? 'all' : c.status)}
               aria-pressed={filter === c.status}
-              className={clsx('glass flex flex-col justify-start p-5 text-left transition hover:brightness-110', n ? meta.border : 'opacity-70', filter === c.status && 'shadow-focus')}
+              className={clsx('glass flex items-center gap-3 px-4 py-3 text-left transition hover:brightness-110', n ? meta.border : 'opacity-70', filter === c.status && 'shadow-focus')}
             >
-              <div className="flex items-center gap-2.5">
-                <span className={clsx('grid h-9 w-9 place-items-center rounded-full border-2', meta.bg)} style={{ borderColor: meta.hex }}>
-                  <Icon className={clsx('h-5 w-5', meta.text)} strokeWidth={2.6} aria-hidden />
+              <span className={clsx('grid h-8 w-8 shrink-0 place-items-center rounded-full border-2', meta.bg)} style={{ borderColor: meta.hex }}>
+                <Icon className={clsx('h-4 w-4', meta.text)} strokeWidth={2.6} aria-hidden />
+              </span>
+              <span className="min-w-0">
+                <span className="flex items-baseline gap-2">
+                  <span className={clsx('text-sm font-bold', meta.text)}>{c.title}</span>
+                  <span className="num text-[1.65rem] font-bold leading-none text-ink">{n}</span>
+                  <span className="text-xs text-ink-muted">{n === 1 ? 'system' : 'systems'}</span>
                 </span>
-                <span className={clsx('text-base font-bold', meta.text)}>{c.title}</span>
-              </div>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="num text-[2.6rem] font-bold leading-none text-ink">{n}</span>
-                <span className="text-sm text-ink-muted">{n === 1 ? 'system' : 'systems'}</span>
-              </div>
-              <p className="mt-1 text-sm text-ink-dim">{c.desc}</p>
+                <span className="mt-0.5 block truncate text-xs text-ink-dim">{c.desc}</span>
+              </span>
             </motion.button>
           );
         })}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
-        <div className="min-w-0 space-y-6">
-          {/* 2. ship profile */}
-          <Panel
-            title="Ship profile · 3D model"
-            icon={<Ship className="h-4 w-4" />}
-            actions={<span className="text-xs text-ink-muted">{ship.hullType} · procedural model, approximate</span>}
-            bodyClassName="!p-0"
-          >
-            <Suspense fallback={<Skeleton className="m-5 h-[34rem]" />}>
-              <ShipModel3D ship={ship} onOpen={onOpen} />
-            </Suspense>
-          </Panel>
+      <Panel
+        title="Ship profile · 3D model"
+        icon={<Ship className="h-4 w-4" />}
+        actions={<span className="text-xs text-ink-muted">{ship.hullType} · procedural model, approximate</span>}
+        bodyClassName="!p-0"
+      >
+        <Suspense fallback={<Skeleton className="m-5 h-[34rem]" />}>
+          <ShipModel3D ship={ship} onOpen={onOpen} />
+        </Suspense>
+      </Panel>
 
-          {/* 3. all systems by department */}
+      <div className="grid items-start gap-6 xl:grid-cols-[1fr_24rem]">
+        <div className="min-w-0">
           <section aria-label="All systems by department">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <h2 className="label-caps flex items-center gap-2 !text-ink-muted">
@@ -162,7 +160,7 @@ function Body({ ship, filter, setFilter, onOpen }: { ship: ShipPayload; filter: 
                     >
                       {Icon && <Icon className={clsx('h-4 w-4', f.id !== 'all' && STATUS[f.id].text)} aria-hidden />}
                       {f.label}
-                      <span className="num rounded-full bg-white/[0.07] px-1.5 text-xs">{n}</span>
+                      <span className="num rounded-full bg-ink/[0.08] px-1.5 text-xs">{n}</span>
                     </button>
                   );
                 })}
@@ -182,7 +180,6 @@ function Body({ ship, filter, setFilter, onOpen }: { ship: ShipPayload; filter: 
           </section>
         </div>
 
-        {/* 4. needs attention */}
         <AttentionPanel ship={ship} />
       </div>
     </>
@@ -194,12 +191,13 @@ function LoadingSkeleton() {
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-36" />
+          <Skeleton key={i} className="h-20" />
         ))}
       </div>
+      <Skeleton className="h-[26rem]" />
       <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
-        <Skeleton className="h-[26rem]" />
-        <Skeleton className="h-[26rem]" />
+        <Skeleton className="h-[20rem]" />
+        <Skeleton className="h-[20rem]" />
       </div>
     </div>
   );

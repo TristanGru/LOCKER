@@ -32,7 +32,7 @@ export function StopButton() {
     <>
       <button
         onClick={() => setConfirming(true)}
-        className="btn border-line-strong bg-transparent px-4 py-2 text-sm font-bold tracking-[0.16em] text-ink hover:border-ink-muted hover:bg-white/[0.04]"
+        className="btn border-line-strong bg-transparent px-4 py-2 text-sm font-bold tracking-[0.16em] text-ink hover:border-ink-muted hover:bg-ink/[0.06]"
         aria-label="Pause this browser's actions"
       >
         <OctagonX className="h-4 w-4" strokeWidth={2.4} aria-hidden /> STOP

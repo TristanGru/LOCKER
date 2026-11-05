@@ -32,7 +32,7 @@ export const ZONE_NAME: Record<Zone, string> = {
   torp: 'Torpedo room',
 };
 
-/** Key shown in the side rail. */
+/** Key shown along the bottom of the 3D model. */
 export const CUT_LEGEND: [string, string][] = [
   ['Machinery', '#8a6424'],
   ['Ops / combat', '#216f82'],

@@ -55,7 +55,7 @@ export function NodeDetailView({ id }: { id: string }) {
       </div>
 
       {node.nextDominoFor.length > 0 && (
-        <motion.div initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-start gap-3 rounded-xl border border-risk bg-[#2a0b12] p-4 animate-pulseRing">
+        <motion.div initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-start gap-3 rounded-xl border border-risk bg-risk/15 p-4 animate-pulseRing">
           <Crosshair className="mt-0.5 h-5 w-5 shrink-0 text-risk" aria-hidden />
           <div>
             <div className="font-bold uppercase tracking-wider text-risk">Next domino</div>
@@ -167,7 +167,7 @@ export function LinkList({ links }: { links: NodeLink[] }) {
           <button
             key={l.id}
             onClick={() => openNode(l.id)}
-            className={clsx('inline-flex items-center gap-2 rounded-lg border bg-abyss-900/60 px-2.5 py-1.5 text-sm transition hover:bg-white/[0.06]', m.border)}
+            className={clsx('inline-flex items-center gap-2 rounded-lg border bg-abyss-900/60 px-2.5 py-1.5 text-sm transition hover:bg-ink/[0.08]', m.border)}
             title={`${l.label}: ${m.label}`}
           >
             <KindIcon className="h-4 w-4 text-ink-dim" aria-hidden />

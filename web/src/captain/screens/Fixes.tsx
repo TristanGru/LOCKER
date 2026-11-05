@@ -87,7 +87,7 @@ export function Fixes() {
             className={clsx(
               'flex flex-wrap items-center gap-3 rounded-2xl border px-5 py-3.5 text-base',
               toast.kind === 'approved' && 'border-ready/50 bg-ready-soft text-ink',
-              toast.kind === 'rejected' && 'border-line-strong bg-white/[0.04] text-ink',
+              toast.kind === 'rejected' && 'border-line-strong bg-ink/[0.05] text-ink',
               toast.kind === 'modified' && 'border-accent/50 bg-accent/10 text-ink',
               toast.kind === 'error' && 'border-risk/60 bg-risk-soft text-ink',
             )}
@@ -197,7 +197,7 @@ export function Fixes() {
                         <Check className="h-4 w-4 text-ready" aria-hidden />
                       </span>
                     ) : (
-                      <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/10">
+                      <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-ink/10">
                         <X className="h-4 w-4 text-ink-muted" aria-hidden />
                       </span>
                     )}

@@ -28,7 +28,7 @@ export function MissionTabs({
             onClick={() => onChange(m.id)}
             className={clsx(
               'flex items-center gap-2 rounded-xl px-4 py-2.5 text-left transition',
-              active ? 'bg-accent/15 shadow-[inset_0_0_0_1px_rgba(34,211,238,0.6)]' : 'hover:bg-white/[0.04]',
+              active ? 'bg-accent/15 shadow-[inset_0_0_0_1px_rgba(34,211,238,0.6)]' : 'hover:bg-ink/[0.06]',
             )}
           >
             <Icon className={clsx('h-4 w-4', meta.text)} aria-label={meta.label} />
@@ -48,7 +48,7 @@ export function MissionTabs({
           onClick={() => onChange('all')}
           className={clsx(
             'rounded-xl px-4 py-2.5 text-sm font-bold transition',
-            value === 'all' ? 'bg-accent/15 text-ink shadow-[inset_0_0_0_1px_rgba(34,211,238,0.6)]' : 'text-ink-muted hover:bg-white/[0.04]',
+            value === 'all' ? 'bg-accent/15 text-ink shadow-[inset_0_0_0_1px_rgba(34,211,238,0.6)]' : 'text-ink-muted hover:bg-ink/[0.06]',
           )}
         >
           All missions

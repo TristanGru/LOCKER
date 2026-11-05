@@ -102,7 +102,7 @@ function Legend() {
       <span className="inline-flex items-center gap-1 rounded-full border border-watch/50 bg-watch-soft px-2 py-0.5 text-[0.7rem] font-semibold text-watch">
         <GitCompareArrows className="h-3 w-3" aria-hidden /> Sources disagree
       </span>
-      <span className="inline-flex items-center gap-1 rounded-full border border-risk bg-[#2a0b12] px-2 py-0.5 text-[0.7rem] font-bold uppercase tracking-wider text-risk">
+      <span className="inline-flex items-center gap-1 rounded-full border border-risk bg-risk/15 px-2 py-0.5 text-[0.7rem] font-bold uppercase tracking-wider text-risk">
         <Crosshair className="h-3 w-3" aria-hidden /> Next domino
       </span>
       <span className="text-[0.72rem] text-ink-dim">Click a card for details</span>

@@ -25,7 +25,7 @@ export function FreshnessIndicator({ freshness }: { freshness: Freshness | null 
   }, [open]);
 
   if (!freshness) {
-    return <div className="h-11 w-56 animate-pulse rounded-xl bg-white/[0.04]" />;
+    return <div className="h-11 w-56 animate-pulse rounded-xl bg-ink/[0.05]" />;
   }
 
   const anyStale = freshness.staleCount > 0;
@@ -63,7 +63,7 @@ export function FreshnessIndicator({ freshness }: { freshness: Freshness | null 
             <p className="label-caps px-3 pb-2 pt-2">Source feeds</p>
             <ul>
               {freshness.feeds.map((f) => (
-                <li key={f.id} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 hover:bg-white/[0.03]">
+                <li key={f.id} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 hover:bg-ink/[0.05]">
                   <span className="text-sm text-ink">{f.label}</span>
                   {f.stale ? <StaleBadge hours={f.ageHours} compact /> : <span className="num text-sm text-ink-muted">{fmtAge(f.ageHours)}</span>}
                 </li>

@@ -27,13 +27,13 @@ const TYPE_META: Record<LogType, { label: string; icon: LucideIcon; cls: string 
   event: { label: 'Event', icon: Radio, cls: 'text-watch border-watch/40 bg-[rgba(251,191,36,0.06)]' },
   recommendation: { label: 'Recommendation', icon: Lightbulb, cls: 'text-accent border-accent/40 bg-accent/[0.06]' },
   approval: { label: 'Approval', icon: CheckCircle2, cls: 'text-ready border-ready/40 bg-ready-soft' },
-  rejection: { label: 'Rejection', icon: XCircle, cls: 'text-ink-muted border-line-strong bg-white/[0.03]' },
+  rejection: { label: 'Rejection', icon: XCircle, cls: 'text-ink-muted border-line-strong bg-ink/[0.04]' },
   modification: { label: 'Modification', icon: SlidersHorizontal, cls: 'text-accent border-accent/40 bg-accent/[0.06]' },
   scenario: { label: 'What-if', icon: FlaskConical, cls: 'text-[#a78bfa] border-[#a78bfa]/40 bg-[#a78bfa]/[0.07]' },
   stop: { label: 'STOP', icon: OctagonX, cls: 'text-risk border-risk/60 bg-risk-soft' },
   resume: { label: 'Resume', icon: Play, cls: 'text-ready border-ready/40 bg-ready-soft' },
-  brief: { label: 'Brief', icon: FileText, cls: 'text-ink border-line-strong bg-white/[0.03]' },
-  system: { label: 'System', icon: Cpu, cls: 'text-ink-dim border-line bg-white/[0.02]' },
+  brief: { label: 'Brief', icon: FileText, cls: 'text-ink border-line-strong bg-ink/[0.04]' },
+  system: { label: 'System', icon: Cpu, cls: 'text-ink-dim border-line bg-ink/[0.03]' },
 };
 
 const FILTERS: { id: string; label: string; types: LogType[] }[] = [
@@ -102,7 +102,7 @@ export function ActivityLog() {
             )}
           >
             {f.label}
-            <span className="num rounded-full bg-white/[0.07] px-1.5 text-xs">{counts[f.id] ?? 0}</span>
+            <span className="num rounded-full bg-ink/[0.08] px-1.5 text-xs">{counts[f.id] ?? 0}</span>
           </button>
         ))}
       </div>

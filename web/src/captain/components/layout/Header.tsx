@@ -5,6 +5,7 @@ import { useApi } from '../../state/useApi';
 import { FreshnessIndicator } from './FreshnessIndicator';
 import { LogoMark } from './Logo';
 import { StopButton } from './StopControl';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Header() {
   const { setStopped, ship, changeShip, focus, setFocus, bump } = useStore();
@@ -34,6 +35,7 @@ export function Header() {
       )}
 
       <div className="ml-auto flex shrink-0 items-center gap-3">
+        <ThemeToggle />
         <FreshnessIndicator freshness={data?.freshness ?? null} />
         <details className="relative text-sm text-ink-muted"><summary>Sources / controls</summary><div className="absolute right-0 z-50 mt-3 max-h-[75vh] w-[min(90vw,42rem)] overflow-auto rounded-xl border border-line bg-abyss-950 p-5">
           <p>Synthetic exercise • event-interval readiness</p><p>Source revision: {snapshot?.state.source_revision}</p>

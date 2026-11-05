@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MissionTwin: Readiness Domino Map (SYNTHETIC)</title>
+    <script>
+      (function () {
+        var mode = 'light';
+        try {
+          var saved = localStorage.getItem('locker-theme');
+          if (saved === 'dark' || saved === 'light') mode = saved;
+        } catch (e) {}
+        document.documentElement.setAttribute('data-theme', mode);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

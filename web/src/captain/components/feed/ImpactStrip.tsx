@@ -57,8 +57,8 @@ export function ImpactStrip({
                 </motion.span>
               )}
             </div>
-            <div className="relative mt-2 h-2 overflow-hidden rounded-full bg-white/[0.06]">
-              {moved && <div className="absolute inset-y-0 left-0 rounded-full bg-white/20" style={{ width: `${d!.before * 100}%` }} />}
+            <div className="relative mt-2 h-2 overflow-hidden rounded-full bg-ink/[0.08]">
+              {moved && <div className="absolute inset-y-0 left-0 rounded-full bg-ink/20" style={{ width: `${d!.before * 100}%` }} />}
               <motion.div
                 className="absolute inset-y-0 left-0 rounded-full"
                 initial={false}

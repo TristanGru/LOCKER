@@ -41,10 +41,10 @@ export function Overview() {
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-ink-muted">
               <span className="inline-flex items-center gap-2">
-                <i className="h-3.5 w-px bg-white/70" aria-hidden /> {pct(getBands().yellow)} watch
+                <i className="h-3.5 w-px bg-ink/70" aria-hidden /> {pct(getBands().yellow)} watch
               </span>
               <span className="inline-flex items-center gap-2">
-                <i className="h-3.5 w-px bg-white/80" aria-hidden /> {pct(getBands().green)} ready
+                <i className="h-3.5 w-px bg-ink/80" aria-hidden /> {pct(getBands().green)} ready
               </span>
             </div>
           </div>
@@ -54,7 +54,7 @@ export function Overview() {
       {loading && (
         <div className="space-y-4">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="space-y-3 rounded-2xl border border-line bg-[#0c1624] p-6">
+            <div key={i} className="space-y-3 rounded-2xl border border-line bg-abyss-800 p-6">
               <Skeleton className="h-6 w-28" />
               <Skeleton className="h-8 w-48" />
               <Skeleton className="h-3 w-full" />

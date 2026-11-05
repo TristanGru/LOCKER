@@ -8,7 +8,7 @@ import { OddsNumber } from '../ui/OddsNumber';
 import { RecordId } from '../ui/RecordId';
 import { StatusBadge } from '../ui/StatusBadge';
 
-/** Right-hand "Needs attention" column: next domino, mission at risk, watch list. */
+/** Needs attention: next domino, mission at risk, watch list. Sits beside the department list. */
 export function AttentionPanel({ ship }: { ship: ShipPayload }) {
   const { openNode, setFocus } = useStore();
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ export function AttentionPanel({ ship }: { ship: ShipPayload }) {
       <h2 className="label-caps !text-ink-muted">Needs attention</h2>
 
       {d ? (
-        <section className="relative overflow-hidden rounded-2xl border border-risk bg-[#1f0a10]/90 p-5 shadow-[0_0_40px_-18px_rgba(251,77,93,0.9)]">
+        <section className="relative overflow-hidden rounded-2xl border border-risk bg-risk/10 p-5 shadow-[0_0_40px_-18px_rgba(251,77,93,0.9)]">
           <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-risk">
             <Crosshair className="h-4 w-4 animate-pulse" aria-hidden /> Next domino · {d.missionCode}
           </div>
@@ -77,7 +77,7 @@ export function AttentionPanel({ ship }: { ship: ShipPayload }) {
             <OddsNumber value={m.odds} className={clsx('text-5xl font-bold leading-none', STATUS[m.status].text)} />
             <span className="pb-1 text-sm text-ink-dim">odds ready</span>
           </div>
-          <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+          <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-ink/[0.08]">
             <div className="absolute inset-y-0 left-0 rounded-full transition-all duration-700" style={{ width: `${m.odds * 100}%`, background: STATUS[m.status].hex }} />
             <div className="absolute inset-y-0 w-px bg-ready/80" style={{ left: '82%' }} />
             <div className="absolute inset-y-0 w-px bg-risk/80" style={{ left: '50%' }} />
@@ -99,7 +99,7 @@ export function AttentionPanel({ ship }: { ship: ShipPayload }) {
               const Icon = meta.icon;
               return (
                 <li key={s.id}>
-                  <button onClick={() => openNode(s.id)} className="flex w-full items-start gap-2.5 rounded-lg px-2 py-1.5 text-left transition hover:bg-white/[0.04]">
+                  <button onClick={() => openNode(s.id)} className="flex w-full items-start gap-2.5 rounded-lg px-2 py-1.5 text-left transition hover:bg-ink/[0.06]">
                     <Icon className={clsx('mt-0.5 h-4 w-4 shrink-0', meta.text)} aria-label={meta.label} />
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold text-ink">

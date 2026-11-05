@@ -43,7 +43,7 @@ export function EventCard({ event, latest }: { event: DemoEvent; latest: boolean
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="num rounded bg-white/[0.06] px-1.5 py-0.5 font-bold text-ink-muted">#{event.seq}</span>
+            <span className="num rounded bg-ink/[0.08] px-1.5 py-0.5 font-bold text-ink-muted">#{event.seq}</span>
             <span className="font-semibold uppercase tracking-[0.14em] text-ink-dim">{meta.source}</span>
             {latest && <span className="rounded-full bg-accent/15 px-2 py-0.5 font-bold uppercase tracking-wider text-accent">Just in</span>}
             <span className="num ml-auto text-ink-dim">{time}</span>
@@ -95,7 +95,7 @@ function ChangeChain({ changes }: { changes: NodeChange[] }) {
             {i > 0 && <span className="text-ink-dim">›</span>}
             <button
               onClick={() => openNode(c.nodeId)}
-              className={clsx('inline-flex items-center gap-1.5 rounded-md border bg-abyss-900/70 px-2 py-1 text-xs transition hover:bg-white/[0.06]', to.border)}
+              className={clsx('inline-flex items-center gap-1.5 rounded-md border bg-abyss-900/70 px-2 py-1 text-xs transition hover:bg-ink/[0.08]', to.border)}
               title={`${c.label}: ${STATUS[c.from].label} -> ${to.label}`}
             >
               <KindIcon className="h-3.5 w-3.5 text-ink-dim" aria-hidden />
