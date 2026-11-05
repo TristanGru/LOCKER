@@ -35,3 +35,4 @@ niin,ship_id,uic,storeroom_on_hand,storeroom_allowance,installed_qty,installed_s
 019990501,KESSLER,99101,1,1,2,COMMS-HF,true,true,drops below allowance,2026-11-04T06:00:00Z,proposed
 019990501,VARNELL,99102,0,0,2,COMMS-HF,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
 019990501,ASHBY,99103,0,0,2,COMMS-HF,false,true,cannibalization only: degrades donor system,2026-11-04T06:00:00Z,proposed
+019998001,NSAHR,99202,1,1,1,MSUB-XF,true,true,Pulling the installed unit takes the regional mobile substation out of service,2026-11-04T06:00:00Z,placeholder

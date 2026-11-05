@@ -1,0 +1,4 @@
+ship_id,uic,niin,nsn,nomenclature,apl,item_type,allowance_qty,on_hand_qty,due_in_qty,sri_osi,cross_deck_eligible,last_inventory_date,system_of_record,as_of,provenance
+NSNORFOLK,99201,019998002,4320-01-999-8002,"PUMP, POTABLE WATER BOOSTER",,STOREROOM,1,1,0,OSI,false,2026-09-30,NOSS (proposed),2026-11-04T06:00:00Z,placeholder
+NSNORFOLK,99201,019998005,5895-01-999-8005,"CONTROLLER, ACCESS GATE",,STOREROOM,1,1,0,OSI,false,2026-09-30,NOSS (proposed),2026-11-04T06:00:00Z,placeholder
+NSNORFOLK,99201,019998001,6120-01-999-8001,"TRANSFORMER, PAD-MOUNT, PIER POWER",,STOREROOM,1,0,0,OSI,false,2026-09-30,NOSS (proposed),2026-11-04T06:00:00Z,placeholder

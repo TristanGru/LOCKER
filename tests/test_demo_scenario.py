@@ -1,4 +1,4 @@
-"""Golden demo test (R12): real generators -> ingest -> 4 feed events -> mechanics, not chosen outcomes."""
+"""Golden demo test (R12): real generators -> ingest -> feed events -> mechanics, not chosen outcomes."""
 import copy
 
 import numpy as np
@@ -16,8 +16,8 @@ def mission(fc, eid):
 def test_each_event_lowers_or_holds_mission_a(baseline, log_path):
     s = Scenario(baseline, log_path=log_path)
     prev = mission(forecast(build_world(s), runs=RUNS), "EVT-KESSLER-01")["p_ready"]
-    assert len(baseline.feed["events"]) == 4
-    for _ in range(4):
+    assert len(baseline.feed["events"]) == 5
+    for _ in range(5):
         s.apply("play_event", {})
         p = mission(forecast(build_world(s), runs=RUNS), "EVT-KESSLER-01")["p_ready"]
         assert p <= prev + 1e-9, f"event {s.played()[-1]} raised Mission A from {prev} to {p}"

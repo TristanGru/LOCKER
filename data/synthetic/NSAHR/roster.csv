@@ -1,0 +1,4 @@
+member_id,ship_id,uic,display_name,rate,rating,paygrade,department,division,work_center,duty_section,onboard_status,status_start,status_end,report_date,prd,eaos,necs,as_of,provenance
+M-2101,NSAHR,99202,CE1 Oyelaran,CE1,CE,E6,PUBLIC WORKS,MS01,MS01,2,ONBOARD,,,2025-06-01,2028-06-01,2030-06-01,,2026-11-04T06:00:00Z,placeholder
+M-2102,NSAHR,99202,CE2 Bellamy,CE2,CE,E5,PUBLIC WORKS,MS01,MS01,3,ONBOARD,,,2025-06-01,2028-06-01,2030-06-01,,2026-11-04T06:00:00Z,placeholder
+M-2103,NSAHR,99202,MA1 Rourke,MA1,MA,E6,PUBLIC WORKS,SE02,SE02,4,ONBOARD,,,2025-06-01,2028-06-01,2030-06-01,,2026-11-04T06:00:00Z,placeholder

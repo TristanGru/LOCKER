@@ -213,7 +213,7 @@ test("feed, graph, ranked fixes, evidence and brief connect end to end", async (
     });
   }
   await expect(page.locator(".playback-controls")).toContainText(
-    "4 / 4 events",
+    "4 / 5 events",
   );
   await page.getByRole("button", { name: "Dominoes", exact: true }).click();
   await expect(page.locator(".react-flow__node.next-domino")).toBeVisible();

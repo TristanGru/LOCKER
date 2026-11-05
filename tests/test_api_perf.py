@@ -55,7 +55,7 @@ def test_visual_registry_and_interval_assessment(client):
     connection, state = client
     data = connection.get("/api/dashboard").json()
     registry = data["visualization"]
-    assert set(registry["mission_areas"]) == {"AW", "ASW", "SUW", "MOB", "CCC"}
+    assert set(registry["mission_areas"]) == {"AW", "ASW", "SUW", "MOB", "CCC", "PIER", "HDLG", "BASE", "MOBL"}
     assert all(mount in registry["mounts"] for item in registry["systems"] for mount in item["mounts"])
     for mission in data["forecast"]["missions"]:
         assert 0 <= mission["interval_p_ready"] <= mission["p_ready"] + .001

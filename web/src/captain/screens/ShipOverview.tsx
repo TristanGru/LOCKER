@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
-import { Anchor, Gauge, LayoutGrid, Ship } from 'lucide-react';
-import { lazy, Suspense, useMemo, useState } from 'react';
-import { api } from '../api/api';
+import { Anchor, Building2, Gauge, LayoutGrid, Ship } from 'lucide-react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { api, backend } from '../api/api';
 import type { ShipPayload, Status } from '../api/types';
 import { AttentionPanel } from '../components/ship/AttentionPanel';
 import { DepartmentCard } from '../components/ship/DepartmentCard';
@@ -14,6 +14,7 @@ import { STATUS } from '../theme/status';
 
 // three.js is large: load the 3D view as its own chunk (bundled locally, works offline).
 const ShipModel3D = lazy(() => import('../components/ship3d/ShipModel3D').then((m) => ({ default: m.ShipModel3D })));
+const BaseModel3D = lazy(() => import('../components/base3d/BaseModel3D').then((m) => ({ default: m.BaseModel3D })));
 
 type Filter = 'all' | Status;
 
@@ -30,35 +31,56 @@ const COUNT_CARDS: { status: Status; title: string; desc: string }[] = [
   { status: 'risk', title: 'At risk', desc: 'Below the assessed readiness threshold' },
 ];
 
-export function ShipOverview() {
+type Domain = ShipPayload['kind'];
+
+/** The last unit viewed on each tab, so moving between Ship and Shore returns to where you were. */
+const lastUnit: Partial<Record<Domain, string>> = {};
+
+export function ShipOverview({ domain }: { domain: Domain }) {
   // Refetches whenever a demo event, approval or reset bumps the store version.
-  const { data, error, loading, reload } = useApi(() => api.getShip());
-  const { openNode } = useStore();
+  const { data: payload, error, loading: fetching, reload } = useApi(() => api.getShip());
+  const { openNode, ship: selected, changeShip } = useStore();
   const [filter, setFilter] = useState<Filter>('all');
+  const ashore = domain === 'installation';
+
+  // Each tab shows only its own kind of unit, so opening it selects a unit of that kind.
+  useEffect(() => {
+    let live = true;
+    backend('state').then((state) => {
+      if (!live) return;
+      const units = state.ships.filter((unit: any) => (unit.kind || 'ship') === domain).map((unit: any) => unit.ship_id);
+      if (units.includes(selected)) lastUnit[domain] = selected;
+      else if (units.length) changeShip(units.includes(lastUnit[domain]) ? lastUnit[domain]! : units[0]);
+    }).catch(() => { /* the data request below surfaces connection errors */ });
+    return () => { live = false; };
+  }, [domain, selected, changeShip]);
+
+  const data = payload?.kind === domain ? payload : null;
+  const loading = fetching || (payload != null && data == null);
 
   return (
     <div className="mx-auto max-w-[120rem] space-y-5 px-8 pb-10 pt-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[2.2rem] font-bold leading-tight tracking-tight">Ship Overview</h1>
+          <h1 className="text-[2.2rem] font-bold leading-tight tracking-tight">{ashore ? 'Installation Overview' : 'Ship Overview'}</h1>
           <p className="mt-1 flex items-center gap-2 text-lg text-ink-muted">
-            <Anchor className="h-5 w-5" aria-hidden />
+            {ashore ? <Building2 className="h-5 w-5" aria-hidden /> : <Anchor className="h-5 w-5" aria-hidden />}
             {data ? (
               <span>
                 <span className="font-semibold text-ink">{data.name}</span> · {data.hull} · {data.className}
               </span>
             ) : (
-              'Loading ship systems…'
+              'Loading systems…'
             )}
           </p>
         </div>
       </div>
 
-      {error != null && !data && <ErrorState error={error} onRetry={reload} className="glass" />}
+      {error != null && !payload && <ErrorState error={error} onRetry={reload} className="glass" />}
       {loading && <LoadingSkeleton />}
       {data && data.systems.length === 0 && (
         <EmptyState icon={Ship} title="No systems reported" className="glass">
-          The ship has not reported any systems yet.
+          This unit has not reported any systems yet.
         </EmptyState>
       )}
       {data && data.systems.length > 0 && <Body ship={data} filter={filter} setFilter={setFilter} onOpen={openNode} />}
@@ -70,25 +92,27 @@ function Body({ ship, filter, setFilter, onOpen }: { ship: ShipPayload; filter: 
   const shown = useMemo(() => (filter === 'all' ? ship.systems : ship.systems.filter((s) => s.status === filter)), [ship.systems, filter]);
   const depts = ship.departments.filter((d) => shown.some((s) => s.department === d.id));
   const overallStatus: Status = ship.counts.risk ? 'risk' : ship.counts.watch ? 'watch' : 'ready';
+  const ashore = ship.kind === 'installation';
+  const grouping = ashore ? 'capability area' : 'department';
 
   return (
     <>
       {/* 1. summary row */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[1.35fr_1fr_1fr_1fr]">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={clsx('glass relative overflow-hidden p-5', STATUS[overallStatus].border)}>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1.35fr_1fr_1fr_1fr]">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={clsx('glass relative overflow-hidden px-4 py-3', STATUS[overallStatus].border)}>
           <div className="label-caps flex items-center gap-2">
-            <Gauge className="h-4 w-4" aria-hidden /> System status summary
+            <Gauge className="h-3.5 w-3.5" aria-hidden /> System status summary
           </div>
-          <div className="mt-1 flex items-end gap-4">
-            <span className="num text-[3.6rem] font-bold leading-none text-ink">
+          <div className="mt-1 flex items-baseline gap-3">
+            <span className="num text-[2.15rem] font-bold leading-none text-ink">
               {Math.round(ship.overall.readyShare * 100)}
               <span className="opacity-60">%</span>
             </span>
-            <span className="pb-1.5 text-sm text-ink-muted">
+            <span className="text-sm text-ink-muted">
               <span className="num font-semibold text-ink">{ship.overall.ready}</span> of <span className="num">{ship.overall.total}</span> systems Ready
             </span>
           </div>
-          <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-white/[0.06]">
+          <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-ink/[0.08]">
             {(['ready', 'watch', 'risk'] as const).map((s) =>
               ship.counts[s] ? <motion.div key={s} initial={false} animate={{ width: `${(ship.counts[s] / ship.overall.total) * 100}%` }} transition={{ duration: 0.6 }} style={{ background: STATUS[s].hex }} /> : null,
             )}
@@ -102,48 +126,46 @@ function Body({ ship, filter, setFilter, onOpen }: { ship: ShipPayload; filter: 
           return (
             <motion.button
               key={c.status}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 * (i + 1) }}
               onClick={() => setFilter(filter === c.status ? 'all' : c.status)}
               aria-pressed={filter === c.status}
-              className={clsx('glass flex flex-col justify-start p-5 text-left transition hover:brightness-110', n ? meta.border : 'opacity-70', filter === c.status && 'shadow-focus')}
+              className={clsx('glass flex items-center gap-3 px-4 py-3 text-left transition hover:brightness-110', n ? meta.border : 'opacity-70', filter === c.status && 'shadow-focus')}
             >
-              <div className="flex items-center gap-2.5">
-                <span className={clsx('grid h-9 w-9 place-items-center rounded-full border-2', meta.bg)} style={{ borderColor: meta.hex }}>
-                  <Icon className={clsx('h-5 w-5', meta.text)} strokeWidth={2.6} aria-hidden />
+              <span className={clsx('grid h-8 w-8 shrink-0 place-items-center rounded-full border-2', meta.bg)} style={{ borderColor: meta.hex }}>
+                <Icon className={clsx('h-4 w-4', meta.text)} strokeWidth={2.6} aria-hidden />
+              </span>
+              <span className="min-w-0">
+                <span className="flex items-baseline gap-2">
+                  <span className={clsx('text-sm font-bold', meta.text)}>{c.title}</span>
+                  <span className="num text-[1.65rem] font-bold leading-none text-ink">{n}</span>
+                  <span className="text-xs text-ink-muted">{n === 1 ? 'system' : 'systems'}</span>
                 </span>
-                <span className={clsx('text-base font-bold', meta.text)}>{c.title}</span>
-              </div>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="num text-[2.6rem] font-bold leading-none text-ink">{n}</span>
-                <span className="text-sm text-ink-muted">{n === 1 ? 'system' : 'systems'}</span>
-              </div>
-              <p className="mt-1 text-sm text-ink-dim">{c.desc}</p>
+                <span className="mt-0.5 block truncate text-xs text-ink-dim">{c.desc}</span>
+              </span>
             </motion.button>
           );
         })}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
-        <div className="min-w-0 space-y-6">
-          {/* 2. ship profile */}
-          <Panel
-            title="Ship profile · 3D model"
-            icon={<Ship className="h-4 w-4" />}
-            actions={<span className="text-xs text-ink-muted">{ship.hullType} · procedural model, approximate</span>}
-            bodyClassName="!p-0"
-          >
-            <Suspense fallback={<Skeleton className="m-5 h-[34rem]" />}>
-              <ShipModel3D ship={ship} onOpen={onOpen} />
-            </Suspense>
-          </Panel>
+      <Panel
+        title={ashore ? 'Base layout · 3D model' : 'Ship profile · 3D model'}
+        icon={ashore ? <Building2 className="h-4 w-4" /> : <Ship className="h-4 w-4" />}
+        actions={<span className="text-xs text-ink-muted">{ship.hullType} · procedural model, approximate</span>}
+        bodyClassName="!p-0"
+      >
+        <Suspense fallback={<Skeleton className="m-5 h-[34rem]" />}>
+          {ashore ? <BaseModel3D unit={ship} onOpen={onOpen} /> : <ShipModel3D ship={ship} onOpen={onOpen} />}
+        </Suspense>
+      </Panel>
 
-          {/* 3. all systems by department */}
-          <section aria-label="All systems by department">
+      <div className="grid items-start gap-6 xl:grid-cols-[1fr_24rem]">
+        <div className="min-w-0">
+          <section aria-label={`All systems by ${grouping}`}>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <h2 className="label-caps flex items-center gap-2 !text-ink-muted">
-                <LayoutGrid className="h-4 w-4 text-accent" aria-hidden /> All systems by department
+                <LayoutGrid className="h-4 w-4 text-accent" aria-hidden /> All systems by {grouping}
               </h2>
               <div role="tablist" aria-label="Filter systems" className="flex gap-1 rounded-xl border border-line bg-abyss-900/70 p-1">
                 {FILTERS.map((f) => {
@@ -162,7 +184,7 @@ function Body({ ship, filter, setFilter, onOpen }: { ship: ShipPayload; filter: 
                     >
                       {Icon && <Icon className={clsx('h-4 w-4', f.id !== 'all' && STATUS[f.id].text)} aria-hidden />}
                       {f.label}
-                      <span className="num rounded-full bg-white/[0.07] px-1.5 text-xs">{n}</span>
+                      <span className="num rounded-full bg-ink/[0.08] px-1.5 text-xs">{n}</span>
                     </button>
                   );
                 })}
@@ -170,7 +192,7 @@ function Body({ ship, filter, setFilter, onOpen }: { ship: ShipPayload; filter: 
             </div>
             {depts.length === 0 ? (
               <EmptyState icon={LayoutGrid} title={`No systems are ${FILTERS.find((f) => f.id === filter)!.label.toLowerCase()}`} className="glass">
-                Pick another filter to see the rest of the ship.
+                Pick another filter to see the rest of this unit.
               </EmptyState>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
@@ -182,7 +204,6 @@ function Body({ ship, filter, setFilter, onOpen }: { ship: ShipPayload; filter: 
           </section>
         </div>
 
-        {/* 4. needs attention */}
         <AttentionPanel ship={ship} />
       </div>
     </>
@@ -194,12 +215,13 @@ function LoadingSkeleton() {
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-36" />
+          <Skeleton key={i} className="h-20" />
         ))}
       </div>
+      <Skeleton className="h-[26rem]" />
       <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
-        <Skeleton className="h-[26rem]" />
-        <Skeleton className="h-[26rem]" />
+        <Skeleton className="h-[20rem]" />
+        <Skeleton className="h-[20rem]" />
       </div>
     </div>
   );

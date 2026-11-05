@@ -14,11 +14,11 @@ export interface StatusMeta {
 }
 
 export const STATUS: Record<Status, StatusMeta> = {
-  unknown: {label:'Unknown',icon:CircleAlert,hex:'#94a3b8',text:'text-ink-muted',bg:'bg-white/5',border:'border-line',ring:''},
+  unknown: {label:'Unknown',icon:CircleAlert,hex:'rgb(var(--ink-dim))',text:'text-ink-muted',bg:'bg-ink/5',border:'border-line',ring:''},
   risk: {
     label: 'At risk',
     icon: CircleX,
-    hex: '#fb4d5d',
+    hex: 'rgb(var(--risk))',
     text: 'text-risk',
     bg: 'bg-risk-soft',
     border: 'border-risk/60',
@@ -27,7 +27,7 @@ export const STATUS: Record<Status, StatusMeta> = {
   watch: {
     label: 'Watch',
     icon: CircleAlert,
-    hex: '#fbbf24',
+    hex: 'rgb(var(--watch))',
     text: 'text-watch',
     bg: 'bg-watch-soft',
     border: 'border-watch/55',
@@ -36,7 +36,7 @@ export const STATUS: Record<Status, StatusMeta> = {
   ready: {
     label: 'Ready',
     icon: CheckCircle2,
-    hex: '#34d399',
+    hex: 'rgb(var(--ready))',
     text: 'text-ready',
     bg: 'bg-ready-soft',
     border: 'border-ready/40',

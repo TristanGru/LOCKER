@@ -32,7 +32,7 @@ export function FreshnessBanner({ freshness }: { freshness: Freshness }) {
       </div>
       <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
         {stale.map((f) => (
-          <span key={f.id} className="inline-flex items-center gap-2 rounded-lg border border-stale/40 bg-white/[0.03] px-2.5 py-1.5 text-sm text-ink">
+          <span key={f.id} className="inline-flex items-center gap-2 rounded-lg border border-stale/40 bg-ink/[0.04] px-2.5 py-1.5 text-sm text-ink">
             {f.label} <StaleBadge hours={f.ageHours} compact />
           </span>
         ))}

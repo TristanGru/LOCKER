@@ -3,10 +3,50 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    color-scheme: dark;
-    /* Large base size: this is shown on a projector. */
+  /* Light is the default. Channels are space-separated so Tailwind opacity modifiers work. */
+  :root,
+  :root[data-theme='light'] {
+    color-scheme: light;
+    --abyss-950: 244 247 251;
+    --abyss-900: 255 255 255;
+    --abyss-850: 255 255 255;
+    --abyss-800: 236 242 248;
+    --abyss-700: 223 232 242;
+    --abyss-600: 206 218 232;
+    --ink: 18 32 51;
+    --ink-muted: 55 74 96;
+    --ink-dim: 82 102 124;
+    --line: 186 201 216;
+    --line-strong: 148 168 188;
+    --accent: 8 116 144;
+    --ready: 4 120 87;
+    --watch: 146 84 7;
+    --risk: 190 18 60;
+    --stale: 71 85 105;
+    --on-accent: #ffffff;
+    --shadow-glass: 0 1px 0 0 rgba(255, 255, 255, 0.9) inset, 0 16px 36px -22px rgba(18, 40, 70, 0.28);
     font-size: 17px;
+  }
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --abyss-950: 3 6 12;
+    --abyss-900: 6 11 20;
+    --abyss-850: 8 16 28;
+    --abyss-800: 11 21 36;
+    --abyss-700: 17 30 51;
+    --abyss-600: 26 42 68;
+    --ink: 230 238 248;
+    --ink-muted: 159 176 198;
+    --ink-dim: 107 125 149;
+    --line: 48 70 96;
+    --line-strong: 78 108 142;
+    --accent: 34 211 238;
+    --ready: 52 211 153;
+    --watch: 251 191 36;
+    --risk: 251 77 93;
+    --stale: 148 163 184;
+    --on-accent: #042028;
+    --shadow-glass: 0 1px 0 0 rgba(255, 255, 255, 0.04) inset, 0 20px 50px -20px rgba(0, 0, 0, 0.7);
   }
   @media (min-width: 1800px) {
     :root {
@@ -26,18 +66,18 @@
   }
 
   ::selection {
-    background: rgba(34, 211, 238, 0.35);
+    background: rgb(var(--accent) / 0.35);
   }
 
   :focus-visible {
-    outline: 2px solid #22d3ee;
+    outline: 2px solid rgb(var(--accent));
     outline-offset: 2px;
     border-radius: 6px;
   }
 
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(140, 180, 220, 0.25) transparent;
+    scrollbar-color: rgb(var(--line)) transparent;
   }
 }
 
@@ -62,7 +102,7 @@
     @apply inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40;
   }
   .btn-ghost {
-    @apply btn border-line bg-white/[0.02] text-ink-muted hover:border-line-strong hover:bg-white/[0.05] hover:text-ink;
+    @apply btn border-line bg-ink/[0.03] text-ink-muted hover:border-line-strong hover:bg-ink/[0.06] hover:text-ink;
   }
   .btn-accent {
     @apply btn border-accent/60 bg-accent/15 text-accent hover:bg-accent/25 hover:shadow-focus;
@@ -96,12 +136,20 @@
 /* React Flow theming */
 .locker-flow {
   --xy-background-color: transparent;
-  --xy-edge-stroke: rgba(140, 180, 220, 0.28);
-  --xy-controls-button-background-color: rgba(11, 21, 36, 0.92);
-  --xy-controls-button-background-color-hover: rgba(26, 42, 68, 0.95);
-  --xy-controls-button-color: #9fb0c6;
-  --xy-controls-button-color-hover: #e6eef8;
-  --xy-controls-button-border-color: rgba(140, 180, 220, 0.14);
+  --xy-edge-stroke: rgb(var(--line-strong));
+  --xy-controls-button-background-color: rgb(var(--abyss-800));
+  --xy-controls-button-background-color-hover: rgb(var(--abyss-700));
+  --xy-controls-button-color: rgb(var(--ink-muted));
+  --xy-controls-button-color-hover: rgb(var(--ink));
+  --xy-controls-button-border-color: rgb(var(--line));
+}
+/* Dark plates that sit on the 3D stage keep light type in either color mode. */
+.on-stage {
+  --ink: 230 238 248;
+  --ink-muted: 195 208 224;
+  --ink-dim: 159 176 198;
+  --accent: 34 211 238;
+  color: rgb(var(--ink));
 }
 .locker-flow .react-flow__node {
   /* Nodes glide when the layout changes (new sailor, schedule shift). */

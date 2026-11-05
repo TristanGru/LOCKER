@@ -218,7 +218,7 @@ def test_alternate_json_export_same_engine(workspace, monkeypatch, tmp_path, off
     export_json(root, exported)
     monkeypatch.setenv('MISSIONTWIN_ADAPTER', 'json-export')
     alternate = AppState(exported, tmp_path / 'alt.jsonl', offline_client)
-    assert alternate.baseline.coverage() == {s: [] for s in SHIPS}
+    assert alternate.baseline.coverage() == {s: [] for s in alternate.baseline.profile.ship_ids}
     assert alternate.fc()['missions'] == expected
     assert alternate.sources()['adapter'] == 'json-export'
     viewer = TestClient(create_app(alternate))

@@ -180,6 +180,8 @@ class Hazard:
     down_nospare: list
     start: float
     sources: list
+    title: str = ""
+    explain: list = field(default_factory=list)
 
 
 @dataclass
@@ -214,17 +216,20 @@ class Mission:
     sources: list
     consequence: str = ""
     moved_note: str = ""
+    supports: str = ""  # the ship event this shore event prepares; its window follows that event
+    lead_days: float = 0.0
     codename: str = ""  # from the event plan (events_missions.json); reports and requests use it
+    support_display: str = ""  # set in build_world for a support window: "Support <supported event>"
 
     @property
     def display(self) -> str:
-        """Short name for generated text: the event plan's codename, else its label."""
-        return self.codename or self.label
+        """Short name for generated text: the event plan's codename, else the supported event's, else its label."""
+        return self.codename or self.support_display or self.label
 
 
 def mission_display(m: dict) -> str:
     """The same short name for a forecast mission record."""
-    return m.get("codename") or m["label"]
+    return m.get("display") or m.get("codename") or m["label"]
 
 
 @dataclass
@@ -258,6 +263,10 @@ class World:
     coverage: dict = field(default_factory=dict)
     reported_baseline: dict = field(default_factory=dict)
     source_revision: str = ''
+    # Ranking optimization: common random numbers make an untouched unit's samples identical to its baseline.
+    last_evaluation: dict | None = None
+    reuse: tuple | None = None  # (runs, seed, baseline evaluation)
+    touched: set = field(default_factory=set)
 
 
 # ====================================================================== scenario (R4)
@@ -447,10 +456,10 @@ def build_world(scn: Scenario) -> World:
     wholesale = {}
     for w in v.squadron("wholesale_stock.csv"):
         wholesale.setdefault(w["niin"], []).append(dict(w))
-    pidx = b.profile.parts_index()
     ships = {}
     facts_used = []
     for s in SHIP_IDS:
+        pidx = b.profile.parts_index(s)
         sw = ShipWorld(ship=s)
         # schedule blocks (current at cursor)
         for blk in v.schedule(s):
@@ -503,7 +512,8 @@ def build_world(scn: Scenario) -> World:
                 certs=list(ev.get("prerequisite_certs", [])), areas=list(ev.get("mission_areas", [])),
                 prereqs=list(ev.get("prerequisite_events", [])), avail_id=ev.get("prerequisite_avail") or "",
                 block_id=blk["block_id"] if blk else "", sources=srcs, consequence=ev.get("consequence_if_missed", ""),
-                moved_note=moved, codename=(ev.get("codename") or "").strip()))
+                moved_note=moved, supports=ev.get("supports", ""), lead_days=float(ev.get("lead_days", 0)),
+                codename=(ev.get("codename") or "").strip()))
         # people: quals x roster x verified facts
         roster = {r["member_id"]: r for r in v.rows(s, "roster.csv")}
         for q in v.rows(s, "quals.csv"):
@@ -613,12 +623,31 @@ def build_world(scn: Scenario) -> World:
                                          spare=sw.stock.get(niin, {}).get("on_hand", 0) > 0, down_spare=[install_stage(params)],
                                          down_nospare=[Stage("lognormal", med, reg[rg]["sigma"], label=f"replacement ({rg})"), install_stage(params)],
                                          start=cursor, sources=[sw.stock[niin]["src"]] if niin in sw.stock else []))
+        # Public regional hazards. A shared hazard_id shares its draws, so one storm hits every asset it touches.
+        for row in v.rows(s, "hazard_model.csv"):
+            down = [Stage("lognormal", row["median_down_days"], row["sigma"], label="regional disruption")]
+            if row["hazard_kind"] == "RATE":
+                sw.hazards.append(Hazard(key=row["hazard_id"], ship=s, comp=row["eic"], niin="", rate=row["rate_per_day"], score=row["score"],
+                                         spare=True, down_spare=down, down_nospare=down, start=cursor, sources=[row["_src"]],
+                                         title=row["title"], explain=[row["derivation"]]))
+            elif day_of(row["window_start"]) + 3 * row["median_down_days"] >= cursor:
+                begin = day_of(row["window_start"])
+                sw.items.append(Item(key=row["hazard_id"], ship=s, eic=row["eic"], score=row["score"], start=begin, base=begin,
+                                     stages=[Stage("bern_lognormal", row["median_down_days"], row["sigma"], 0, row["p_trigger"], label="flood window")],
+                                     title=row["title"], sources=[row["_src"]], kind="hazard_window", explain=[row["derivation"]]))
         ships[s] = sw
+    # A shore support window is named after the ship event it prepares, so a codename change follows it.
+    by_event = {m.event_id: m for sw_ in ships.values() for m in sw_.missions}
+    for sw_ in ships.values():
+        for m in sw_.missions:
+            if m.supports and not m.codename and m.supports in by_event:
+                m.support_display = f"Support {by_event[m.supports].display}"
 
     world = World(cursor=cursor, cursor_dt=cursor_dt, params=params, ships=ships, wholesale=wholesale, fixes=[],
                   notes=[], facts_used=facts_used, digest=scn.digest(), profile=b.profile, coverage=b.coverage(), source_revision=b.source_revision,
                   reported_baseline={s: [{k: val for k, val in row.items() if not k.startswith('_') and k != 'as_of'} |
                       {'as_of': iso(row['as_of']), 'source': row['_src'].model_dump()} for row in v.rows(s, 'readiness_baseline.csv')] for s in SHIP_IDS})
+    _sync_support(world)
     # actions and approved fixes, in order
     for c in scn.changes:
         if c["kind"] == "action":
@@ -636,6 +665,28 @@ def _mission(world: World, event_id: str) -> Mission | None:
             if m.event_id == event_id:
                 return m
     return None
+
+
+def _sync_support(world: World):
+    """Shore support windows are defined by the ship event they prepare, so they move with it."""
+    for sw in world.ships.values():
+        for m in sw.missions:
+            target = _mission(world, m.supports) if m.supports else None
+            if target is not None:
+                m.start, m.end = target.start - m.lead_days, target.start
+
+
+def _shift_mission(world: World, event_id: str, days: float, note: str):
+    """Shifting a support event moves the ship event it serves; the support window then follows."""
+    m = _mission(world, event_id)
+    if m is None:
+        return
+    if m.supports:
+        m = _mission(world, m.supports) or m
+    m.start += days
+    m.end += days
+    m.moved_note = (m.moved_note + "; " if m.moved_note else "") + note
+    _sync_support(world)
 
 
 def apply_action(world: World, a: dict, at: float):
@@ -666,11 +717,7 @@ def apply_action(world: World, a: dict, at: float):
                              explain=[f"what-if ETR {format_dtg(etr)} + slip risk"]))
         sw.hazards = [h for h in sw.hazards if h.comp != a["eic"]]
     elif t == "shift_mission":
-        m = _mission(world, a["event_id"])
-        if m:
-            m.start += float(a["days"])
-            m.end += float(a["days"])
-            m.moved_note = (m.moved_note + "; " if m.moved_note else "") + f"what-if shift {a['days']:+g}d"
+        _shift_mission(world, a["event_id"], float(a["days"]), f"what-if shift {a['days']:+g}d")
 
 
 def transfer_stages(world: World, donor: str, receiver: str, at: float) -> tuple[list, str]:
@@ -699,6 +746,10 @@ def first_common_port(world: World, a: str, b: str, frm: float, horizon: float =
 def apply_fix(world: World, fix: dict, at: float):
     for st in fix["steps"]:
         k = st["kind"]
+        involved = {st[key] for key in ("receiver", "donor", "ship") if st.get(key)}
+        if k == "shift_mission":  # a shift also moves linked support windows, so nothing is safe to reuse
+            involved = set(world.ships)
+        world.touched |= involved or set(world.ships)
         if k == "part_transfer":
             recv = world.ships[st["receiver"]]
             item = next((i for i in recv.items if i.key == st["item_key"]), None)
@@ -807,11 +858,7 @@ def apply_fix(world: World, fix: dict, at: float):
                 member_id=st["member_id"], rate=src_h.rate, ws=st["ws"], on_base=t0, on_stages=stages, on_until=ret,
                 sources=src_h.sources, note=f"loan from {st['donor']} ({how})", loan_from=st["donor"]))
         elif k == "shift_mission":
-            m = _mission(world, st["event_id"])
-            if m:
-                m.start += st["days"]
-                m.end += st["days"]
-                m.moved_note = (m.moved_note + "; " if m.moved_note else "") + f"FIX: shift {st['days']:+g}d"
+            _shift_mission(world, st["event_id"], st["days"], f"FIX: shift {st['days']:+g}d")
         elif k == "schedule_training":
             sw = world.ships[st["ship"]]
             for t in sw.trainings:
@@ -832,12 +879,15 @@ def _items_scores(sw: ShipWorld, T: np.ndarray, n: int, seed: int, planned: bool
     scores: dict[str, np.ndarray] = {}
     info = []
     item_ready = {}
+    shared = {}  # regional hazards reuse one draw per hazard_id across the assets they touch
     for it in sw.items:
-        if planned:
-            end = np.array([it.planned_end()])
+        if it.kind == "hazard_window" and it.key in shared:
+            end, active = shared[it.key]
         else:
-            end = it.sample_end(seed, n)
-        active = (it.start <= T[None, :]) & (T[None, :] < end[:, None])
+            end = np.array([it.planned_end()]) if planned else it.sample_end(seed, n)
+            active = (it.start <= T[None, :]) & (T[None, :] < end[:, None])
+            if it.kind == "hazard_window":
+                shared[it.key] = (end, active)
         val = np.where(active, it.score, 1.0).astype(np.float32)
         scores[it.eic] = np.minimum(scores.get(it.eic, np.ones((n if not planned else 1, K), np.float32)), val)
         info.append((it, end))
@@ -845,13 +895,18 @@ def _items_scores(sw: ShipWorld, T: np.ndarray, n: int, seed: int, planned: bool
     for hz in sw.hazards:
         if planned or hz.rate <= 0:
             continue
-        rng = rng_for(seed, hz.key)
-        u = rng.random(n)
-        fail = hz.start - np.log(np.maximum(u, 1e-12)) / hz.rate
-        down = np.zeros(n)
-        for st in (hz.down_spare if hz.spare else hz.down_nospare):
-            down = down + st.sample(rng, n)
-        active = (fail[:, None] <= T[None, :]) & (T[None, :] < (fail + down)[:, None])
+        if not hz.niin and hz.key in shared:
+            fail, active = shared[hz.key]
+        else:
+            rng = rng_for(seed, hz.key)
+            u = rng.random(n)
+            fail = hz.start - np.log(np.maximum(u, 1e-12)) / hz.rate
+            down = np.zeros(n)
+            for st in (hz.down_spare if hz.spare else hz.down_nospare):
+                down = down + st.sample(rng, n)
+            active = (fail[:, None] <= T[None, :]) & (T[None, :] < (fail + down)[:, None])
+            if not hz.niin:
+                shared[hz.key] = (fail, active)
         val = np.where(active, hz.score, 1.0).astype(np.float32)
         scores[hz.comp] = np.minimum(scores.get(hz.comp, np.ones((n, K), np.float32)), val)
         info.append((hz, fail))
@@ -859,9 +914,9 @@ def _items_scores(sw: ShipWorld, T: np.ndarray, n: int, seed: int, planned: bool
     return scores, info, item_ready
 
 
-def _system_scores(comp_scores: dict, n: int, K: int, profile=None) -> dict[str, np.ndarray]:
+def _system_scores(comp_scores: dict, n: int, K: int, profile=None, unit: str | None = None) -> dict[str, np.ndarray]:
     profile = profile or default_profile()
-    SYSTEMS = profile.systems
+    SYSTEMS = profile.systems_for(unit) if unit else profile.systems
     out = {}
     one = np.ones((n, K), np.float32)
     for eic, sy in SYSTEMS.items():
@@ -904,9 +959,9 @@ def _team_counts(sw: ShipWorld, ws: str, T: np.ndarray, n: int, seed: int, plann
     return count, det
 
 
-def _area_rollup(sys_scores: dict, profile=None) -> dict[str, np.ndarray]:
+def _area_rollup(sys_scores: dict, profile=None, unit: str | None = None) -> dict[str, np.ndarray]:
     profile = profile or default_profile()
-    AREAS, SYSTEMS = profile.areas, profile.systems
+    AREAS, SYSTEMS = profile.areas_for(unit) if unit else profile.areas, profile.systems
     out = {}
     for area, (_name, members) in AREAS.items():
         v = sum(w * sys_scores[e] for e, w in members)
@@ -920,13 +975,17 @@ def _area_rollup(sys_scores: dict, profile=None) -> dict[str, np.ndarray]:
 
 def _evaluate(world: World, T_by_ship: dict, n: int, seed: int, planned: bool):
     """Core vectorized evaluation. Returns per-ship dict of arrays."""
-    SYSTEMS = world.profile.systems
     res = {}
+    reuse = world.reuse[2] if (world.reuse and not planned and world.reuse[:2] == (n, seed)) else None
     for s, sw in world.ships.items():
+        if reuse and s not in world.touched and s in reuse and np.array_equal(reuse[s]["T"], T_by_ship[s]):
+            res[s] = reuse[s]
+            continue
+        SYSTEMS = world.profile.systems_for(s)
         T = T_by_ship[s]
         comp_scores, info, item_ready = _items_scores(sw, T, n if not planned else 1, seed, planned)
         nn = 1 if planned else n
-        sys_scores = _system_scores(comp_scores, nn, len(T), world.profile)
+        sys_scores = _system_scores(comp_scores, nn, len(T), world.profile, s)
         teams = {}
         team_det = {}
         needed_ws = {q["watchstation_code"] for sy in SYSTEMS.values() for q in sy["required_quals"]}
@@ -1070,6 +1129,7 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
             times.extend(samples)
         T_by_ship[s] = np.array(times, dtype=float)
     r = _evaluate(world, T_by_ship, n, seed, planned=False)
+    world.last_evaluation = {"runs": n, "seed": seed, "units": r}
     G = len(grid)
     missions_out = []
     ready_at_start = {}
@@ -1125,7 +1185,10 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
                     others &= arr2
             uplift = float(others.mean()) - assessment
             g = next((x for x in interval_gates_raw if x['id'] == gid), None)
-            row = {"gate_id": gid, "kind": g["kind"] if g else "prereq", "label": g["label"] if g else f"{_mission(world, gid[7:]).display} ready first",
+            parent = None if g else _mission(world, gid[7:])
+            prereq_label = None if g else (f"{world.profile.ships[parent.ship]['name']} pre-sail services ready" if parent.supports == eid
+                                           else f"{parent.display} ready first")
+            row = {"gate_id": gid, "kind": g["kind"] if g else "prereq", "label": g["label"] if g else prereq_label,
                    "p_ok": float(arr.mean()), "uplift": uplift}
             if detail:
                 row.update(_gate_detail(world, world.ships[s], m, g, r[s], G, n) if g else
@@ -1146,7 +1209,8 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
             ok = np.ones((n, G), bool)
             for g in gates_c:
                 ok &= g["ok"]
-            daily_prereqs = {pe: ready_at_start[pe][:, None] & (grid >= gate_cache[pe][1].end)[None, :]
+            # A support window always ends as its ship event begins, so it has no separate calendar constraint here.
+            daily_prereqs = {pe: ready_at_start[pe][:, None] & ((grid >= gate_cache[pe][1].end) | (gate_cache[pe][1].supports == eid))[None, :]
                              for pe, _ in prereq_arrays}
             for arr in daily_prereqs.values():
                 ok &= arr
@@ -1156,6 +1220,10 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
                 daily_gates[f"prereq:{pe}"] = [round(float(x), 4) for x in arr.mean(axis=0)]
             for row in gate_rows:
                 row["p_ready"] = daily_gates[row["gate_id"]]
+                if row["kind"] == "prereq" and gate_cache[row["gate_id"][7:]][1].supports == eid:
+                    parent_id = row["gate_id"][7:]
+                    row["supporting_unit"] = gate_cache[parent_id][0]
+                    row["supporting_event"] = parent_id
                 for item in row.get("items", []):
                     item.setdefault("p_ready", row["p_ready"])
         interval_probability = round(assessment, 4)
@@ -1167,12 +1235,13 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
             "planned": planned.get(eid), "areas": m.areas, "moved_note": m.moved_note, "consequence": m.consequence,
             "sources": [x.model_dump() for x in m.sources], "prereqs": m.prereqs,
             "end": iso(dt_of(m.end)), "interval_p_ready": interval_probability,
-            "interval_gates": interval_gates, "interval_sampling_hours": 6,
+            "interval_gates": interval_gates, "interval_sampling_hours": 6, "supports": m.supports, "display": m.display,
         })
     ships_out = {}
     for s, sw in world.ships.items():
         rr = r[s]
         cap = {}
+        AREAS, SYSTEMS = world.profile.areas_for(s), world.profile.systems_for(s)
         for a, (_nm, members) in AREAS.items():
             okc = np.ones((n, G), bool)
             for e, _w in members:
@@ -1186,7 +1255,7 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
                             "area_capability_mean": {a: round(float(np.mean(v)), 4) for a, v in cap.items()}}
             continue
         if True:
-            area = _area_rollup({k: v[:, :G] for k, v in rr["sys"].items()}, world.profile)
+            area = _area_rollup({k: v[:, :G] for k, v in rr["sys"].items()}, world.profile, s)
             ships_out[s] = {
                 "capability_mean": round(float(np.mean([np.mean(v) for v in cap.values()])), 4),
                 "area_capability_mean": {a: round(float(np.mean(v)), 4) for a, v in cap.items()},
@@ -1211,6 +1280,7 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
                         item['p_ready'] = [None] * G
     for s, ship in ships_out.items():
         if world.coverage.get(s):
+            AREAS, SYSTEMS = world.profile.areas_for(s), world.profile.systems_for(s)
             ship['capability_mean'] = None
             ship['area_capability_mean'] = {a: None for a in AREAS}
             if detail:
@@ -1252,12 +1322,12 @@ def _gate_detail(world, sw, m, g, r, G, n) -> dict:
                               "sources": [s.model_dump() for s in obj.sources]})
                 sources += obj.sources
             elif isinstance(obj, Hazard) and obj.comp in comps:
-                items.append({"key": obj.key, "kind": "hazard", "title": f"Random failure risk: {obj.comp} (NIIN {obj.niin})",
+                items.append({"key": obj.key, "kind": "hazard", "title": obj.title or f"Random failure risk: {obj.comp} (NIIN {obj.niin})",
                               "eic": obj.comp, "score_while_active": obj.score,
                               "p_active_at_mission": None, "p_fail_before_mission": round(float(np.mean(arr < m.end)), 4),
                               "p_ready_at_mission": round(float(r["item_ready"][obj.key][col]), 4),
                               "p_ready": [round(float(x), 4) for x in r["item_ready"][obj.key][:G]],
-                              "spare_onboard": obj.spare, "explain": [f"rate {obj.rate:.4f}/day (ledger)", "spare on board" if obj.spare else "no spare on board"],
+                              "spare_onboard": obj.spare, "explain": obj.explain or [f"rate {obj.rate:.4f}/day (ledger)", "spare on board" if obj.spare else "no spare on board"],
                               "sources": [s.model_dump() for s in obj.sources]})
     elif g["kind"] == "team":
         for h, aboard in r["team_det"][g["ws"]]:
@@ -1399,6 +1469,20 @@ def _planned_why(world, sw, g, m, r, window_cols) -> list[str]:
 
 
 # ====================================================================== domino graph (networkx export)
+def _graph_items(G, gate: dict, gate_node: str, mission: dict):
+    for it in gate.get("items", []):
+        iid = f"{gate_node}|{it['key']}"
+        pa = it.get("p_active_at_mission")
+        p_ok = None if mission.get('coverage_issues') else (1 - pa) if pa is not None else it.get('p_available_interval', 1 - (it.get('p_fail_before_mission') or 0))
+        if it["kind"] == "hazard" and (it.get("p_fail_before_mission") or 0) < 0.01:
+            continue
+        if it["kind"] == "hazard_window" and (pa or 0) < 0.01:
+            continue
+        G.add_node(iid, kind=it["kind"], label=it["title"], p=p_ok,
+                   eic=it.get("eic"), sources=it.get("sources", []), p_ready=it.get("p_ready"))
+        G.add_edge(iid, gate_node)
+
+
 def domino_graph(fc: dict, ship_id: str, event_id: str | None = None) -> dict:
     import networkx as nx
     G = nx.DiGraph()
@@ -1420,15 +1504,17 @@ def domino_graph(fc: dict, ship_id: str, event_id: str | None = None) -> dict:
             G.add_edge(gid, mid)
             if g["kind"] == "prereq" and g["gate_id"][7:] in selected:
                 G.add_edge(f"mission:{g['gate_id'][7:]}", gid)
-            for it in g.get("items", []):
-                iid = f"{gid}|{it['key']}"
-                pa = it.get("p_active_at_mission")
-                p_ok = None if m.get('coverage_issues') else (1 - pa) if pa is not None else it.get('p_available_interval', 1 - (it.get('p_fail_before_mission') or 0))
-                if it["kind"] == "hazard" and (it.get("p_fail_before_mission") or 0) < 0.01:
-                    continue
-                G.add_node(iid, kind=it["kind"], label=it["title"], p=p_ok,
-                           eic=it.get("eic"), sources=it.get("sources", []), p_ready=it.get("p_ready"))
-                G.add_edge(iid, gid)
+            if g["kind"] == "prereq" and g.get("supporting_event"):
+                # The dependency chain continues ashore: show why the supporting installation is limiting this event.
+                parent = next(x for x in fc["missions"] if x["event_id"] == g["supporting_event"])
+                for pg in parent["gates"]:
+                    pid = f"{gid}|{pg['gate_id']}"
+                    G.add_node(pid, kind=pg["kind"], label=f"{parent['ship_id']}: {pg['label']}", p=pg["p_ok"], uplift=pg["uplift"], next=False,
+                               gate_id=pg["gate_id"], eic=pg["gate_id"].split(":", 1)[1] if pg["kind"] == "system" else None,
+                               sources=[source for item in pg.get("items", []) for source in item.get("sources", [])], p_ready=pg.get("p_ready"))
+                    G.add_edge(pid, gid)
+                    _graph_items(G, pg, pid, parent)
+            _graph_items(G, g, gid, m)
     assert nx.is_directed_acyclic_graph(G)
     return {"dates": fc["grid_dates"], "nodes": [{"id": n, "ship_id": ship_id, **d} for n, d in G.nodes(data=True)],
             "edges": [{"source": a, "target": b} for a, b in G.edges()]}

@@ -136,8 +136,8 @@ class AppState:
                 raise HTTPException(422, "Return must follow absence start")
         elif kind == "delay_part" and not any(row["doc_number"] == action["doc_number"] for row in self.view().rows(ship, "requisition_status.csv")):
             raise HTTPException(422, "Requisition is not known for this ship at the scenario cursor")
-        elif kind == 'add_casrep' and action['eic'] not in self.baseline.profile.all_eics:
-            raise HTTPException(422, "Unknown equipment identity")
+        elif kind == 'add_casrep' and action['eic'] not in self.baseline.profile.eics_for(ship):
+            raise HTTPException(422, "Unknown equipment identity for this unit")
         elif kind == "shift_mission" and not any(event["event_id"] == action["event_id"] for event in self.baseline.events):
             raise HTTPException(422, "Unknown event identity")
 
@@ -214,7 +214,8 @@ def create_app(state: AppState | None = None) -> FastAPI:
                     "extraction_methods": s.baseline.extraction_methods, "ingest_issues": len(s.baseline.issues),
                     "changes": len(sc.changes), "cache": CACHE_STATS,
                     "systems": {k: {"name": v["name"], "critical": v["critical"]} for k, v in s.baseline.profile.systems.items()},
-                    'source_revision': s.baseline.source_revision, 'watchstations': s.baseline.profile.watchstations}
+                    'source_revision': s.baseline.source_revision, 'watchstations': s.baseline.profile.watchstations,
+                    'berths': _berths(s.baseline, cur)}
 
     @app.get("/api/forecast")
     def get_forecast():
@@ -583,6 +584,16 @@ def create_app(state: AppState | None = None) -> FastAPI:
             return FileResponse(dist / "index.html")
 
     return app
+
+
+def _berths(baseline, cursor) -> list[dict]:
+    """Where each ship is on the scenario date, from ship_positions.csv. Context for the shore view only."""
+    out = []
+    for row in baseline.view(cursor).squadron('ship_positions.csv'):
+        if row['date'] == cursor.date() and row['ship_id'] in baseline.profile.ships:
+            out.append({'ship_id': row['ship_id'], 'name': baseline.profile.ships[row['ship_id']]['name'],
+                        'in_port': row['status'] == 'INPORT', 'pier': row['pier']})
+    return out
 
 
 def _ship(ship_id: str):

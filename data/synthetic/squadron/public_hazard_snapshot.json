@@ -1,0 +1,425 @@
+{
+  "_banner": "PUBLIC REGIONAL DATA FOR A SYNTHETIC EXERCISE - DOES NOT DESCRIBE ANY REAL INSTALLATION",
+  "retrieved": "2026-11-05T02:28:46Z",
+  "tides": {
+    "station": "8638610",
+    "station_name": "Sewells Point, VA",
+    "source_url": "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=LOCKER_exercise&begin_date=20261104&end_date=20261204&datum=MLLW&station=8638610&time_zone=gmt&interval=hilo&units=english&format=json",
+    "flood_levels_url": "https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations/8638610/floodlevels.json",
+    "datums_url": "https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations/8638610/datums.json?units=english",
+    "nws_minor_flood_feet_station_datum": 8.88,
+    "mllw_feet_station_datum": 4.38,
+    "nws_minor_flood_feet_mllw": 4.5,
+    "high_tides": [
+      {
+        "time": "2026-11-04T10:02:00Z",
+        "feet_mllw": 2.709,
+        "margin_to_minor_flood_feet": 1.791
+      },
+      {
+        "time": "2026-11-04T22:22:00Z",
+        "feet_mllw": 2.613,
+        "margin_to_minor_flood_feet": 1.887
+      },
+      {
+        "time": "2026-11-05T10:59:00Z",
+        "feet_mllw": 2.878,
+        "margin_to_minor_flood_feet": 1.622
+      },
+      {
+        "time": "2026-11-05T23:13:00Z",
+        "feet_mllw": 2.582,
+        "margin_to_minor_flood_feet": 1.918
+      },
+      {
+        "time": "2026-11-06T11:48:00Z",
+        "feet_mllw": 3.009,
+        "margin_to_minor_flood_feet": 1.491
+      },
+      {
+        "time": "2026-11-07T00:00:00Z",
+        "feet_mllw": 2.556,
+        "margin_to_minor_flood_feet": 1.944
+      },
+      {
+        "time": "2026-11-07T12:32:00Z",
+        "feet_mllw": 3.087,
+        "margin_to_minor_flood_feet": 1.413
+      },
+      {
+        "time": "2026-11-08T00:43:00Z",
+        "feet_mllw": 2.53,
+        "margin_to_minor_flood_feet": 1.97
+      },
+      {
+        "time": "2026-11-08T13:13:00Z",
+        "feet_mllw": 3.109,
+        "margin_to_minor_flood_feet": 1.391
+      },
+      {
+        "time": "2026-11-09T01:25:00Z",
+        "feet_mllw": 2.498,
+        "margin_to_minor_flood_feet": 2.002
+      },
+      {
+        "time": "2026-11-09T13:51:00Z",
+        "feet_mllw": 3.083,
+        "margin_to_minor_flood_feet": 1.417
+      },
+      {
+        "time": "2026-11-10T02:04:00Z",
+        "feet_mllw": 2.455,
+        "margin_to_minor_flood_feet": 2.045
+      },
+      {
+        "time": "2026-11-10T14:27:00Z",
+        "feet_mllw": 3.018,
+        "margin_to_minor_flood_feet": 1.482
+      },
+      {
+        "time": "2026-11-11T02:42:00Z",
+        "feet_mllw": 2.393,
+        "margin_to_minor_flood_feet": 2.107
+      },
+      {
+        "time": "2026-11-11T15:03:00Z",
+        "feet_mllw": 2.927,
+        "margin_to_minor_flood_feet": 1.573
+      },
+      {
+        "time": "2026-11-12T03:20:00Z",
+        "feet_mllw": 2.315,
+        "margin_to_minor_flood_feet": 2.185
+      },
+      {
+        "time": "2026-11-12T15:41:00Z",
+        "feet_mllw": 2.821,
+        "margin_to_minor_flood_feet": 1.679
+      },
+      {
+        "time": "2026-11-13T04:01:00Z",
+        "feet_mllw": 2.227,
+        "margin_to_minor_flood_feet": 2.273
+      },
+      {
+        "time": "2026-11-13T16:20:00Z",
+        "feet_mllw": 2.709,
+        "margin_to_minor_flood_feet": 1.791
+      },
+      {
+        "time": "2026-11-14T04:44:00Z",
+        "feet_mllw": 2.147,
+        "margin_to_minor_flood_feet": 2.353
+      },
+      {
+        "time": "2026-11-14T17:02:00Z",
+        "feet_mllw": 2.6,
+        "margin_to_minor_flood_feet": 1.9
+      },
+      {
+        "time": "2026-11-15T05:29:00Z",
+        "feet_mllw": 2.09,
+        "margin_to_minor_flood_feet": 2.41
+      },
+      {
+        "time": "2026-11-15T17:47:00Z",
+        "feet_mllw": 2.5,
+        "margin_to_minor_flood_feet": 2.0
+      },
+      {
+        "time": "2026-11-16T06:16:00Z",
+        "feet_mllw": 2.068,
+        "margin_to_minor_flood_feet": 2.432
+      },
+      {
+        "time": "2026-11-16T18:32:00Z",
+        "feet_mllw": 2.41,
+        "margin_to_minor_flood_feet": 2.09
+      },
+      {
+        "time": "2026-11-17T07:05:00Z",
+        "feet_mllw": 2.09,
+        "margin_to_minor_flood_feet": 2.41
+      },
+      {
+        "time": "2026-11-17T19:21:00Z",
+        "feet_mllw": 2.332,
+        "margin_to_minor_flood_feet": 2.168
+      },
+      {
+        "time": "2026-11-18T07:59:00Z",
+        "feet_mllw": 2.162,
+        "margin_to_minor_flood_feet": 2.338
+      },
+      {
+        "time": "2026-11-18T20:16:00Z",
+        "feet_mllw": 2.277,
+        "margin_to_minor_flood_feet": 2.223
+      },
+      {
+        "time": "2026-11-19T08:57:00Z",
+        "feet_mllw": 2.295,
+        "margin_to_minor_flood_feet": 2.205
+      },
+      {
+        "time": "2026-11-19T21:15:00Z",
+        "feet_mllw": 2.261,
+        "margin_to_minor_flood_feet": 2.239
+      },
+      {
+        "time": "2026-11-20T09:53:00Z",
+        "feet_mllw": 2.483,
+        "margin_to_minor_flood_feet": 2.017
+      },
+      {
+        "time": "2026-11-20T22:12:00Z",
+        "feet_mllw": 2.285,
+        "margin_to_minor_flood_feet": 2.215
+      },
+      {
+        "time": "2026-11-21T10:44:00Z",
+        "feet_mllw": 2.697,
+        "margin_to_minor_flood_feet": 1.803
+      },
+      {
+        "time": "2026-11-21T23:04:00Z",
+        "feet_mllw": 2.33,
+        "margin_to_minor_flood_feet": 2.17
+      },
+      {
+        "time": "2026-11-22T11:32:00Z",
+        "feet_mllw": 2.904,
+        "margin_to_minor_flood_feet": 1.596
+      },
+      {
+        "time": "2026-11-22T23:54:00Z",
+        "feet_mllw": 2.375,
+        "margin_to_minor_flood_feet": 2.125
+      },
+      {
+        "time": "2026-11-23T12:22:00Z",
+        "feet_mllw": 3.076,
+        "margin_to_minor_flood_feet": 1.424
+      },
+      {
+        "time": "2026-11-24T00:45:00Z",
+        "feet_mllw": 2.41,
+        "margin_to_minor_flood_feet": 2.09
+      },
+      {
+        "time": "2026-11-24T13:12:00Z",
+        "feet_mllw": 3.196,
+        "margin_to_minor_flood_feet": 1.304
+      },
+      {
+        "time": "2026-11-25T01:36:00Z",
+        "feet_mllw": 2.426,
+        "margin_to_minor_flood_feet": 2.074
+      },
+      {
+        "time": "2026-11-25T14:03:00Z",
+        "feet_mllw": 3.248,
+        "margin_to_minor_flood_feet": 1.252
+      },
+      {
+        "time": "2026-11-26T02:27:00Z",
+        "feet_mllw": 2.421,
+        "margin_to_minor_flood_feet": 2.079
+      },
+      {
+        "time": "2026-11-26T14:55:00Z",
+        "feet_mllw": 3.221,
+        "margin_to_minor_flood_feet": 1.279
+      },
+      {
+        "time": "2026-11-27T03:20:00Z",
+        "feet_mllw": 2.393,
+        "margin_to_minor_flood_feet": 2.107
+      },
+      {
+        "time": "2026-11-27T15:49:00Z",
+        "feet_mllw": 3.119,
+        "margin_to_minor_flood_feet": 1.381
+      },
+      {
+        "time": "2026-11-28T04:16:00Z",
+        "feet_mllw": 2.356,
+        "margin_to_minor_flood_feet": 2.144
+      },
+      {
+        "time": "2026-11-28T16:46:00Z",
+        "feet_mllw": 2.96,
+        "margin_to_minor_flood_feet": 1.54
+      },
+      {
+        "time": "2026-11-29T05:16:00Z",
+        "feet_mllw": 2.329,
+        "margin_to_minor_flood_feet": 2.171
+      },
+      {
+        "time": "2026-11-29T17:44:00Z",
+        "feet_mllw": 2.766,
+        "margin_to_minor_flood_feet": 1.734
+      },
+      {
+        "time": "2026-11-30T06:18:00Z",
+        "feet_mllw": 2.326,
+        "margin_to_minor_flood_feet": 2.174
+      },
+      {
+        "time": "2026-11-30T18:42:00Z",
+        "feet_mllw": 2.557,
+        "margin_to_minor_flood_feet": 1.943
+      },
+      {
+        "time": "2026-12-01T07:22:00Z",
+        "feet_mllw": 2.345,
+        "margin_to_minor_flood_feet": 2.155
+      },
+      {
+        "time": "2026-12-01T19:42:00Z",
+        "feet_mllw": 2.352,
+        "margin_to_minor_flood_feet": 2.148
+      },
+      {
+        "time": "2026-12-02T08:30:00Z",
+        "feet_mllw": 2.393,
+        "margin_to_minor_flood_feet": 2.107
+      },
+      {
+        "time": "2026-12-02T20:47:00Z",
+        "feet_mllw": 2.186,
+        "margin_to_minor_flood_feet": 2.314
+      },
+      {
+        "time": "2026-12-03T09:38:00Z",
+        "feet_mllw": 2.476,
+        "margin_to_minor_flood_feet": 2.024
+      },
+      {
+        "time": "2026-12-03T21:51:00Z",
+        "feet_mllw": 2.085,
+        "margin_to_minor_flood_feet": 2.415
+      },
+      {
+        "time": "2026-12-04T10:36:00Z",
+        "feet_mllw": 2.565,
+        "margin_to_minor_flood_feet": 1.935
+      },
+      {
+        "time": "2026-12-04T22:46:00Z",
+        "feet_mllw": 2.038,
+        "margin_to_minor_flood_feet": 2.462
+      }
+    ]
+  },
+  "storms": {
+    "source_url": "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/",
+    "files": [
+      "StormEvents_details-ftp_v1.0_d2016_c20260323.csv.gz",
+      "StormEvents_details-ftp_v1.0_d2017_c20260519.csv.gz",
+      "StormEvents_details-ftp_v1.0_d2018_c20260323.csv.gz",
+      "StormEvents_details-ftp_v1.0_d2019_c20260323.csv.gz",
+      "StormEvents_details-ftp_v1.0_d2020_c20260323.csv.gz",
+      "StormEvents_details-ftp_v1.0_d2021_c20260323.csv.gz",
+      "StormEvents_details-ftp_v1.0_d2022_c20260625.csv.gz",
+      "StormEvents_details-ftp_v1.0_d2023_c20260323.csv.gz",
+      "StormEvents_details-ftp_v1.0_d2024_c20260728.csv.gz",
+      "StormEvents_details-ftp_v1.0_d2025_c20260819.csv.gz"
+    ],
+    "filter": "STATE=VIRGINIA and CZ_NAME contains NORFOLK",
+    "span_days": 3653,
+    "years": [
+      2016,
+      2025
+    ],
+    "note": "Distinct event-days avoid counting a county and a forecast zone twice.",
+    "categories": {
+      "coastal_flood": {
+        "event_types": [
+          "Coastal Flood",
+          "Storm Surge/Tide"
+        ],
+        "distinct_event_days": 13,
+        "rate_per_day": 0.003559,
+        "median_duration_days": 0.2604
+      },
+      "high_wind": {
+        "event_types": [
+          "High Wind",
+          "Hurricane",
+          "Strong Wind",
+          "Tropical Storm"
+        ],
+        "distinct_event_days": 15,
+        "rate_per_day": 0.004106,
+        "median_duration_days": 0.3958
+      },
+      "rain_flood": {
+        "event_types": [
+          "Flash Flood",
+          "Flood"
+        ],
+        "distinct_event_days": 29,
+        "rate_per_day": 0.007939,
+        "median_duration_days": 0.0625
+      }
+    }
+  },
+  "grid": {
+    "source_url": "https://s3.us-west-2.amazonaws.com/pudl.catalyst.coop/stable/core_eia861__yearly_reliability.parquet",
+    "origin": "EIA Form 861 via PUDL table core_eia861__yearly_reliability",
+    "utility_name": "Virginia Electric & Power Co",
+    "utility_id_eia": 19876,
+    "state": "VA",
+    "scope": "Utility-wide customer averages with major event days; not a feeder or installation measurement",
+    "years": [
+      {
+        "year": 2025,
+        "saifi_with_major_events": 1.78,
+        "caidi_minutes_with_major_events": 172.30337,
+        "standard": "other_standard"
+      },
+      {
+        "year": 2024,
+        "saifi_with_major_events": 1.36,
+        "caidi_minutes_with_major_events": 126.54412,
+        "standard": "other_standard"
+      },
+      {
+        "year": 2023,
+        "saifi_with_major_events": 1.371,
+        "caidi_minutes_with_major_events": 138.72939,
+        "standard": "other_standard"
+      },
+      {
+        "year": 2022,
+        "saifi_with_major_events": 1.665,
+        "caidi_minutes_with_major_events": 253.13814,
+        "standard": "other_standard"
+      },
+      {
+        "year": 2021,
+        "saifi_with_major_events": 1.478,
+        "caidi_minutes_with_major_events": 215.68877,
+        "standard": "other_standard"
+      }
+    ],
+    "mean_saifi_per_year": 1.5308,
+    "mean_caidi_minutes": 181.28,
+    "rate_per_day": 0.004191,
+    "median_duration_days": 0.1259
+  },
+  "unavailable": [
+    {
+      "dataset": "FEMA National Risk Index",
+      "url": "https://hazards.fema.gov/nri/data-resources",
+      "reason": "Automated download returned HTTP 403; not used"
+    },
+    {
+      "dataset": "EAGLE-I county outages",
+      "url": "https://doi.ccs.ornl.gov/ui/doi/435",
+      "reason": "Offered through Globus transfer only; EIA-861 used for grid reliability instead"
+    }
+  ]
+}

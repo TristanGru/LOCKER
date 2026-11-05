@@ -18,6 +18,10 @@ The default frontend now uses the layout and components imported from Sakie's fr
 
 `/?legacy=1` provides the previous connected workspace. It is linked from Sources / controls and retains the complete assumption editor, structured action preview/apply, report-fact review, source comparison and detailed timeline. Existing browser regression tests explicitly target this route; new captain tests exercise the new default route.
 
+## Shore
+
+**Shore Overview** is a separate tab for labeled mock naval installations, with a 3D base layout and list fallback. The advanced workspace stays ship-only. See [shore implementation](SHORE.md).
+
 ## Remaining integration work — not claimed complete
 
 This is the frontend integration increment, not completion of every item in the proposed cross-branch merge sequence:

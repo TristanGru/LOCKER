@@ -1,0 +1,3 @@
+ship_id,mission_area,requirement_id,requirement_name,team,last_completed,periodicity_days,expires,scheduled_refresh,tfom_value,as_of,provenance
+NSNORFOLK,HDLG,TR-HP-CRANE,Crane rigging safety refresher,Crane crew,2025-11-21,365,2026-11-21,2026-11-18,84,2026-11-04T06:00:00Z,placeholder
+NSNORFOLK,PIER,TR-HP-HV,High-voltage switching qualification,Shore power crew,2026-05-12,365,2027-05-12,,91,2026-11-04T06:00:00Z,placeholder

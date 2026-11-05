@@ -17,7 +17,8 @@ export default function App() {
       <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route element={<AppShell />}>
-            <Route index element={<ShipOverview />} />
+            <Route index element={<ShipOverview domain="ship" />} />
+            <Route path="shore" element={<ShipOverview domain="installation" />} />
             <Route path="missions" element={<Overview />} />
             <Route path="dominoes" element={<Dominoes />} />
             <Route path="fixes" element={<Fixes />} />

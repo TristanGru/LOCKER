@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { ShipSystem, Status } from '../../api/types';
-import { clampCut, disposeSplit, KD, makeSplit, ZONE_NAME, zoneAt, type Split } from './cutaway';
+import { clampCut, disposeSplit, KD, makeSplit, type Split } from './cutaway';
 import { buildSea, dress } from './dress';
 import { disposeTree, V } from './geom';
 import { hullDef } from './hulls';
 import { disposeInterior, type Blocker } from './interiors/kit';
-import { buildInterior } from './interiors/rooms';
+import { buildLanding } from './interiors/rooms';
 import { createMaterials, disposeMaterials, setXray, type Mats } from './materials';
 import { buildPins, disposePins, layoutLabels, type Anchor, type PinSet } from './pins';
 import type { BuildCtx, CutMode, HullInfo, HullType, PinInfo, ViewKind } from './types';
@@ -276,10 +276,12 @@ export class ShipScene {
     const info = this.info;
     if (!sp || !info || this.inside) return;
     const focus = sp.focus;
-    const x = focus ? focus.p.x : sp.mode === 'z' ? (info.bb.min.x + info.bb.max.x) / 2 : sp.cx;
-    const zone = zoneAt(info, x);
-    const room = buildInterior(focus?.mount ?? null, zone);
-    const title = focus ? `${focus.name} · ${KD[focus.mount]?.[0] ?? ZONE_NAME[zone]}` : ZONE_NAME[zone];
+    const lengthwise = sp.mode === 'z';
+    const x = focus ? focus.p.x : lengthwise ? (info.bb.min.x + info.bb.max.x) / 2 : sp.cx;
+    const z = lengthwise ? sp.cx : (focus?.p.z ?? 0);
+    const landing = buildLanding(info, { x, z, mount: focus?.mount ?? null, lengthwise });
+    const room = landing.room;
+    const title = focus ? `${focus.name} · ${landing.title}` : landing.title;
     const offset = V(0, 0, 900);
     room.group.position.copy(offset);
 
@@ -549,6 +551,39 @@ export class ShipScene {
     sc.updateProjectionMatrix();
   }
 
+  /** Pixel bands occupied by the filter bar and the legend. Both blur the canvas behind them. */
+  private chromeInsets() {
+    const bar = this.host.querySelector('[aria-label="3D model filters"]')?.parentElement as HTMLElement | null;
+    const legend = this.host.querySelector('[aria-label="3D model legend"]') as HTMLElement | null;
+    return {
+      top: (bar?.offsetHeight ?? 0) + 8,
+      bottom: (legend?.offsetHeight ?? 0) + 8,
+    };
+  }
+
+  /**
+   * Side view looks along the beam, so the mast is a thin strip at the top of the picture.
+   * Fit the whole hull, including the mast, and leave the filter bar plus one label of
+   * headroom above it. Framing only the waterline hull parks that mast, and the Exterior
+   * communications pin on it, inside the bar's blur.
+   */
+  private sideFrame(info: HullInfo, th: number, tv: number, ex: number) {
+    const h = this.host.clientHeight || 1;
+    const chrome = this.chromeInsets();
+    const topFrac = Math.min(0.34, (chrome.top + 64) / h);
+    const botFrac = Math.min(0.22, chrome.bottom / h);
+    const usable = Math.max(0.45, 1 - topFrac - botFrac);
+    const yMin = info.bb.min.y;
+    const yMax = info.bb.max.y;
+    const ySpan = Math.max(yMax - yMin, info.HH * 2, 1);
+    const framed = ySpan / usable;
+    const shipCenter = (yMin + yMax) / 2;
+    const midScreen = botFrac + usable / 2;
+    const targetY = shipCenter - (midScreen - 0.5) * framed;
+    const dist = Math.max((info.len / 2 + ex) / th, framed / 2 / tv) * 1.06;
+    return { center: V(0, targetY, 0), dir: V(0, 0.04, 1), dist };
+  }
+
   /** Frame the camera for a named view. Re-runs on resize until the user first orbits. */
   private view(kind: ViewKind) {
     const info = this.info;
@@ -567,10 +602,12 @@ export class ShipScene {
     const ex = sp && !zm ? sp.gap * 0.5 : 0;
     const exz = zm && sp ? sp.gap * 0.5 : 0;
     const fit = Math.max((info.len / 2 + ex) / th, (info.beam / 2 + exz) / tv) * 1.22 + info.HH * 0.5;
+    const side = this.sideFrame(info, th, tv, ex);
+    if (kind === 'side') c = side.center;
     const dirs: Record<string, [THREE.Vector3, number]> = {
       sky: [V(0, 1, 0.001), fit],
       iso: [V(0.45, 0.6, 0.9), Math.max(info.len * 0.95 + ex * 1.6 + exz * 2.2, fit * 1.08)],
-      side: [V(0, 0.12, 1), Math.max((info.len / 2 + ex) / th, (info.HH * 2) / tv) * 1.28 + info.HH * 0.5],
+      side: [side.dir, side.dist],
     };
     if (kind === 'cut' && sp) {
       const topY = info.sub ? info.HH : Math.max(info.deckY || info.HH, ...(info.houses || []).map((hs) => hs.y0 + hs.h));
@@ -755,7 +792,8 @@ export class ShipScene {
         // next-domino ring breathes so it reads as "act here"
         const k = 1 + 0.12 * Math.sin(t * 3.2);
         for (const r of this.pinSet.rings) r.scale.set(k, k, k);
-        layoutLabels(this.pinSet.anchors, this.cam, this.host.clientWidth, this.host.clientHeight, this.labelHidden);
+        const chrome = this.chromeInsets();
+        layoutLabels(this.pinSet.anchors, this.cam, this.host.clientWidth, this.host.clientHeight, this.labelHidden, chrome);
       }
       this.renderer.render(this.scene, this.cam);
     } catch (err) {

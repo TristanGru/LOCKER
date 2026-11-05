@@ -4,6 +4,7 @@ import { api } from '../api/api';
 import type { Mission, Status } from '../api/types';
 import { MissionRow } from '../components/overview/MissionCard';
 import { EmptyState, ErrorState, Skeleton } from '../components/ui/States';
+import { StatusBadge } from '../components/ui/StatusBadge';
 import clsx from '../lib/clsx';
 import { useApi } from '../state/useApi';
 import { STATUS, STATUS_ORDER, pct, getBands } from '../theme/status';
@@ -41,10 +42,10 @@ export function Overview() {
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-ink-muted">
               <span className="inline-flex items-center gap-2">
-                <i className="h-3.5 w-px bg-white/70" aria-hidden /> {pct(getBands().yellow)} watch
+                <i className="h-3.5 w-px bg-ink/70" aria-hidden /> {pct(getBands().yellow)} watch
               </span>
               <span className="inline-flex items-center gap-2">
-                <i className="h-3.5 w-px bg-white/80" aria-hidden /> {pct(getBands().green)} ready
+                <i className="h-3.5 w-px bg-ink/80" aria-hidden /> {pct(getBands().green)} ready
               </span>
             </div>
           </div>
@@ -54,7 +55,7 @@ export function Overview() {
       {loading && (
         <div className="space-y-4">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="space-y-3 rounded-2xl border border-line bg-[#0c1624] p-6">
+            <div key={i} className="space-y-3 rounded-2xl border border-line bg-abyss-800 p-6">
               <Skeleton className="h-6 w-28" />
               <Skeleton className="h-8 w-48" />
               <Skeleton className="h-3 w-full" />
@@ -74,7 +75,7 @@ export function Overview() {
       {data && missions.length > 0 && (
         <div className="space-y-4">
           {missions.map((m, i) => (
-            <MissionRow key={m.id} mission={m} history={data.history[m.id] ?? []} index={i} />
+            <MissionRow key={m.id} mission={m} index={i} />
           ))}
         </div>
       )}
@@ -86,24 +87,40 @@ function Headline({ mission: m }: { mission: Mission }) {
   const meta = STATUS[m.status];
   const odds = pct(m.odds);
   const domino = m.nextDominoLabel ?? 'the next item';
+
   return (
-    <motion.h1 initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-2 max-w-[52rem] text-[2.15rem] font-extrabold leading-[1.15] tracking-tight text-ink">
+    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-2">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h1 className="text-[2.15rem] font-extrabold leading-none tracking-tight" style={{ color: meta.hex }}>
+          {m.code}
+        </h1>
+        <StatusBadge status={m.status} />
+      </div>
+      <dl className="mt-3 flex flex-wrap items-baseline gap-x-8 gap-y-2">
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">Interval</dt>
+          <dd className="num text-2xl font-bold leading-none text-ink">{odds}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">At start</dt>
+          <dd className="num text-2xl font-bold leading-none text-ink">{pct(m.oddsAtStart)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">Days out</dt>
+          <dd className="num text-2xl font-bold leading-none text-ink">{m.daysOut}</dd>
+        </div>
+      </dl>
       {m.status === 'risk' && (
-        <>
-          <span style={{ color: meta.hex }}>{m.code}</span> needs action: {odds} odds, {m.daysOut} days out.{' '}
-          <span className="underline decoration-risk/80 decoration-2 underline-offset-[5px]">Fix the {domino} first.</span>
-        </>
+        <p className="mt-3 max-w-[40rem] text-base font-semibold leading-snug text-ink">
+          Fix the <span className="underline decoration-risk/80 decoration-2 underline-offset-[5px]">{domino}</span> first.
+        </p>
       )}
       {m.status === 'watch' && (
-        <>
-          <span style={{ color: meta.hex }}>{m.code}</span> is on watch: {odds} odds, {m.daysOut} days out. {domino} is next.
-        </>
+        <p className="mt-3 max-w-[40rem] text-base font-semibold leading-snug text-ink">{domino} is next.</p>
       )}
       {m.status === 'ready' && (
-        <>
-          Every mission is ready. <span className="text-ready">{m.code}</span> is closest, at {odds}, {m.daysOut} days out.
-        </>
+        <p className="mt-3 max-w-[40rem] text-base font-semibold leading-snug text-ink">Closest mission. Every mission is ready.</p>
       )}
-    </motion.h1>
+    </motion.div>
   );
 }

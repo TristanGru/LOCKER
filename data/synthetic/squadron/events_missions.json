@@ -43,7 +43,9 @@
           "k": 2
         }
       ],
-      "prerequisite_events": [],
+      "prerequisite_events": [
+        "EVT-NSNORFOLK-01"
+      ],
       "prerequisite_certs": [
         "CERT-KESSLER-AW"
       ],
@@ -105,7 +107,8 @@
         }
       ],
       "prerequisite_events": [
-        "EVT-KESSLER-01"
+        "EVT-KESSLER-01",
+        "EVT-NSNORFOLK-02"
       ],
       "prerequisite_certs": [
         "CERT-KESSLER-AW",
@@ -150,7 +153,9 @@
           "k": 2
         }
       ],
-      "prerequisite_events": [],
+      "prerequisite_events": [
+        "EVT-NSNORFOLK-03"
+      ],
       "prerequisite_certs": [],
       "prerequisite_avail": "AV-VARNELL-26-02",
       "consequence_if_missed": "ASW certification slips; Basic Phase extends",
@@ -195,7 +200,9 @@
           "k": 1
         }
       ],
-      "prerequisite_events": [],
+      "prerequisite_events": [
+        "EVT-NSNORFOLK-04"
+      ],
       "prerequisite_certs": [
         "CERT-ASHBY-AW",
         "CERT-ASHBY-SUW"
@@ -203,6 +210,276 @@
       "prerequisite_avail": "",
       "consequence_if_missed": "Sustainment proficiency lapses",
       "schedule_block_id": "SCH-ASHBY-04",
+      "provenance": "proposed"
+    },
+    {
+      "event_id": "EVT-NSNORFOLK-01",
+      "label": "Support Mission A",
+      "ship_id": "NSNORFOLK",
+      "name": "Pre-sail services for KESSLER: Group Sail / SWATT air defense serial",
+      "ofrp_phase": "N/A",
+      "start": "2026-11-11T12:00:00Z",
+      "end": "2026-11-13T12:00:00Z",
+      "supports": "EVT-KESSLER-01",
+      "lead_days": 2.0,
+      "mission_areas": [
+        "PIER",
+        "HDLG",
+        "BASE"
+      ],
+      "required_systems": [
+        {
+          "eic": "SP12",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "CRANE",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "FUEL",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "GATE",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "WATER",
+          "min_status_score": 0.6
+        }
+      ],
+      "required_watch_teams": [
+        {
+          "watchstation_code": "5110",
+          "k": 2
+        },
+        {
+          "watchstation_code": "5120",
+          "k": 1
+        },
+        {
+          "watchstation_code": "5130",
+          "k": 1
+        }
+      ],
+      "prerequisite_events": [],
+      "prerequisite_certs": [
+        "CERT-NSNORFOLK-CRANE"
+      ],
+      "prerequisite_avail": "",
+      "consequence_if_missed": "KESSLER cannot complete pre-sail services for Mission A",
+      "schedule_block_id": "",
+      "provenance": "proposed"
+    },
+    {
+      "event_id": "EVT-NSNORFOLK-02",
+      "label": "Support Mission B",
+      "ship_id": "NSNORFOLK",
+      "name": "Pre-sail services for KESSLER: COMPTUEX",
+      "ofrp_phase": "N/A",
+      "start": "2026-11-23T12:00:00Z",
+      "end": "2026-11-25T12:00:00Z",
+      "supports": "EVT-KESSLER-02",
+      "lead_days": 2.0,
+      "mission_areas": [
+        "PIER",
+        "HDLG",
+        "BASE"
+      ],
+      "required_systems": [
+        {
+          "eic": "SP12",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "CRANE",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "FUEL",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "GATE",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "WATER",
+          "min_status_score": 0.6
+        }
+      ],
+      "required_watch_teams": [
+        {
+          "watchstation_code": "5110",
+          "k": 2
+        },
+        {
+          "watchstation_code": "5120",
+          "k": 1
+        },
+        {
+          "watchstation_code": "5130",
+          "k": 1
+        }
+      ],
+      "prerequisite_events": [],
+      "prerequisite_certs": [
+        "CERT-NSNORFOLK-CRANE"
+      ],
+      "prerequisite_avail": "",
+      "consequence_if_missed": "KESSLER cannot complete pre-sail services for Mission B",
+      "schedule_block_id": "",
+      "provenance": "proposed"
+    },
+    {
+      "event_id": "EVT-NSNORFOLK-03",
+      "label": "Support Mission C",
+      "ship_id": "NSNORFOLK",
+      "name": "Pre-sail services for VARNELL: Basic Phase ASW certification event",
+      "ofrp_phase": "N/A",
+      "start": "2026-11-16T12:00:00Z",
+      "end": "2026-11-18T12:00:00Z",
+      "supports": "EVT-VARNELL-01",
+      "lead_days": 2.0,
+      "mission_areas": [
+        "PIER",
+        "HDLG",
+        "BASE"
+      ],
+      "required_systems": [
+        {
+          "eic": "SP10",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "CRANE",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "FUEL",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "GATE",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "WATER",
+          "min_status_score": 0.6
+        }
+      ],
+      "required_watch_teams": [
+        {
+          "watchstation_code": "5110",
+          "k": 2
+        },
+        {
+          "watchstation_code": "5120",
+          "k": 1
+        },
+        {
+          "watchstation_code": "5130",
+          "k": 1
+        }
+      ],
+      "prerequisite_events": [],
+      "prerequisite_certs": [
+        "CERT-NSNORFOLK-CRANE"
+      ],
+      "prerequisite_avail": "",
+      "consequence_if_missed": "VARNELL cannot complete pre-sail services for Mission C",
+      "schedule_block_id": "",
+      "provenance": "proposed"
+    },
+    {
+      "event_id": "EVT-NSNORFOLK-04",
+      "label": "Support Mission D",
+      "ship_id": "NSNORFOLK",
+      "name": "Pre-sail services for ASHBY: Sustainment exercise",
+      "ofrp_phase": "N/A",
+      "start": "2026-11-20T12:00:00Z",
+      "end": "2026-11-22T12:00:00Z",
+      "supports": "EVT-ASHBY-01",
+      "lead_days": 2.0,
+      "mission_areas": [
+        "PIER",
+        "HDLG",
+        "BASE"
+      ],
+      "required_systems": [
+        {
+          "eic": "SP11",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "CRANE",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "FUEL",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "GATE",
+          "min_status_score": 0.6
+        },
+        {
+          "eic": "WATER",
+          "min_status_score": 0.6
+        }
+      ],
+      "required_watch_teams": [
+        {
+          "watchstation_code": "5110",
+          "k": 2
+        },
+        {
+          "watchstation_code": "5120",
+          "k": 1
+        },
+        {
+          "watchstation_code": "5130",
+          "k": 1
+        }
+      ],
+      "prerequisite_events": [],
+      "prerequisite_certs": [
+        "CERT-NSNORFOLK-CRANE"
+      ],
+      "prerequisite_avail": "",
+      "consequence_if_missed": "ASHBY cannot complete pre-sail services for Mission D",
+      "schedule_block_id": "",
+      "provenance": "proposed"
+    },
+    {
+      "event_id": "EVT-NSAHR-01",
+      "label": "Standby E",
+      "ship_id": "NSAHR",
+      "name": "Mobile substation storm-readiness standby",
+      "ofrp_phase": "N/A",
+      "start": "2026-11-16T12:00:00Z",
+      "end": "2026-11-20T12:00:00Z",
+      "mission_areas": [
+        "MOBL"
+      ],
+      "required_systems": [
+        {
+          "eic": "MSUB",
+          "min_status_score": 0.6
+        }
+      ],
+      "required_watch_teams": [
+        {
+          "watchstation_code": "5110",
+          "k": 1
+        }
+      ],
+      "prerequisite_events": [],
+      "prerequisite_certs": [],
+      "prerequisite_avail": "",
+      "consequence_if_missed": "No mobile power reserve for the region during the standby window",
+      "schedule_block_id": "",
       "provenance": "proposed"
     }
   ]

@@ -56,7 +56,7 @@ export function FixCard({
               {fix.rank === 1 && <div className="label-caps !text-accent">Top recommendation</div>}
               <h3 className="text-xl font-semibold leading-snug text-ink">{fix.title}</h3>
             </div>
-            <div className={clsx('num rounded-lg px-2.5 py-1 text-lg font-bold', gain > 0 ? 'bg-ready-soft text-ready' : 'bg-white/5 text-ink-muted')}>+{gain} pts</div>
+            <div className={clsx('num rounded-lg px-2.5 py-1 text-lg font-bold', gain > 0 ? 'bg-ready-soft text-ready' : 'bg-ink/5 text-ink-muted')}>+{gain} pts</div>
           </div>
           <p className="mt-1 text-base text-ink">{fix.action}</p>
           <p className="mt-1 text-sm leading-relaxed text-ink-muted">{fix.rationale}</p>
@@ -225,7 +225,7 @@ function OddsBar({ label, odds, color, muted }: { label: string; odds: number; c
   return (
     <div className="flex items-center gap-3">
       <span className="w-12 shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-dim">{label}</span>
-      <div className="relative h-3.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+      <div className="relative h-3.5 flex-1 overflow-hidden rounded-full bg-ink/[0.08]">
         <motion.div
           className="absolute inset-y-0 left-0 rounded-full"
           initial={{ width: 0 }}

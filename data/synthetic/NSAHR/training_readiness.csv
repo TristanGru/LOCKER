@@ -1,0 +1,2 @@
+ship_id,mission_area,requirement_id,requirement_name,team,last_completed,periodicity_days,expires,scheduled_refresh,tfom_value,as_of,provenance
+NSAHR,MOBL,TR-LB-HV,High-voltage switching qualification,Mobile power crew,2026-04-02,365,2027-04-02,,90,2026-11-04T06:00:00Z,placeholder

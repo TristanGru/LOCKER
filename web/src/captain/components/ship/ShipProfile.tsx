@@ -131,7 +131,7 @@ function BelowPin({ s, index, onOpen }: { s: ShipSystem; index: number; onOpen: 
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 + index * 0.05 }}
       className={clsx(
-        'flex min-w-0 items-center gap-2.5 rounded-xl border bg-abyss-900/60 px-3 py-2 text-left transition hover:bg-white/[0.04]',
+        'flex min-w-0 items-center gap-2.5 rounded-xl border bg-abyss-900/60 px-3 py-2 text-left transition hover:bg-ink/[0.06]',
         s.isNextDomino ? 'border-risk shadow-[0_0_22px_-8px_rgba(251,77,93,0.9)]' : meta.border,
       )}
       aria-label={`${s.name} (${s.location}): ${meta.label}${s.isNextDomino ? ', next domino' : ''}`}

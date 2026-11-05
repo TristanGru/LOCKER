@@ -5,11 +5,13 @@ import { useApi } from '../../state/useApi';
 import { FreshnessIndicator } from './FreshnessIndicator';
 import { LogoMark } from './Logo';
 import { StopButton } from './StopControl';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Header() {
   const { setStopped, ship, changeShip, focus, setFocus, bump } = useStore();
   const { data: snapshot } = useApi(dashboard);
   const { data } = useApi(() => api.getMissions());
+  const ashore = snapshot?.state.ships.find((s: any) => s.ship_id === ship)?.kind === 'installation';
 
   useEffect(() => {
     if (data) { setStopped(data.stopped); if (!data.missions.some(m=>m.id===focus)) setFocus(data.missions[0]?.id || 'all'); }
@@ -22,18 +24,19 @@ export function Header() {
         <span className="text-[1.35rem] font-extrabold tracking-[0.16em] text-ink">LOCKER</span>
       </div>
 
-      <label className="text-sm text-ink-muted">Ship<select aria-label="Selected ship" value={ship} onChange={e=>changeShip(e.target.value)} className="ml-2 rounded border border-line bg-abyss-950 p-2 text-ink">{snapshot?.state.ships.map((s: any)=><option key={s.ship_id} value={s.ship_id}>{s.name}</option>)}</select></label>
+      <label className="text-sm text-ink-muted">{ashore ? 'Installation' : 'Ship'}<select aria-label={ashore ? 'Selected installation' : 'Selected ship'} value={ship} onChange={e=>changeShip(e.target.value)} className="ml-2 rounded border border-line bg-abyss-950 p-2 text-ink">{snapshot?.state.ships.filter((s: any)=>(s.kind==='installation')===ashore).map((s: any)=><option key={s.ship_id} value={s.ship_id}>{s.name}</option>)}</select></label>
       {data && (
         <div className="hidden min-w-0 items-center truncate border-l border-line pl-4 text-sm text-ink-muted lg:flex">
           <span className="truncate font-semibold text-ink">{data.ship.name}</span>
           <span className="mx-2 shrink-0 text-ink-dim">·</span>
           <span className="shrink-0">
-            deploys in <span className="num font-semibold text-ink">{data.ship.deployInDays}</span> days
+            {data.ship.kind==='installation' ? 'next support in' : 'deploys in'} <span className="num font-semibold text-ink">{data.ship.deployInDays}</span> days
           </span>
         </div>
       )}
 
       <div className="ml-auto flex shrink-0 items-center gap-3">
+        <ThemeToggle />
         <FreshnessIndicator freshness={data?.freshness ?? null} />
         <details className="relative text-sm text-ink-muted"><summary>Sources / controls</summary><div className="absolute right-0 z-50 mt-3 max-h-[75vh] w-[min(90vw,42rem)] overflow-auto rounded-xl border border-line bg-abyss-950 p-5">
           <p>Synthetic exercise • event-interval readiness</p><p>Source revision: {snapshot?.state.source_revision}</p>

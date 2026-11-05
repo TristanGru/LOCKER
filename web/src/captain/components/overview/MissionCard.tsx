@@ -1,11 +1,10 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import type { Mission, OddsPoint, Status } from '../../api/types';
+import type { Mission, Status } from '../../api/types';
 import clsx from '../../lib/clsx';
 import { useStore } from '../../state/store';
 import { STATUS, pct, getBands } from '../../theme/status';
-import { OddsSparkline } from '../charts/OddsSparkline';
 import { OddsNumber } from '../ui/OddsNumber';
 import { RecordId } from '../ui/RecordId';
 import { StatusBadge } from '../ui/StatusBadge';
@@ -18,13 +17,12 @@ const ACTION: Record<Status, { label: string; to: string; solid: boolean }> = {
 };
 
 /** One mission as a ranked row: status, odds on a 50/82 bar, trend, next domino, one action. */
-export function MissionRow({ mission: m, history, index }: { mission: Mission; history: OddsPoint[]; index: number }) {
+export function MissionRow({ mission: m, index }: { mission: Mission; index: number }) {
   const meta = STATUS[m.status];
   const navigate = useNavigate();
   const { setFocus, openNode } = useStore();
   const date = new Date(m.date);
-  const first = history[0]?.odds ?? m.odds;
-  const delta = Math.round((m.odds - first) * 100);
+  const delta = m.baselineDelta;
   const action = ACTION[m.status];
   const emphasized = m.status === 'risk';
   const when = date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
@@ -41,7 +39,7 @@ export function MissionRow({ mission: m, history, index }: { mission: Mission; h
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       className={clsx(
-        'grid items-center gap-x-8 gap-y-4 rounded-2xl border bg-[#0c1624] px-6',
+        'grid items-center gap-x-8 gap-y-4 rounded-2xl border bg-abyss-800 px-6',
         emphasized ? 'border-risk/45 py-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.35fr)_minmax(0,1fr)]' : 'border-line py-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.15fr)_minmax(0,1fr)]',
       )}
       style={{ boxShadow: `inset 4px 0 0 0 ${meta.hex}` }}
@@ -64,15 +62,21 @@ export function MissionRow({ mission: m, history, index }: { mission: Mission; h
       <div className="min-w-0">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <OddsNumber value={m.odds} className={clsx('font-bold leading-none', emphasized ? 'text-[3.4rem]' : 'text-[2.6rem]')} style={{ color: meta.hex }} />
-          <span className={clsx('num text-sm font-bold', delta < 0 ? 'text-risk' : delta > 0 ? 'text-ready' : 'text-ink-muted')}>
-            {delta > 0 ? '+' : ''}
-            {delta} pts since baseline
-          </span>
+          <span className="text-sm text-ink-muted">across the interval</span>
         </div>
         <ThresholdBar odds={m.odds} color={meta.hex} />
-        <div className="mt-1">
-          <OddsSparkline points={history} status={m.status} id={m.id} bare />
-        </div>
+        <p className="mt-2 text-sm text-ink-muted">
+          At start <span className="num font-semibold text-ink">{pct(m.oddsAtStart)}</span>
+          {delta != null && (
+            <>
+              <span className="mx-1.5 text-ink-dim">·</span>
+              <span className={clsx('num font-bold', delta < 0 ? 'text-risk' : delta > 0 ? 'text-ready' : 'text-ink-muted')}>
+                {delta > 0 ? '+' : ''}
+                {delta} pts vs baseline
+              </span>
+            </>
+          )}
+        </p>
       </div>
 
       <div className="min-w-0">
@@ -93,7 +97,7 @@ export function MissionRow({ mission: m, history, index }: { mission: Mission; h
             onClick={go}
             className={clsx(
               'inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition',
-              action.solid ? 'bg-accent text-[#042028] hover:brightness-110' : 'border border-line-strong text-ink hover:border-ink-muted hover:bg-white/[0.04]',
+              action.solid ? 'bg-accent text-[color:var(--on-accent)] hover:brightness-110' : 'border border-line-strong text-ink hover:border-ink-muted hover:bg-ink/[0.06]',
             )}
           >
             {action.label} <ArrowRight className="h-4 w-4" aria-hidden />
@@ -111,10 +115,10 @@ function ThresholdBar({ odds, color }: { odds: number; color: string }) {
   const width = Number.isFinite(odds) ? Math.max(0, Math.min(100, Math.round(odds * 100))) : 0;
   return (
     <div className="relative mt-3 h-2.5" role="img" aria-label={`Interval readiness ${pct(odds)}. Watch ${pct(getBands().yellow)}, ready ${pct(getBands().green)}.`}>
-      <div className="absolute inset-0 rounded-full bg-white/[0.08]" />
+      <div className="absolute inset-0 rounded-full bg-ink/10" />
       <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${width}%`, background: color }} />
-      <span className="absolute -top-1 bottom-[-4px] w-px bg-white/55" style={{ left: `${getBands().yellow*100}%` }} />
-      <span className="absolute -top-1 bottom-[-4px] w-px bg-white/70" style={{ left: `${getBands().green*100}%` }} />
+      <span className="absolute -top-1 bottom-[-4px] w-px bg-ink/60" style={{ left: `${getBands().yellow*100}%` }} />
+      <span className="absolute -top-1 bottom-[-4px] w-px bg-ink/70" style={{ left: `${getBands().green*100}%` }} />
     </div>
   );
 }

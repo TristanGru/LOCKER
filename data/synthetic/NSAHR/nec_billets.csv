@@ -1,0 +1,4 @@
+ship_id,uic,billet_id,billet_title,rate_required,nec_required,work_center,fltmps_holder_member_id,holder_prd,gap_start,inbound_member_id,inbound_report_date,as_of,provenance
+NSAHR,99202,B-NS-2101,SHORE POWER HIGH-VOLTAGE ELECTRICIAN (SYNTH),CE1,S000,MS01,M-2101,2028-06-01,,,,2026-11-04T06:00:00Z,placeholder
+NSAHR,99202,B-NS-2102,SHORE POWER HIGH-VOLTAGE ELECTRICIAN (SYNTH),CE2,S000,MS01,M-2102,2028-06-01,,,,2026-11-04T06:00:00Z,placeholder
+NSAHR,99202,B-NS-2103,BASE ACCESS WATCH SUPERVISOR (SYNTH),MA1,S000,SE02,M-2103,2028-06-01,,,,2026-11-04T06:00:00Z,placeholder

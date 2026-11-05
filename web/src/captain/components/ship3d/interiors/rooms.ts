@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { Zone } from '../types';
+import type { HullInfo, Zone } from '../types';
 import { Bx, Cy, led, ledMat, makeMats, pipes, rail, roomLights, shell, sign, Sph, texGrate, Tor, tray, type IMats, type InteriorRoom } from './kit';
 
 export type Family =
@@ -73,7 +73,7 @@ const ZONE_FAMILY: Record<Zone, Family> = {
   torp: 'torp',
 };
 
-function famEngine(p: IMats, v: 'turb' | 'gen' | 'chill' | 'jet' | 'shaft'): InteriorRoom {
+function famEngine(p: IMats, v: 'turb' | 'gen' | 'chill' | 'jet' | 'shaft', label = 'MACHINERY SPACE'): InteriorRoom {
   const W = 24;
   const L = 11;
   const H = 7.5;
@@ -154,11 +154,11 @@ function famEngine(p: IMats, v: 'turb' | 'gen' | 'chill' | 'jet' | 'shaft'): Int
     Cy(G, 0.08, 0.08, 3.6, p.red, x, 1.8, -4.8);
     Tor(G, 0.2, 0.03, p.red, x, 1.2, -4.68, 'z');
   }
-  sign(G, 'MACHINERY SPACE', '#c4443a', '#ffffff', -W / 2 + 0.05, 3.6, 0, Math.PI / 2, 2.2);
+  sign(G, label, '#c4443a', '#ffffff', -W / 2 + 0.05, 3.6, 0, Math.PI / 2, 2.2);
   return { group: G, blockers: bl, eye: [-9.5, -0.8], look: [1, 0.1], bounds: [-W / 2 + 0.7, W / 2 - 0.7, -L / 2 + 0.6, L / 2 - 0.6] };
 }
 
-function famRack(p: IMats): InteriorRoom {
+function famRack(p: IMats, which: 'radar' | 'comms' | 'equip' = 'equip'): InteriorRoom {
   const W = 18;
   const L = 8;
   const H = 3.4;
@@ -192,7 +192,15 @@ function famRack(p: IMats): InteriorRoom {
   Bx(G, 0.6, 0.4, 0.04, p.scrB, 7.2, 1.1, 0);
   Cy(G, 0.25, 0.25, 0.08, p.rubber, 8.2, 0.5, 0.6);
   Cy(G, 0.04, 0.04, 0.45, p.dark, 8.2, 0.28, 0.6);
-  sign(G, 'EQUIPMENT ROOM', '#1f6f82', '#ffffff', -W / 2 + 0.05, 2.7, L * 0.2, Math.PI / 2, 1.8);
+  if (which === 'radar') {
+    Bx(G, 0.35, 1.6, 0.35, p.dark, -6.4, 2.4, 0);
+    Bx(G, 1.4, 0.12, 0.35, p.sil, -6.4, 3.15, 0);
+    sign(G, 'RADAR EQUIPMENT', '#1f6f82', '#ffffff', -W / 2 + 0.05, 2.7, L * 0.2, Math.PI / 2, 1.8);
+  } else if (which === 'comms') {
+    Cy(G, 0.7, 0.15, 0.7, p.sil, -6.2, 2.5, 0);
+    Cy(G, 0.08, 0.08, 1.1, p.dark, -6.2, 1.9, 0);
+    sign(G, 'COMMUNICATIONS', '#1f6f82', '#ffffff', -W / 2 + 0.05, 2.7, L * 0.2, Math.PI / 2, 1.8);
+  } else sign(G, 'EQUIPMENT ROOM', '#1f6f82', '#ffffff', -W / 2 + 0.05, 2.7, L * 0.2, Math.PI / 2, 1.8);
   return { group: G, blockers: bl, eye: [-8, 0], look: [1, 0], bounds: [-W / 2 + 0.6, W / 2 - 0.6, -L / 2 + 0.5, L / 2 - 0.5] };
 }
 
@@ -233,7 +241,7 @@ function famCic(p: IMats): InteriorRoom {
   return { group: G, blockers: [{ x0: -6.5, x1: -0.3, z0: -5, z1: 5 }], eye: [-7.2, 0], look: [1, 0], bounds: [-W / 2 + 0.7, W / 2 - 0.7, -L / 2 + 0.6, L / 2 - 0.6] };
 }
 
-function famMag(p: IMats): InteriorRoom {
+function famMag(p: IMats, label = 'EXPLOSIVES  AUTHORIZED ONLY'): InteriorRoom {
   const W = 20;
   const L = 13;
   const H = 6.2;
@@ -267,7 +275,7 @@ function famMag(p: IMats): InteriorRoom {
     Cy(G, 0.27, 0.27, 0.9, p.red, -1 + dx, 0.95, 0, 'x');
   }
   for (const dx of [-1.2, 1.2]) Cy(G, 0.16, 0.16, 0.1, p.rubber, -3 + dx, 0.16, 0.5, 'z');
-  sign(G, 'EXPLOSIVES  AUTHORIZED ONLY', '#c4443a', '#ffffff', -W / 2 + 0.05, 3.2, -2, Math.PI / 2, 2.8);
+  sign(G, label, '#c4443a', '#ffffff', -W / 2 + 0.05, 3.2, -2, Math.PI / 2, 2.8);
   return {
     group: G,
     blockers: [
@@ -326,30 +334,27 @@ function famHangar(p: IMats, bay: boolean): InteriorRoom {
   const bl: InteriorRoom['blockers'] = [];
   for (const z of [-6, 6]) Bx(G, W - 1, 0.4, 0.3, p.yel, 0, H - 0.6, z);
   if (!bay) {
-    const h = new THREE.Group();
-    h.name = 'helicopter';
-    const nose = Sph(h, 1, p.heli, 0, 0, 0);
-    nose.scale.set(3.6, 1.5, 1.5);
-    const glass = Sph(h, 0.9, p.glass, 2.9, 0.3, 0);
-    glass.scale.set(1, 0.8, 1);
-    Bx(h, 7, 0.7, 0.6, p.heli, -6.2, 0.5, 0);
-    Bx(h, 1.2, 2, 0.18, p.heli, -9.3, 1.3, 0);
-    Bx(h, 2, 0.12, 3, p.heli, -8.8, 0.5, 0);
-    Cy(h, 0.2, 0.2, 1.2, p.dark, 0, 1.9, 0);
-    for (let i = 0; i < 4; i++) {
-      const a = (i * Math.PI) / 2 + 0.4;
-      const blade = Bx(h, 10, 0.08, 0.55, p.dark, Math.cos(a) * 5, 2.5, Math.sin(a) * 5);
-      blade.rotation.y = -a;
-    }
+    // The aircraft is parked on the flight deck, so the hangar is the empty maintenance bay.
     for (const [x, z] of [
-      [2, 0],
-      [-3.2, -1.2],
-      [-3.2, 1.2],
-    ] as const)
-      Cy(h, 0.4, 0.4, 0.35, p.rubber, x, -1.45, z, 'z');
-    h.position.set(0, 2.55, 0);
-    G.add(h);
-    bl.push({ x0: -7, x1: 5, z0: -4, z1: 4 });
+      [-4, -3],
+      [2, -3],
+      [-4, 3],
+      [2, 3],
+      [-1, 0],
+    ] as const) {
+      Bx(G, 1.2, 0.04, 0.12, p.yel, x, 0.04, z);
+      Bx(G, 0.12, 0.04, 1.2, p.yel, x, 0.05, z);
+    }
+    Bx(G, 3.2, 0.9, 1.1, p.paint, -8, 0.45, -6);
+    Bx(G, 2.4, 0.08, 1, p.dark, -8, 1.4, -6);
+    for (let i = 0; i < 4; i++) Bx(G, 0.15, 0.7, 0.4, p.steel, -8.8 + i * 0.5, 1.05, -6);
+    Cy(G, 0.45, 0.45, 1.6, p.red, 6, 0.9, -6, 'x');
+    Tor(G, 0.48, 0.06, p.dark, 6, 0.9, -6, 'x');
+    Cy(G, 0.06, 0.06, 4, p.dark, 8.2, 0.5, -4, 'z');
+    Bx(G, 1.4, 0.8, 0.9, p.orange, 4, 0.4, 6);
+    Bx(G, 0.8, 1.1, 0.6, p.dark, 9, 0.55, 5);
+    for (const z of [-1.2, 1.2]) Cy(G, 0.35, 0.35, 0.2, p.rubber, 9, 0.35, 5 + z, 'z');
+    bl.push({ x0: -9.6, x1: -6.2, z0: -6.8, z1: -5.2 }, { x0: 7.4, x1: 10.2, z0: 4.2, z1: 6.6 });
   } else {
     const cs = [0x5d7a5b, 0x7a6a4a, 0x4a6f8a, 0x8a5a4a];
     for (let i = 0; i < 5; i++)
@@ -369,7 +374,7 @@ function famHangar(p: IMats, bay: boolean): InteriorRoom {
   Bx(G, 0.2, 5, L - 1, new THREE.MeshStandardMaterial({ color: 0x8f9aa2, roughness: 0.6 }), W / 2 - 0.12, 2.5, 0);
   for (let k = 0; k < 10; k++) Bx(G, 0.22, 0.5, 1.6, [p.yel, p.dark][k % 2], W / 2 - 0.1, 0.5, -7.2 + k * 1.6);
   for (let i = 0; i < 8; i++) Tor(G, 0.12, 0.025, p.dark, -10 + i * 3, 0.03, -3 + (i % 2) * 6, 'y');
-  sign(G, bay ? 'MISSION BAY' : 'AIRCRAFT HANGAR', '#1f6f82', '#ffffff', -W / 2 + 0.05, 5.2, 0, Math.PI / 2, 3.4);
+  sign(G, bay ? 'MISSION BAY' : 'AIRCRAFT ON DECK', '#1f6f82', '#ffffff', -W / 2 + 0.05, 5.2, 0, Math.PI / 2, 3.2);
   return { group: G, blockers: bl, eye: [-12.5, 2], look: [1, -0.1], bounds: [-W / 2 + 0.8, W / 2 - 0.8, -L / 2 + 0.8, L / 2 - 0.8] };
 }
 
@@ -566,7 +571,7 @@ function famDeck(p: IMats, v: 'cat' | 'arr' | 'elev' | 'well'): InteriorRoom {
   return { group: G, blockers: bl, eye: [-9.5, 0], look: [1, 0], bounds: [-W / 2 + 0.7, W / 2 - 0.7, -L / 2 + 0.6, L / 2 - 0.6] };
 }
 
-function famBerth(p: IMats): InteriorRoom {
+function famBerth(p: IMats, label = 'BERTHING'): InteriorRoom {
   const W = 16;
   const L = 6.4;
   const H = 2.6;
@@ -594,7 +599,7 @@ function famBerth(p: IMats): InteriorRoom {
   const night = new THREE.PointLight(0xff5a4a, 10, 10, 1.5);
   night.position.set(0, H - 0.4, 0);
   G.add(night);
-  sign(G, 'BERTHING', '#2c4a6e', '#ffffff', -W / 2 + 0.05, 2, -1.5, Math.PI / 2, 1.4);
+  sign(G, label, '#2c4a6e', '#ffffff', -W / 2 + 0.05, 2, -1.5, Math.PI / 2, 1.4);
   return {
     group: G,
     blockers: [
@@ -607,33 +612,237 @@ function famBerth(p: IMats): InteriorRoom {
   };
 }
 
-/** Build the walk-in compartment for a mount, or for the zone under an empty-hull cut. */
-export function buildInterior(mount: string | null, zone: Zone): InteriorRoom {
-  const fam: Family = (mount && MOUNT_FAMILY[mount]) || ZONE_FAMILY[zone] || 'berth';
-  const p = makeMats();
-  switch (fam) {
-    case 'turb':
-      return famEngine(p, 'turb');
-    case 'gen':
-      return famEngine(p, 'gen');
-    case 'chill':
-      return famEngine(p, 'chill');
-    case 'jet':
-      return famEngine(p, 'jet');
-    case 'shaft':
-      return famEngine(p, 'shaft');
-    case 'rack':
-      return famRack(p);
-    case 'cic':
-      return famCic(p);
-    case 'mag':
-      return famMag(p);
-    case 'gun':
-      return famGun(p);
+function famSteering(p: IMats): InteriorRoom {
+  const W = 14;
+  const L = 10;
+  const H = 5;
+  const G = shell(p, W, L, H, '#8d9892');
+  roomLights(G, p, W, L, H, 4);
+  pipes(G, p, W, H, [
+    [-4, 0.12, 'yel'],
+    [4, 0.1, 'red'],
+  ]);
+  for (const z of [-2.2, 2.2]) {
+    Cy(G, 0.55, 0.55, 3.6, p.steel, 1.2, 1.8, z);
+    Bx(G, 3.4, 0.28, 0.45, p.dark, -0.8, 2.2, z);
+    Cy(G, 0.22, 0.22, 2.2, p.paint, -2.6, 1.5, z, 'x');
+    Tor(G, 0.6, 0.05, p.yel, 1.2, 3.4, z);
+  }
+  Bx(G, 2.2, 1.3, 1.1, p.paint, 4.4, 0.65, 0);
+  Bx(G, 1.4, 0.5, 0.06, p.scrT, 4.4, 1.5, 0.2);
+  sign(G, 'STEERING GEAR', '#c4443a', '#ffffff', -W / 2 + 0.05, 3.2, -2, Math.PI / 2, 2);
+  return {
+    group: G,
+    blockers: [
+      { x0: -1.2, x1: 2.4, z0: -3, z1: -1.4 },
+      { x0: -1.2, x1: 2.4, z0: 1.4, z1: 3 },
+    ],
+    eye: [-5.2, 0],
+    look: [1, 0],
+    bounds: [-W / 2 + 0.6, W / 2 - 0.6, -L / 2 + 0.6, L / 2 - 0.6],
+  };
+}
+
+function famStores(p: IMats): InteriorRoom {
+  const W = 14;
+  const L = 8;
+  const H = 3.1;
+  const G = shell(p, W, L, H, '#a7aea8', 0.85);
+  roomLights(G, p, W, L, H, 4);
+  for (const s of [-1, 1])
+    for (let i = 0; i < 4; i++) {
+      const x = -4.5 + i * 2.4;
+      Bx(G, 2, 2.2, 0.7, p.paint, x, 1.1, s * 3.1);
+      for (let k = 0; k < 3; k++) Bx(G, 1.5, 0.35, 0.5, [p.olive, p.dark, p.navy][k], x, 0.4 + k * 0.6, s * 2.7);
+    }
+  Cy(G, 0.18, 0.18, 3.2, p.dark, 5.2, 0.3, 0, 'x');
+  for (let i = 0; i < 5; i++) Tor(G, 0.28, 0.05, p.steel, 4.2 + i * 0.45, 0.35, 0, 'x');
+  sign(G, 'BOW STORES', '#2c4a6e', '#ffffff', -W / 2 + 0.05, 2.3, -1, Math.PI / 2, 1.6);
+  return {
+    group: G,
+    blockers: [
+      { x0: -5.6, x1: 3.2, z0: -3.6, z1: -2.6 },
+      { x0: -5.6, x1: 3.2, z0: 2.6, z1: 3.6 },
+    ],
+    eye: [-6, 0],
+    look: [1, 0],
+    bounds: [-W / 2 + 0.5, W / 2 - 0.5, -L / 2 + 0.5, L / 2 - 0.5],
+  };
+}
+
+/** Side passage. Doors face the side you entered from, so port and starboard are different rooms. */
+function famPassage(p: IMats, port: boolean): InteriorRoom {
+  const W = 24;
+  const L = 3.6;
+  const H = 2.5;
+  const G = shell(p, W, L, H, '#9aa3a8', 0.8);
+  roomLights(G, p, W, L, H, 8);
+  const z = port ? 1.15 : -1.15;
+  ['ENG RM', 'MAG', 'GEN', 'CIC', 'RADAR', 'GUN'].forEach((name, i) => {
+    const x = -9 + i * 3.4;
+    Bx(G, 1.05, 2.05, 0.08, p.paint, x, 1.05, z);
+    sign(G, name, '#1c2830', '#d5e2ea', x, 1.65, z + (port ? -0.1 : 0.1), port ? 0 : Math.PI, 0.9);
+  });
+  Bx(G, W - 2, 0.03, 0.28, p.yel, 0, 0.03, 0);
+  sign(G, port ? 'PORT PASSAGE' : 'STBD PASSAGE', '#2c4a6e', '#ffffff', -W / 2 + 0.05, 2, 0, Math.PI / 2, 1.8);
+  return { group: G, blockers: [], eye: [-10, 0], look: [1, 0], bounds: [-W / 2 + 0.5, W / 2 - 0.5, -L / 2 + 0.45, L / 2 - 0.45] };
+}
+
+type Kind =
+  | 'hangar'
+  | 'steering'
+  | 'engine-p'
+  | 'engine-s'
+  | 'mag-aft'
+  | 'mag-fwd'
+  | 'gen-1'
+  | 'gen-2'
+  | 'cic'
+  | 'comms'
+  | 'chill'
+  | 'radar'
+  | 'gun'
+  | 'sonar'
+  | 'stores'
+  | 'berth-fwd'
+  | 'berth-aft'
+  | 'passage-p'
+  | 'passage-s'
+  | 'reactor'
+  | 'well'
+  | 'bay'
+  | 'torp'
+  | 'cat'
+  | 'arr'
+  | 'elev'
+  | 'jet'
+  | 'shaft'
+  | 'reel';
+
+const MOUNT_KIND: Record<string, Kind> = {
+  flight: 'hangar',
+  mission_bay: 'bay',
+  engine_p: 'engine-p',
+  engine: 'engine-p',
+  engine_s: 'engine-s',
+  genset_1: 'gen-1',
+  genset_2: 'gen-2',
+  chill: 'chill',
+  waterjet: 'jet',
+  propulsor: 'shaft',
+  air_radar: 'radar',
+  sat: 'comms',
+  control: 'cic',
+  photonics: 'cic',
+  vls_fwd: 'mag-fwd',
+  vls: 'mag-fwd',
+  vls_aft: 'mag-aft',
+  magazine: 'mag-aft',
+  harpoon: 'mag-aft',
+  nsm: 'mag-fwd',
+  ram: 'gun',
+  gun: 'gun',
+  gun_aft: 'gun',
+  ciws: 'gun',
+  reactor: 'reactor',
+  sonar: 'sonar',
+  sonar_bow: 'sonar',
+  towed_array: 'reel',
+  torpedo: 'torp',
+  planes: 'torp',
+  dds: 'torp',
+  catapult: 'cat',
+  arrest: 'arr',
+  elev: 'elev',
+  well: 'well',
+};
+
+/** Stern to bow. A hull click lands in the compartment that owns that station. */
+const ALONG: { u: number; kind: Kind }[] = [
+  { u: 0.1, kind: 'hangar' },
+  { u: 0.18, kind: 'steering' },
+  { u: 0.26, kind: 'berth-aft' },
+  { u: 0.34, kind: 'engine-p' },
+  { u: 0.42, kind: 'mag-aft' },
+  { u: 0.5, kind: 'engine-s' },
+  { u: 0.56, kind: 'gen-1' },
+  { u: 0.62, kind: 'comms' },
+  { u: 0.68, kind: 'chill' },
+  { u: 0.74, kind: 'radar' },
+  { u: 0.8, kind: 'cic' },
+  { u: 0.86, kind: 'gen-2' },
+  { u: 0.91, kind: 'mag-fwd' },
+  { u: 0.95, kind: 'gun' },
+  { u: 0.98, kind: 'sonar' },
+  { u: 1.02, kind: 'stores' },
+];
+
+const COPY: Record<Kind, [string, string]> = {
+  hangar: ['Hangar bay', 'Tie-downs and maintenance gear. The aircraft is on the flight deck.'],
+  steering: ['Steering gear room', 'Rudder stocks and hydraulic rams'],
+  'engine-p': ['Port main engine room', 'Gas turbine, reduction gear and uptake'],
+  'engine-s': ['Starboard main engine room', 'Gas turbine, reduction gear and uptake'],
+  'mag-aft': ['Aft missile magazine', 'Aft vertical launch cells'],
+  'mag-fwd': ['Forward missile magazine', 'Forward vertical launch cells'],
+  'gen-1': ['No. 1 generator room', 'Aft ship service generator'],
+  'gen-2': ['No. 2 generator room', 'Forward ship service generator'],
+  cic: ['Combat information center', 'Consoles and status boards'],
+  comms: ['Communications room', 'Racks for exterior communications. The antennas are on the mast.'],
+  chill: ['Air conditioning plant', 'Chilled water for the combat systems'],
+  radar: ['Radar equipment room', 'Transmitters and waveguide. The arrays are topside.'],
+  gun: ['Gun magazine', 'Ammunition handling under the mount'],
+  sonar: ['Sonar equipment room', 'Processing racks for the bow array'],
+  stores: ['Bow stores', 'Bosun stores and ground tackle'],
+  'berth-fwd': ['Forward berthing', 'Enlisted berthing, forward'],
+  'berth-aft': ['Aft berthing', 'Enlisted berthing, aft'],
+  'passage-p': ['Port passageway', 'Port access between the main compartments'],
+  'passage-s': ['Starboard passageway', 'Starboard access between the main compartments'],
+  reactor: ['Reactor compartment', 'Reactor vessel and steam generators'],
+  well: ['Well deck', 'Landing craft bay'],
+  bay: ['Mission bay', 'Mission modules and boats'],
+  torp: ['Torpedo room', 'Tubes and weapons stowage'],
+  cat: ['Catapult machinery', 'Launch accumulators'],
+  arr: ['Arresting gear room', 'Arresting engines'],
+  elev: ['Elevator pit', 'Platform and ram'],
+  jet: ['Waterjet room', 'Impeller and duct'],
+  shaft: ['Shaft alley', 'Line shaft and bearings'],
+  reel: ['Towed array room', 'Winch and cable reel'],
+};
+
+function roomFor(kind: Kind, p: IMats): InteriorRoom {
+  switch (kind) {
     case 'hangar':
       return famHangar(p, false);
     case 'bay':
       return famHangar(p, true);
+    case 'steering':
+      return famSteering(p);
+    case 'engine-p':
+      return famEngine(p, 'turb', 'PORT MAIN ENGINE');
+    case 'engine-s':
+      return famEngine(p, 'turb', 'STBD MAIN ENGINE');
+    case 'gen-1':
+      return famEngine(p, 'gen', 'NO. 1 GENERATOR');
+    case 'gen-2':
+      return famEngine(p, 'gen', 'NO. 2 GENERATOR');
+    case 'chill':
+      return famEngine(p, 'chill', 'A/C PLANT');
+    case 'jet':
+      return famEngine(p, 'jet');
+    case 'shaft':
+      return famEngine(p, 'shaft', 'SHAFT ALLEY');
+    case 'radar':
+      return famRack(p, 'radar');
+    case 'comms':
+      return famRack(p, 'comms');
+    case 'cic':
+      return famCic(p);
+    case 'mag-aft':
+      return famMag(p, 'AFT MISSILE MAGAZINE');
+    case 'mag-fwd':
+      return famMag(p, 'FWD MISSILE MAGAZINE');
+    case 'gun':
+      return famGun(p);
     case 'reactor':
       return famReactor(p);
     case 'sonar':
@@ -650,7 +859,59 @@ export function buildInterior(mount: string | null, zone: Zone): InteriorRoom {
       return famDeck(p, 'elev');
     case 'well':
       return famDeck(p, 'well');
-    default:
-      return famBerth(p);
+    case 'stores':
+      return famStores(p);
+    case 'berth-fwd':
+      return famBerth(p, 'FWD BERTHING');
+    case 'berth-aft':
+      return famBerth(p, 'AFT BERTHING');
+    case 'passage-p':
+      return famPassage(p, true);
+    case 'passage-s':
+      return famPassage(p, false);
   }
+}
+
+/** Stand somewhere that belongs to this cut, not in the same corner of every room. */
+function place(room: InteriorRoom, seed: number, side: number) {
+  const [x0, x1, z0, z1] = room.bounds;
+  const t = ((Math.sin(seed * 12.9898) * 43758.5453) % 1 + 1) % 1;
+  const x = x0 + (x1 - x0) * (0.18 + 0.64 * t);
+  let z = side >= 0 ? z0 + 0.55 : z1 - 0.55;
+  const hit = (px: number, pz: number) => room.blockers.some((b) => px > b.x0 - 0.25 && px < b.x1 + 0.25 && pz > b.z0 - 0.25 && pz < b.z1 + 0.25);
+  for (let i = 0; i < 12 && hit(x, z); i++) z += side >= 0 ? 0.35 : -0.35;
+  room.eye = [Math.min(x1 - 0.45, Math.max(x0 + 0.45, x)), Math.min(z1 - 0.4, Math.max(z0 + 0.4, z))];
+  if (hit(room.eye[0], room.eye[1])) room.eye = [(x0 + x1) / 2, (z0 + z1) / 2];
+  room.look = [room.eye[0] > 0 ? -1 : 1, 0];
+}
+
+export interface Landing {
+  room: InteriorRoom;
+  title: string;
+  detail: string;
+}
+
+/**
+ * Each cut lands in the compartment for that station. A system pin picks its own room.
+ * A lengthwise cut on the port or starboard side lands in that side's passage.
+ * The standing point moves with the cut, so two splits of the same room do not share a doorway.
+ */
+export function buildLanding(info: HullInfo, cut: { x: number; z: number; mount: string | null; lengthwise: boolean }): Landing {
+  const span = Math.max(info.bb.max.x - info.bb.min.x, 1);
+  const u = (cut.x - info.bb.min.x) / span;
+  let kind: Kind = (cut.mount && MOUNT_KIND[cut.mount]) || ALONG.find((s) => u <= s.u)?.kind || 'stores';
+  if (cut.lengthwise && !cut.mount) kind = cut.z < -1.5 ? 'passage-p' : cut.z > 1.5 ? 'passage-s' : kind;
+  const room = roomFor(kind, makeMats());
+  const side = kind === 'engine-p' || kind === 'passage-p' ? -1 : kind === 'engine-s' || kind === 'passage-s' ? 1 : cut.z >= 0 ? 1 : -1;
+  place(room, cut.lengthwise ? cut.z : cut.x, side);
+  const [title, detail] = COPY[kind];
+  return { room, title, detail };
+}
+
+/** Build the walk-in compartment for a mount, or for the zone under an empty-hull cut. */
+export function buildInterior(mount: string | null, zone: Zone): InteriorRoom {
+  const fam: Family = (mount && MOUNT_FAMILY[mount]) || ZONE_FAMILY[zone] || 'berth';
+  const kind: Kind =
+    fam === 'turb' ? 'engine-p' : fam === 'gen' ? 'gen-1' : fam === 'rack' ? 'radar' : fam === 'mag' ? 'mag-fwd' : fam === 'hangar' ? 'hangar' : fam === 'berth' ? 'berth-fwd' : (fam as Kind);
+  return roomFor(kind, makeMats());
 }

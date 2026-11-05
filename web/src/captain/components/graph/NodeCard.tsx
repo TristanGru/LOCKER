@@ -85,7 +85,7 @@ export const NodeCard = memo(function NodeCard({ data }: NodeProps<CardNode>) {
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute -top-4 left-4 z-10 flex items-center gap-1.5 rounded-full border border-risk bg-[#2a0b12] px-2.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-[0.14em] text-risk shadow-[0_0_18px_-4px_rgba(251,77,93,0.9)]"
+          className="absolute -top-4 left-4 z-10 flex items-center gap-1.5 rounded-full border border-risk bg-risk/15 px-2.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-[0.14em] text-risk shadow-[0_0_18px_-4px_rgba(251,77,93,0.9)]"
         >
           <Crosshair className="h-3.5 w-3.5" strokeWidth={2.6} aria-hidden />
           Next domino
@@ -157,7 +157,7 @@ function MissionBody({ node, status, daysOut }: { node: GraphNode; status: Statu
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-ink-dim">
           <KIND_META.mission.icon className="h-3.5 w-3.5" aria-hidden /> Mission
-          {daysOut !== undefined && <span className="num rounded bg-white/[0.06] px-1.5 py-0.5 text-ink-muted">D+{daysOut}</span>}
+          {daysOut !== undefined && <span className="num rounded bg-ink/[0.08] px-1.5 py-0.5 text-ink-muted">D+{daysOut}</span>}
         </span>
         <StatusBadge status={status} size="sm" />
       </div>

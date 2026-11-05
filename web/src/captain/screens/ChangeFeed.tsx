@@ -92,7 +92,7 @@ export function ChangeFeed() {
               {Array.from({ length: total || 4 }, (_, i) => (
                 <motion.span
                   key={i}
-                  className={clsx('h-2.5 w-7 rounded-full', i < delivered.length ? 'bg-accent' : 'bg-white/10')}
+                  className={clsx('h-2.5 w-7 rounded-full', i < delivered.length ? 'bg-accent' : 'bg-ink/10')}
                   animate={i === delivered.length - 1 ? { scale: [1, 1.25, 1] } : {}}
                   transition={{ duration: 0.5 }}
                 />

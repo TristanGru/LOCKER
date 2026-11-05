@@ -1,0 +1,2 @@
+ship_id,inspection_date,inspection_type,eic,finding_severity,finding_summary,corrected,as_of,provenance
+NSNORFOLK,2026-02-11,Facility condition (proposed),SP12-VAULT,MINOR,Vault sump pump near end of service life (synthetic),false,2026-11-04T06:00:00Z,placeholder

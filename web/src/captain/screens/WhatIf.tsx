@@ -301,18 +301,18 @@ function ResultView({ result, labelOf, running }: { result: ScenarioResult; labe
         <div className="mt-5 h-56">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 22, right: 8, bottom: 0, left: -12 }} barGap={4}>
-              <XAxis dataKey="name" stroke="rgba(140,180,220,0.35)" tick={{ fill: '#e6eef8', fontSize: 13, fontWeight: 700 }} />
-              <YAxis domain={[0, 100]} ticks={[0, getBands().yellow*100, getBands().green*100, 100]} stroke="rgba(140,180,220,0.35)" tick={{ fill: '#6b7d95', fontSize: 11, fontFamily: 'JetBrains Mono' }} />
-              <ReferenceLine y={getBands().green*100} stroke="rgba(52,211,153,0.6)" strokeDasharray="4 4" />
-              <ReferenceLine y={getBands().yellow*100} stroke="rgba(251,77,93,0.6)" strokeDasharray="4 4" />
-              <Bar dataKey="before" name="Now" fill="rgba(148,163,184,0.35)" radius={[4, 4, 0, 0]} isAnimationActive={false}>
-                <LabelList dataKey="before" position="top" formatter={(v: number) => `${v}%`} style={{ fill: '#9fb0c6', fontSize: 12, fontFamily: 'JetBrains Mono' }} />
+              <XAxis dataKey="name" stroke="rgb(var(--line))" tick={{ fill: 'rgb(var(--ink))', fontSize: 13, fontWeight: 700 }} />
+              <YAxis domain={[0, 100]} ticks={[0, getBands().yellow*100, getBands().green*100, 100]} stroke="rgb(var(--line))" tick={{ fill: 'rgb(var(--ink-dim))', fontSize: 11, fontFamily: 'JetBrains Mono' }} />
+              <ReferenceLine y={getBands().green*100} stroke="rgb(var(--ready))" strokeDasharray="4 4" />
+              <ReferenceLine y={getBands().yellow*100} stroke="rgb(var(--risk))" strokeDasharray="4 4" />
+              <Bar dataKey="before" name="Now" fill="rgb(var(--stale) / 0.35)" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+                <LabelList dataKey="before" position="top" formatter={(v: number) => `${v}%`} style={{ fill: 'rgb(var(--ink-muted))', fontSize: 12, fontFamily: 'JetBrains Mono' }} />
               </Bar>
               <Bar dataKey="after" name="What-if" radius={[4, 4, 0, 0]} isAnimationActive={false}>
                 {data.map((r) => (
                   <Cell key={r.name} fill={STATUS[oddsStatus(r.after / 100)].hex} />
                 ))}
-                <LabelList dataKey="after" position="top" formatter={(v: number) => `${v}%`} style={{ fill: '#e6eef8', fontSize: 13, fontWeight: 700, fontFamily: 'JetBrains Mono' }} />
+                <LabelList dataKey="after" position="top" formatter={(v: number) => `${v}%`} style={{ fill: 'rgb(var(--ink))', fontSize: 13, fontWeight: 700, fontFamily: 'JetBrains Mono' }} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>

@@ -45,7 +45,10 @@ def training_fact(b):
 
 def test_codenames_flow_from_event_plan_to_forecast_and_labels(baseline, log_path):
     fc = forecast(build_world(Scenario(baseline, log_path=log_path)), runs=500)
-    assert {m["event_id"]: m["codename"] for m in fc["missions"]} == NAMES
+    assert {m["event_id"]: m["codename"] for m in fc["missions"] if m["codename"]} == NAMES
+    # Shore support windows carry no codename of their own; they are named after the ship event they prepare.
+    support = next(m for m in fc["missions"] if m.get("supports") == "EVT-KESSLER-01")
+    assert support["display"] == "Support TIDEWATCH"
     seashield = next(m for m in fc["missions"] if m["event_id"] == "EVT-KESSLER-02")
     assert next(g for g in seashield["gates"] if g["gate_id"] == "prereq:EVT-KESSLER-01")["label"] == "TIDEWATCH ready first"
     mission_node = next(n for n in domino_graph(fc, "KESSLER", "EVT-KESSLER-02")["nodes"] if n["kind"] == "mission")
@@ -64,6 +67,7 @@ def test_renaming_codename_in_source_renames_it_everywhere(data_dir, tmp_path, o
     assert prereq["label"].startswith("NIGHTJAR must ") and all("NIGHTJAR" in w for w in prereq["why"])
     fc = forecast(world, runs=500)
     assert next(m for m in fc["missions"] if m["event_id"] == "EVT-KESSLER-01")["codename"] == "NIGHTJAR"
+    assert next(m for m in fc["missions"] if m.get("supports") == "EVT-KESSLER-01")["display"] == "Support NIGHTJAR"
     text = build_brief(fc, "KESSLER", None, [], {}, [])["text"]
     assert "NIGHTJAR" in text and "TIDEWATCH" not in text
 

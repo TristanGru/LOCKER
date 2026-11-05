@@ -393,6 +393,8 @@ COLUMNS = {
     "insurv_findings.csv": ["ship_id", "inspection_date", "inspection_type", "eic", "finding_severity", "finding_summary",
                             "corrected", "as_of", "provenance"],
     "pii_redaction_test.csv": ["case_id", "ship_id", "input_text", "expected_redacted", "names_that_must_not_appear"],
+    "hazard_model.csv": ["hazard_id", "ship_id", "eic", "hazard_kind", "rate_per_day", "window_start", "p_trigger", "median_down_days",
+                         "sigma", "score", "title", "derivation", "public_source", "as_of", "provenance"],
 }
 PER_SHIP_CSV = ["sked_schedule.csv", "sked_loep.csv", "csmp.csv", "requisition_status.csv", "onboard_allowance_cosal.csv",
                 "roster.csv", "quals.csv", "watchbill.csv", "nec_billets.csv", "readiness_baseline.csv",
@@ -414,4 +416,6 @@ SPEC_OF_FILE = {
     "insurv_findings.csv": "18_insurv.md", "data_catalog.json": "19_catalog_and_assumptions.md",
     "delay_model_params.yaml": "19_catalog_and_assumptions.md", "scenario_feed.json": "00_README.md",
     "pii_redaction_test.csv": "20_fielded_access.md", "casrep_messages": "03_casrep.md",
+    "hazard_model.csv": "21_shore_installations.md", "shore_profile.json": "21_shore_installations.md",
+    "public_hazard_snapshot.json": "21_shore_installations.md",
 }

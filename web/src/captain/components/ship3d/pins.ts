@@ -29,7 +29,12 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
  * Resolve each system's mount on this hull and build its pin (sphere, stem, next-domino ring) plus an
  * HTML label in the overlay. Systems whose mount the hull lacks get no pin.
  */
-export function buildPins(info: HullInfo, systems: ShipSystem[], overlay: HTMLElement, onPick: (id: string) => void): PinSet {
+export function buildPins(
+  info: Pick<HullInfo, 'g' | 'mounts' | 'len' | 'labelAll'> & { pinAction?: string },
+  systems: ShipSystem[],
+  overlay: HTMLElement,
+  onPick: (id: string) => void,
+): PinSet {
   overlay.replaceChildren();
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('class', 's3-leaders');
@@ -82,7 +87,7 @@ export function buildPins(info: HullInfo, systems: ShipSystem[], overlay: HTMLEl
       el.type = 'button';
       el.className = 's3-lb' + (s.isNextDomino ? ' dom' : '') + (mt.side === 'dn' ? ' dn' : '');
       el.style.borderColor = meta.hex;
-      el.setAttribute('aria-label', `${s.name}: ${meta.label}${s.isNextDomino ? ', next domino' : ''}. Cut the ship open here.`);
+      el.setAttribute('aria-label', `${s.name}: ${meta.label}${s.isNextDomino ? ', next domino' : ''}. ${info.pinAction ?? 'Cut the ship open here.'}`);
       if (s.isNextDomino) {
         const cap = document.createElement('small');
         cap.className = 's3-dom';
@@ -122,9 +127,18 @@ type Box = { l: number; r: number; t: number; b: number };
 
 /**
  * Place labels for this frame: project each anchor, keep its fixed side (up/down), then nudge to avoid
- * overlap (up/down steps first, then sideways) and clamp inside the stage. Leader lines join label to pin.
+ * overlap (up/down steps first, then sideways) and clamp inside the clear part of the stage.
+ * `margin` keeps labels out of the filter bar and legend, which blur whatever sits behind them.
+ * Leader lines join label to pin.
  */
-export function layoutLabels(anchors: Anchor[], cam: THREE.Camera, w: number, h: number, hidden: (a: Anchor) => boolean) {
+export function layoutLabels(
+  anchors: Anchor[],
+  cam: THREE.Camera,
+  w: number,
+  h: number,
+  hidden: (a: Anchor) => boolean,
+  margin: { top: number; bottom: number } = { top: 2, bottom: 2 },
+) {
   const placed: Box[] = [];
   for (const a of anchors) {
     if (!a.el || !a.ln) continue;
@@ -147,7 +161,8 @@ export function layoutLabels(anchors: Anchor[], cam: THREE.Camera, w: number, h:
     const eh = a.el.offsetHeight;
     const s = (a.dn ? 1 : -1) * (eh + 4);
     const rect = (x: number, y: number): Box => ({ l: x - ew / 2, r: x + ew / 2, t: a.dn ? y : y - eh, b: a.dn ? y + eh : y });
-    const ok = (r: Box) => r.l >= 2 && r.r <= w - 2 && r.t >= 2 && r.b <= h - 2 && !placed.some((p) => r.l < p.r && r.r > p.l && r.t < p.b && r.b > p.t);
+    const ok = (r: Box) =>
+      r.l >= 2 && r.r <= w - 2 && r.t >= margin.top && r.b <= h - margin.bottom && !placed.some((p) => r.l < p.r && r.r > p.l && r.t < p.b && r.b > p.t);
     const base = py + (a.dn ? 20 : -10);
     const side = ew * 0.6 + 8;
     const tries: [number, number][] = [
@@ -172,7 +187,7 @@ export function layoutLabels(anchors: Anchor[], cam: THREE.Camera, w: number, h:
     let y = base + pick[1];
     const r0 = rect(x, y);
     x += Math.max(0, 2 - r0.l) - Math.max(0, r0.r - (w - 2));
-    y += Math.max(0, 2 - r0.t) - Math.max(0, r0.b - (h - 2));
+    y += Math.max(0, margin.top - r0.t) - Math.max(0, r0.b - (h - margin.bottom));
     placed.push(rect(x, y));
     a.el.style.left = x + 'px';
     a.el.style.top = y + 'px';
