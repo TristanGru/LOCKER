@@ -178,7 +178,7 @@ export function FixCard({
                       step={fix.param.step}
                       value={value}
                       onChange={(e) => setValue(Number(e.target.value))}
-                      className="mt-3 w-full accent-[#22d3ee]"
+                      className="mt-3 w-full accent-[rgb(var(--accent))]"
                     />
                     <span className="num flex justify-between text-xs text-ink-dim">
                       <span>

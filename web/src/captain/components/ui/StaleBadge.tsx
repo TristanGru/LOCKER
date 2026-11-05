@@ -8,7 +8,7 @@ export function StaleBadge({ hours, className, compact }: { hours: number; class
     <span
       title={`Source data is ${fmtAge(hours)}. Confirm before acting.`}
       className={clsx(
-        'stale-stripes inline-flex items-center gap-1.5 rounded-full border border-stale/50 font-semibold text-slate-200',
+        'stale-stripes inline-flex items-center gap-1.5 rounded-full border border-stale/50 font-semibold text-ink-muted',
         compact ? 'px-2 py-0.5 text-[0.7rem]' : 'px-2.5 py-1 text-xs',
         className,
       )}

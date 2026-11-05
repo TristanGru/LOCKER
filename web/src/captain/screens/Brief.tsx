@@ -11,6 +11,8 @@ import { StatusBadge } from '../components/ui/StatusBadge';
 import clsx from '../lib/clsx';
 import { useStore } from '../state/store';
 import { useApi } from '../state/useApi';
+import { parseBrief, type Item, type Section } from '../lib/briefText';
+import { PrintBrief } from './BriefPrint';
 import { STATUS, fmtAge, oddsStatus, pct } from '../theme/status';
 
 export function Brief() {
@@ -63,7 +65,17 @@ export function Brief() {
           No data is available for this mission yet.
         </EmptyState>
       )}
-      {briefQ.data && briefQ.data.sections.length > 0 && <BriefDoc brief={briefQ.data} missionCode={missions.find((m) => m.id === missionId)?.code} />}
+      {briefQ.data && briefQ.data.sections.length > 0 && (
+        <>
+          <div className="print:hidden">
+            <BriefDoc brief={briefQ.data} missionCode={missions.find((m) => m.id === missionId)?.code} />
+          </div>
+          {/* Paper gets its own dense, table-based layout. */}
+          <div className="hidden print:block">
+            <PrintBrief brief={briefQ.data} focusId={missionId} />
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -71,50 +83,6 @@ export function Brief() {
 // ---------------------------------------------------------------- parsing
 // The backend writes the brief as structured plain text (headings in capitals, "- " bullets, indented
 // continuation lines, [n] citations). This page only re-lays it out; the wording stays the backend's.
-
-interface Item {
-  text: string;
-  notes: string[];
-}
-interface Section {
-  key: string;
-  heading: string;
-  items: Item[];
-}
-interface Parsed {
-  asOf: string | null;
-  disclaimer: string[];
-  sections: Section[];
-}
-
-function parseBrief(text: string): Parsed {
-  const blocks = text
-    .replace(/\r/g, '')
-    .split(/\n\s*\n/)
-    .map((b) => b.split('\n').filter((l) => l.trim()))
-    .filter((b) => b.length);
-  const banner = (l: string) => /^SYNTHETIC\b/.test(l.trim());
-  const first = blocks.shift() ?? [];
-  const pre = first.filter((l) => !banner(l) && !/^READINESS BRIEF\b/.test(l.trim()));
-  const asOf = pre.find((l) => /^As of\b/.test(l)) ?? null;
-  const disclaimer = pre.filter((l) => l !== asOf);
-  const sections: Section[] = [];
-  for (const b of blocks) {
-    if (b.every(banner)) continue;
-    const isBullet = (l: string) => /^\s*- /.test(l);
-    const heading = isBullet(b[0]) ? '' : b[0].trim();
-    const key = heading.replace(/\s*\(.*\)$/, '').toUpperCase();
-    if (key === 'SOURCES') continue; // rendered from the structured citation list below
-    const items: Item[] = [];
-    for (const line of heading ? b.slice(1) : b) {
-      if (isBullet(line)) items.push({ text: line.replace(/^\s*- /, '').trim(), notes: [] });
-      else if (/^\s{2,}/.test(line) && items.length) items[items.length - 1].notes.push(line.trim());
-      else items.push({ text: line.trim(), notes: [] });
-    }
-    sections.push({ key, heading: heading || 'Notes', items });
-  }
-  return { asOf, disclaimer, sections };
-}
 
 const COLOR_STATUS: Record<string, Status> = { GREEN: 'ready', YELLOW: 'watch', RED: 'risk' };
 const titleCase = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
@@ -320,7 +288,7 @@ function Outlook({ items, Cited, highlight }: { items: Item[]; Cited: CitedT; hi
                 <div className="mt-0.5 text-sm leading-snug text-ink-muted print:text-black/70">{descParts[0]}</div>
                 {descParts[1] && <div className="num mt-0.5 text-xs text-ink-dim print:text-black/60">{descParts[1]}</div>}
               </div>
-              <span className={clsx('inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold', sm.text, sm.border)}>
+              <span className={clsx('inline-flex shrink-0 items-center gap-1 rounded-sm border px-2 py-0.5 text-xs font-bold', sm.text, sm.border)}>
                 <Icon className="h-3.5 w-3.5" aria-hidden /> {sm.label}
               </span>
             </div>

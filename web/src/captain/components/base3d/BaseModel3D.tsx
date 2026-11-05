@@ -236,7 +236,7 @@ function FacilityCard({ system: s, onOpen, onClose }: { system: ShipSystem; onOp
               <span className="font-mono">{s.tag}</span> · {s.department}
             </div>
           </div>
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold" style={{ color: meta.hex, borderColor: meta.hex }}>
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-sm border px-2 py-0.5 text-xs font-bold" style={{ color: meta.hex, borderColor: meta.hex }}>
             <Icon className="h-3.5 w-3.5" aria-hidden /> {meta.label}
           </span>
         </div>
@@ -325,7 +325,7 @@ function FacilityList({ systems, onOpen }: { systems: ShipSystem[]; onOpen: (id:
               type="button"
               onClick={() => onOpen(s.id)}
               aria-label={`${s.name}: ${meta.label}. Open its details.`}
-              className={clsx('flex w-full items-center gap-2.5 rounded-[10px] border border-line px-2.5 py-1.5 text-left text-sm transition hover:border-line-strong hover:bg-ink/[0.06]', s.isNextDomino && 'border-risk/70')}
+              className={clsx('flex w-full items-center gap-2.5 rounded border border-line px-2.5 py-1.5 text-left text-sm transition hover:border-line-strong hover:bg-ink/[0.06]', s.isNextDomino && 'border-risk/70')}
             >
               <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: meta.hex }} aria-hidden />
               <span className="min-w-0 flex-1 truncate text-ink" title={s.name}>

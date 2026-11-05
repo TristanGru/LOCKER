@@ -53,7 +53,7 @@ export function Overview() {
                   const Icon = id === 'installation' ? Building2 : id === 'ship' ? Anchor : null;
                   return (
                     <button key={id} type="button" aria-pressed={scope === id} onClick={() => setScope(id)}
-                      className={clsx('inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold transition', scope === id ? 'bg-accent/15 text-ink' : 'text-ink-muted hover:text-ink')}>
+                      className={clsx('inline-flex items-center gap-1.5 rounded-sm px-3 py-1 text-sm font-semibold transition', scope === id ? 'bg-accent/15 text-ink' : 'text-ink-muted hover:text-ink')}>
                       {Icon && <Icon className="h-3.5 w-3.5" aria-hidden />}{label} <span className="num text-xs text-ink-dim">{n}</span>
                     </button>
                   );
