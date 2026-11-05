@@ -308,8 +308,8 @@ def create_app(state: AppState | None = None) -> FastAPI:
 
     @app.post('/api/overview-assistant/brief')
     def overview_brief(body: OverviewRequest, request: Request):
-        if urlsplit('http://' + request.headers.get('host', '')).hostname not in {'127.0.0.1', 'localhost', '::1', 'testserver'}:
-            raise HTTPException(403, 'Overview assistant is local-only')
+        if not auth.assistant_host_allowed(request.headers.get('host', '')):
+            raise HTTPException(403, 'Overview assistant is not enabled on this host')
         origin = request.headers.get('origin')
         if origin and urlsplit(origin).netloc != request.headers.get('host'):
             raise HTTPException(403, 'Same-origin requests only')

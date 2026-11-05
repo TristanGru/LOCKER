@@ -312,8 +312,8 @@ def register_chat(app, get_state):
 
     def owner(request, response=None):
         host = request.headers.get('host', '')
-        if urlsplit('http://' + host).hostname not in {'127.0.0.1', 'localhost', '::1', 'testserver'}:
-            raise HTTPException(403, 'Local overview chat only')
+        if not auth.assistant_host_allowed(host):
+            raise HTTPException(403, 'Overview chat is not enabled on this host')
         origin = request.headers.get('origin')
         if origin and urlsplit(origin).netloc != host:
             raise HTTPException(403, 'Same-origin chat only')
