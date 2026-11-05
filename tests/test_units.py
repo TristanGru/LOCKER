@@ -141,7 +141,8 @@ def _timeout_transport():
 
 
 def test_llm_timeout_falls_back_to_template(tmp_path):
-    c = LLMClient(base_url="http://llm.invalid/v1", cache_dir=tmp_path, transport=_timeout_transport())
+    # demo_mode=False: CI sets MISSIONTWIN_DEMO_MODE=1, which would skip the endpoint this test times out.
+    c = LLMClient(base_url="http://llm.invalid/v1", cache_dir=tmp_path, demo_mode=False, transport=_timeout_transport())
     text, src, badge = llm_brief(c, {"x": 1}, "DRAFT [1]", 1, "k")
     assert text == "DRAFT [1]" and src == "template" and badge == FALLBACK_BADGE
     act, src, badge = nl_to_action(c, "shift mission A two days", {})
@@ -155,7 +156,8 @@ def test_nl_action_validated_and_cached(tmp_path):
         calls.append(1)
         body = {"choices": [{"message": {"content": json.dumps({"type": "shift_mission", "event_id": "EVT-KESSLER-01", "days": 2})}}]}
         return httpx.Response(200, json=body)
-    c = LLMClient(base_url="http://llm.test/v1", cache_dir=tmp_path, transport=httpx.MockTransport(handler))
+    # demo_mode=False: CI sets MISSIONTWIN_DEMO_MODE=1, which forces the offline fallback and returns no action.
+    c = LLMClient(base_url="http://llm.test/v1", cache_dir=tmp_path, demo_mode=False, transport=httpx.MockTransport(handler))
     a1, s1, _ = nl_to_action(c, "push mission A two days", {"ship": "KESSLER"})
     a2, s2, _ = nl_to_action(c, "push mission A two days", {"ship": "KESSLER"})
     assert a1.type == "shift_mission" and s1 == "llm" and s2 == "cache" and len(calls) == 1
