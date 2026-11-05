@@ -80,6 +80,12 @@ def test_model_only_selects_verified_claims_and_fallback(overview):
             assert task == 'overview'
             return validate({'fact_ids': ['counts'], 'evidence_ids': []}), 'llm'
     assert answer(FakeClient(), data, request)['method'] == 'llm'
+    class LongValidClient:
+        def run(self, task, messages, input_bytes, validate, **kwargs):
+            return validate({'fact_ids': [f['id'] for f in data['facts']], 'evidence_ids': []}), 'llm'
+    capped = answer(LongValidClient(), data, request)
+    assert capped['method'] == 'llm'
+    assert len(capped['fact_ids']) == 8
     class BadClient:
         def run(self, task, messages, input_bytes, validate, **kwargs):
             from missiontwin.llm import LLMUnavailable

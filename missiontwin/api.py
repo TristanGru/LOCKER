@@ -174,6 +174,8 @@ def create_app(state: AppState | None = None) -> FastAPI:
         return holder['s']
 
     app.state.get = S
+    from .overview_chat import register_chat
+    register_chat(app, S)
 
     from urllib.parse import urlsplit
     overview_slots = threading.BoundedSemaphore(2)
@@ -182,7 +184,7 @@ def create_app(state: AppState | None = None) -> FastAPI:
     def overview_status():
         s = S()
         return {'mode': 'live-capable' if s.client.configured else 'offline',
-                'model': s.client.model, 'generation': 'verified_fact_selection_only',
+                'model': s.client.model, 'generation': 'grounded_summaries_and_chat',
                 'embedding_model': 'Xenova/all-MiniLM-L6-v2', 'embedding_runtime': 'Transformers.js 3.8.1 / CPU WASM',
                 'local_assets_bundled': (ROOT / 'web/dist/models/overview-manifest.json').is_file(),
                 'vector_storage': 'browser_memory', 'fallback': 'structured_and_lexical'}

@@ -4,7 +4,7 @@ LOCKER connects synthetic maintenance, supply, personnel, training, and event da
 
 Backend setup and architecture: [MissionTwin backend](docs/BACKEND.md). AI configuration and forecast API: [DEV 2 guide](docs/DEV2.md). Synthetic exercise dataset: [data guide](data_sources/Synthetic%20Data/README.md). Naval station support: [shore implementation](docs/SHORE.md).
 
-Ship and Shore Overview now include a read-only source-backed Command brief with optional local MiniLM/Transformers.js search. See [overview assistant setup, usage and current limits](docs/OVERVIEW_ASSISTANT.md); model assets require a one-time explicit bundle step.
+Ship and Shore Overview now include floating Ask LOCKER chat with LLM-written summaries, inline source/calculation citations, session-only follow-ups, and optional local MiniLM/Transformers.js search. See [overview assistant setup, usage and current limits](docs/OVERVIEW_ASSISTANT.md); model assets require a one-time explicit bundle step.
 
 Broader roadmap: [Captain decision assistant implementation plan](docs/CAPTAIN_DECISION_ASSISTANT_PLAN.md) — a mission-specific decision brief, an existing OpenAI-compatible LLM endpoint, and optional Keystone-style browser semantic retrieval. This roadmap includes functionality beyond the initial overview assistant.
 

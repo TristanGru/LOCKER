@@ -34,7 +34,7 @@ from .domain import CACHE_DIR, ROOT, MONTHS, UTC, parse_dtg, SYSTEMS, COMPONENT_
 from .models import ActionAdapter, ExtractedFact, LLMFactsOut, action_schema
 
 PROMPT_VERSION = "2026-11-05.1"
-TIMEOUTS = {"extract": 30.0, "extract_casrep": 30.0, "nl_action": 15.0, "brief": 15.0, "overview": 10.0}
+TIMEOUTS = {"extract": 30.0, "extract_casrep": 30.0, "nl_action": 15.0, "brief": 15.0, "overview": 10.0, "overview_chat": 30.0}
 FALLBACK_BADGE = "LLM unavailable, using fallback"
 OFFLINE_BADGE = "Offline: no LLM endpoint configured"
 
@@ -112,14 +112,25 @@ class LLMClient:
         body = {"model": self.model, "messages": messages, "temperature": 0, "max_tokens": 4096,
                 "response_format": {"type": "json_object"}}
         last = None
-        for _ in range(2):  # 1 retry
+        failures = 0
+        while failures < 2:  # 1 retry; at most two explicit parameter adaptations.
             try:
                 with httpx.Client(timeout=timeout, transport=self.transport) as c:
                     r = c.post(f"{self.base_url}/chat/completions", headers=headers, json=body)
+                    if r.status_code == 400:
+                        error = r.json().get('error', {})
+                        unsupported = error.get('code') in {'unsupported_parameter', 'unsupported_value'}
+                        if unsupported and error.get('param') == 'max_tokens' and 'max_tokens' in body:
+                            body['max_completion_tokens'] = body.pop('max_tokens')
+                            continue
+                        if unsupported and error.get('param') == 'temperature' and 'temperature' in body:
+                            body.pop('temperature')  # Reasoning models may require their default.
+                            continue
                     r.raise_for_status()
                     return r.json()["choices"][0]["message"]["content"]
             except Exception as e:  # timeout, connection, HTTP, shape
                 last = e
+                failures += 1
         raise LLMUnavailable(f"{type(last).__name__}: {last}")
 
     def run(self, task: str, messages: list[dict], input_bytes: bytes, validate: Callable[[dict], object],

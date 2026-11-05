@@ -1,21 +1,79 @@
-# Ship and Shore Overview assistant
+# Ship and Shore Overview chat
 
-The overview pages include a floating **Ask LOCKER** button in the lower-right corner. It opens a non-modal **Command brief** side panel backed by the same accepted dataset and status projection as the overview cards. The assistant starts collapsed, takes no dashboard layout space, and loads data only when opened. Close/minimize it or press Escape to return focus to the launcher; closing also stops its embedding worker. It is read-only and marked as a synthetic exercise.
+Ask LOCKER now generates **natural-language summaries with inline citations** and supports bounded follow-up conversations. It remains read-only synthetic decision support, not an operational readiness authority.
 
-## Use
+Implementation/design reference: [conversational summaries and citations plan](OVERVIEW_CHAT_CITATIONS_PLAN.md).
 
-1. Open Ship Overview or Shore Overview, select a unit, and click **Ask LOCKER**.
-2. Read the verified system counts and attention items. Unknown and At-risk systems are ordered before healthy ones.
-3. Select a system/capability focus or apply an overview status filter.
-4. Expand **Loaded sources** for exact permitted recorded fields, file/row references and effective times. These fields are not predictions.
-5. Ask about status, loaded work/requisition records, record counts or existing dependencies.
-6. Optionally enable **local MiniLM semantic search** to rank relevant source records by meaning.
+## Using the assistant
 
-The panel regenerates when unit, focus, filter, source or scenario context changes. A stale request is rejected instead of mixing revisions. Refresh the brief if a question reports that its context changed. Evidence is delivered inline in the captured packet and can also be resolved through `/api/overview-assistant/evidence/{id}` with the packet's unit/context/version/revision parameters. `/api/overview-assistant/status` reports safe mode and local-model capability metadata. Neither endpoint is an unrestricted raw-file browser.
+1. Open Ship Overview or Shore Overview and select the unit.
+2. Click the floating **Ask LOCKER** button. It stays collapsed by default and takes no dashboard layout space.
+3. Choose **Summarize this ship/installation**, or enter your own question. Opening the panel does not automatically incur a generation request.
+4. Read the concise bottom line, explanation, dependencies and uncertainty sections.
+5. Click an inline citation such as **[1]**. The source view identifies the recorded fields, model assessment or calculation, source revision and exercise time.
+6. Use **Back to conversation** and ask a follow-up. Enter sends; Shift+Enter inserts a line.
 
-## Local embedding setup
+The panel supports system/capability focus and explicit status filters. **New conversation** clears the active context. Closing/minimizing or pressing Escape returns focus to the launcher and stops the embedding worker. Reopening restores the session, including historical citations. Cancel stops response display; a request already sent to the server may finish and be restored later.
 
-With frontend dependencies installed, run once on a connected machine:
+A changed source/scenario marks the conversation historical. Start a new conversation before asking about current state. Historical citation evidence is retained with its message; it is never silently replaced with newer source contents.
+
+## What the LLM can do
+
+- Summarize the selected overview in plain language rather than selecting prewritten fact strings.
+- Explain currently modeled statuses using available input explanations and recorded evidence.
+- Answer supported record/count/dependency questions and conversational follow-ups.
+- Identify missing, assumed, stale or partial evidence and ask for clarification.
+
+There is no general-purpose tool loop or mutation capability. Chat cannot approve fixes, edit sources, run simulations or issue operational orders. Unsupported questions should receive limitations or clarification, not fabricated data. Existing application workflows remain separate.
+
+## Citations and numerical fidelity
+
+Every factual generated sentence must cite server-issued support IDs. The application validates the structured response and adds the visible citation numbers. The model never chooses arbitrary file paths or citation URLs.
+
+Evidence classes:
+
+- **Reported/assumed source:** exercise-time visible, allowlisted CSV fields with original file/row locators and freshness metadata.
+- **Modeled assessment:** an existing system/gate result, its metric basis and available input explanations/references.
+- **Calculated result:** backend counts and queries with filters, units and contributing record identifiers.
+- **Coverage:** explicitly disclosed evidence limitations.
+
+Dates, numeric values, identifiers and exact status values use typed value segments inserted from the captured backend support. Generated connecting text cannot contain numeric literals or URLs. Unknown supports, field references, headings and malformed output are rejected. One bounded correction attempt is allowed before a visibly labeled cited deterministic fallback.
+
+Source views expose values, calculation filters, assumptions, input locators and underlying retained records where available. **Lineage is explicitly partial for model assessments/dependencies**; a related row is not by itself proof of causality. Valid citation syntax does not prove the generated prose follows from its evidence. Human-reviewed factual/usefulness evaluation remains necessary, particularly for causal interpretation.
+
+Ready-system share is a count-based overview metric, not mission success probability. Material-capability samples, event-interval gates, reported values and scenario overlays remain distinct. Regional hazards are model assumptions, not observed real installation failures. Mock installation labels remain in effect.
+
+## Conversation storage and privacy
+
+- Conversations are stored in server memory only: up to 32 sessions, 20 user/assistant exchanges each, a 30-minute idle expiry and a global memory budget.
+- A browser session cookie (`HttpOnly`, `SameSite=Strict`) scopes conversation ownership. Only opaque conversation IDs are kept in browser session storage to restore the panel.
+- Recent user/assistant turns supply conversational context, not additional evidence. Each answer retrieves eligible supports again and checks state before returning.
+- Host/origin/fetch-site checks protect chat routes. This local prototype is not authenticated multi-user deployment.
+- No raw chat/prompt logging is enabled by the chat service. Requests to a configured cloud model do transmit the selected redacted context; local key storage does not make that traffic local.
+- Restart loses in-memory conversations. Deleted/expired sessions are not recreated under their old IDs.
+
+## Generation endpoint and `.env`
+
+Keep `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY` and `MISSIONTWIN_DEMO_MODE=0` in repository-root local `.env`. Do not overwrite an existing configuration, use `VITE_*` secrets, commit keys or paste them into chat. `.env` is Git-ignored; OneDrive may still sync it, so use a non-synced checkout for strict local-only secret storage.
+
+The Python backend alone contacts the provider. The client supports explicit provider adaptations from `max_tokens` to `max_completion_tokens`, and omits temperature when the model requires its default. It does not drop output validation.
+
+Build the frontend, then use the direct API launcher for live generation:
+
+```powershell
+npm --prefix web run build
+.\.venv\Scripts\python.exe -m uvicorn missiontwin.api:app --host 127.0.0.1 --port 8000
+```
+
+The `missiontwin.demo` launcher intentionally forces offline behavior. Process environment overrides `.env`; restart the backend after configuration changes. Live mode can also enable existing document extraction. Use approved synthetic data and an approved endpoint.
+
+Live, cached and template responses are visibly distinct. Safe fallback categories distinguish offline/context limits, invalid answers/citations, timeout, provider rejection/unavailability and privacy-guard failures. There is no token streaming: the answer is displayed only after validation.
+
+## Local MiniLM / Transformers.js
+
+Optional semantic retrieval uses **`Xenova/all-MiniLM-L6-v2`**, pinned revision `751bff37182d3f1213fa05d7196b954e230abad9`, through **Transformers.js 3.8.1** in a Web Worker. It uses quantized ONNX, CPU/WASM, 384-dimensional mean-pooled normalized vectors. Remote-model downloads are disabled at runtime.
+
+Bundle assets once on a connected build machine:
 
 ```powershell
 cd web
@@ -25,58 +83,46 @@ cd ..
 npm --prefix web run build
 ```
 
-The script downloads **`Xenova/all-MiniLM-L6-v2`**, pinned to revision `751bff37182d3f1213fa05d7196b954e230abad9`, with the quantized ONNX model and tokenizer files. It copies matching WASM assets from **Transformers.js 3.8.1**. A manifest records artifact SHA-256 hashes and configuration.
+Generated model/runtime directories under `web/public/` are ignored by Git. The bundle script pins model revision, records hashes and copies runtime notices; retain applicable model/runtime licenses when redistributing. Copy the generated assets before an air-gapped build, or transfer the complete built `web/dist`.
 
-Generated assets live in `web/public/models/` and `web/public/wasm/`, are copied into `web/dist/` by Vite, and are ignored by Git. For an air-gapped machine, copy these generated directories from a trusted connected build before building, or transfer the complete built `web/dist`. Do not assume a fresh checkout already contains model weights. Retain the upstream model/runtime licenses with any redistributed bundle; the model card is at https://huggingface.co/Xenova/all-MiniLM-L6-v2.
+Enable the checkbox in the panel to use semantic ranking. Missing assets, unsupported inference, worker timeout or an oversized corpus fall back to lexical/structured retrieval. Vectors are packet-scoped browser memory only, unloaded after idle timeout or closing the panel. No LanceDB, persistent vector uploads or WebGPU are included.
 
-Runtime inference runs in a browser Web Worker through Transformers.js, using **CPU/WASM**, 384-dimensional vectors, mean pooling and normalization. Remote-model downloads are disabled. No WebGPU is enabled in this release. Vectors are packet-scoped in browser memory, unloaded after five idle minutes; there is **no persistent LanceDB index or browser-to-server vector upload**. The server accepts only eligible evidence IDs as semantic ranking hints, never client-provided numerical facts.
+Embeddings rank a bounded eligible-record subset, not a whole-table numerical population. All counts/values still come from backend queries or engine results. The Node-only `sharp` dependency is overridden to `0.35.5` to avoid older-libvips advisories; existing moderate React Router audit findings remain outside this change.
 
-The first semantic question loads the local model; expect a cold-start delay. The worker has a timeout and record/context bounds. If assets are absent, inference fails, the corpus is too large, or the browser cannot run the worker, the panel falls back to exact/lexical retrieval. Semantic retrieval ranks a bounded subset (up to 300 records), not an entire-population numerical query.
+## API and implementation
 
-The transitive Node-only `sharp` dependency is overridden to `0.35.5` to avoid the audited older-libvips advisories; this application uses the browser text feature-extraction path, not Node image processing. Existing React Router moderate audit findings remain outside this change.
+- `POST /api/overview-assistant/conversations`: establish context and receive its packet.
+- `GET /api/overview-assistant/conversations/{id}`: restore messages and report stale state.
+- `POST /api/overview-assistant/conversations/{id}/messages`: answer a bounded question with validated prose/citations.
+- `DELETE /api/overview-assistant/conversations/{id}`: clear that conversation.
+- Existing overview brief/evidence/status endpoints remain compatible.
 
-## LLM configuration
-
-The embedding model and generation endpoint are separate. MiniLM runs locally; optional generation uses the backend's existing OpenAI-compatible service.
-
-Create `.env` from `.env.example` only if `.env` does not already exist. Set `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY` and `MISSIONTWIN_DEMO_MODE=0`. Never commit actual values or use a `VITE_*` secret. The backend reads the key; the browser does not. `.env` is ignored by Git, but OneDrive may still sync it—use a non-synced checkout for strict local-only storage.
-
-The `missiontwin.demo` launcher intentionally remains offline. To allow live model calls, build the frontend and run the direct API on an available loopback port:
-
-```powershell
-.\.venv\Scripts\python.exe -m uvicorn missiontwin.api:app --host 127.0.0.1 --port 8011
-```
-
-Live mode can also activate existing document extraction. Use approved synthetic data and an approved endpoint. Local key storage does not make cloud requests local.
-
-In this initial release the LLM **selects and orders verified fact/evidence IDs**, rather than generating unrestricted prose or numbers. This intentionally prevents invented metrics and unsupported causal statements. Invalid output, unavailable service or oversized context returns template facts. No live endpoint quality claim is made by the mock tests.
-
-## Numerical and evidence boundary
-
-- Status and count calculations come from the shared backend projection, not embeddings or the LLM.
-- Recorded CSV values are hydrated from exercise-time visible typed rows.
-- Requisition histories are resolved at the current exercise cursor; raw future history strings are never returned.
-- Supported evidence tables: work (`csmp`), requisitions, training, certifications, onboard allowance and hazard model. Fields are explicitly allowlisted; the panel does not expose whole files or roster names.
-- A loaded row is not necessarily a modeled blocker. Where no supported row links to a modeled system assessment, the brief explicitly discloses that gap.
-- Whole-unit counts differ from filtered/focused counts. Table row counts cover the complete eligible rows after focus linkage, not top-k semantic matches. They are **not** counts of only open jobs, transfer-eligible stock or expired qualifications.
-- Ready-system share is not mission success probability. Material samples and event-interval gates retain distinct labels.
-- Current scenario overlays influence modeled status, while recorded source values remain unchanged.
-
-## Current limitations / remaining plan work
-
-This is the first bounded overview implementation, not completion of every roadmap item. It does not provide arbitrary joins/sums/date-range queries, qualification searches, narrative/PDF RAG, free-form generated explanations, persistent vector indexes, full calculation-input lineage for every gate, durable chat, or operational authentication. Source gaps and unsupported requests are disclosed rather than guessed. It does not apply actions, rank fixes or run what-if simulations.
-
-The overview POST rejects cross-origin browser requests and validates unit/focus/version/revision/packet identity. Broader host/session/CSRF hardening and access controls remain required before any nonlocal or operational deployment. Do not expose the demo to an untrusted network.
+Main files: `missiontwin/overview_chat.py`, `missiontwin/overview.py`, `web/src/captain/components/overview-assistant/OverviewChat.tsx` and `OverviewAssistantPanel.tsx`.
 
 ## Verification
 
-Local verification on Windows/Edge: **146 backend tests passed**, frontend typecheck/build passed, and the isolated acceptance runner passed **15 browser tests**, including real MiniLM/WASM inference with no external HTTP requests. The CI workflow now explicitly bundles model assets before browser acceptance; hosted CI and a live generation endpoint have not been verified in this change.
+Local release checks: **156 backend tests passed**, frontend typecheck/build passed, and **16 isolated browser tests passed**. Opt-in live evaluation completed ship and shore summaries plus one follow-up each: all four returned `llm` responses with resolvable citation maps (roughly 14–31 seconds in that run). Model lineage was correctly labeled partial. One shore explanation was manually inspected for reported-versus-modeled qualifiers; this limited review is not a general factuality guarantee or operational certification. Hosted CI was not exercised locally.
 
+Backend and browser tests cover schema/value/citation rejection, correction/fallback, read-only behavior, owner isolation, stale/expired conversations, bounded memory/busy requests, follow-up context, history restoration, source views, keyboard/mobile behavior and local MiniLM inference without external HTTP requests.
+
+The backend regression suite isolates model environment variables automatically in `tests/conftest.py`, so a developer's live `.env` cannot accidentally turn ordinary tests into provider requests. Mock transport/configuration tests explicitly override those defaults as needed.
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
 npm --prefix web run typecheck
-npm --prefix web run build
+.\.venv\Scripts\python.exe scripts/check_demo.py
 ```
 
-`web/tests/overview-assistant.spec.ts` tests ship/shore source cards, refusal of actions and actual local MiniLM inference. Run it against an owned isolated server using `LOCKER_URL`; it does not reset the server's exercise. The semantic test requires the bundled assets and a supported browser. It monitors requests to verify that inference makes no external HTTP requests.
+`scripts/check_demo.py` owns temporary source copies, logs and its acceptance server; it does not reset an existing server on 8000.
+
+Opt-in live smoke evaluation against an existing local server:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/evaluate_overview_chat.py --allow-live
+```
+
+The evaluator creates/deletes its own conversations and reports method, citations, word count and latency only. It does not reset the exercise or print credentials/source excerpts. Structural success is not a substitute for factual support/usefulness review.
+
+## Remaining limits
+
+Arbitrary joins/sums/date-range queries, full PDF narrative RAG, durable review snapshots, persistent vector indexing and operational authentication remain outside this release. Free-form language can misinterpret evidence despite structural validation; review the cited source and model assumptions before relying on a conclusion. The interface must not be exposed to an untrusted network or loaded with operational/personnel data without a separate authorization and assurance effort.

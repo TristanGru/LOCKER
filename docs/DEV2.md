@@ -12,7 +12,7 @@ Copy `.env.example` to `.env` in the repository root, only if `.env` does not al
 | `MISSIONTWIN_DEMO_MODE` | `0` while generating responses; `1` for offline replay |
 
 The app and CLI load `.env` automatically. Process environment variables take precedence. `.env` is ignored by Git.
-The endpoint must support `/chat/completions`, JSON-object response format, `temperature: 0`, and `max_tokens`.
+The endpoint must support `/chat/completions` and JSON-object response format. The client starts with `temperature: 0` and `max_tokens`; for explicit provider parameter errors it adapts to `max_completion_tokens` and/or omits `temperature` for models that require their default. It does not remove JSON-output validation.
 No provider is preselected and no live-model results are bundled.
 
 ## Prepare and verify the offline demo

@@ -15,6 +15,7 @@ playwright-report/
 
 # App runtime output (activity log is the app's own, never a source record)
 logs/
+cache/llm/
 data/normalized/
 data/demo-refresh/
 data/demo-json/
