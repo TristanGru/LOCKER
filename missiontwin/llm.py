@@ -112,7 +112,13 @@ class LLMClient:
         return None
 
     def cache_put(self, key: str, task: str, input_bytes: bytes, output: dict):
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+            self._write_cache(key, task, input_bytes, output)
+        except OSError:
+            pass  # a read-only disk (serverless hosting) only loses the cache; the answer is still returned
+
+    def _write_cache(self, key: str, task: str, input_bytes: bytes, output: dict):
         rec = {"task": task, "prompt_version": PROMPT_VERSION, "model": self.model,
                "input_sha256": hashlib.sha256(input_bytes).hexdigest(), "output": output}
         # Replace atomically so an interrupted write cannot destroy an existing entry.
