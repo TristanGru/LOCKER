@@ -1215,6 +1215,8 @@ def _forecast(world: World, n: int, seed: int, detail: bool) -> dict:
                                            else f"{parent.display} ready first")
             row = {"gate_id": gid, "kind": g["kind"] if g else "prereq", "label": g["label"] if g else prereq_label,
                    "p_ok": float(arr.mean()), "uplift": uplift}
+            if g and g.get("min") is not None:
+                row["min_score"] = float(g["min"])  # the capability score this requirement needs
             if detail:
                 row.update(_gate_detail(world, world.ships[s], m, g, r[s], G, n) if g else
                            {'items': [], 'sources': [s.model_dump() for s in _mission(world, gid[7:]).sources]})

@@ -32,10 +32,10 @@ export function Header() {
         </span>
       </div>
 
-      <label className="flex min-w-0 shrink items-center gap-2 text-[0.78rem] font-semibold uppercase tracking-[0.06em] text-ink-dim">{ashore ? 'Installation' : 'Ship'}<select aria-label={ashore ? 'Selected installation' : 'Selected ship'} value={ship} onChange={e=>changeShip(e.target.value)} disabled={choices.length < 2} title={choices.length < 2 ? 'Your account covers this unit only' : undefined} className="min-w-[9rem] max-w-[14rem] truncate rounded border border-line-strong bg-abyss-950 px-2.5 py-1.5 disabled:opacity-100 text-sm font-semibold normal-case tracking-normal text-ink">{choices.map((s: any)=><option key={s.ship_id} value={s.ship_id}>{s.name}</option>)}</select></label>
+      <label className="flex min-w-[7rem] shrink items-center gap-2 text-[0.78rem] font-semibold uppercase tracking-[0.06em] text-ink-dim min-[1440px]:min-w-[14rem]"><span className="hidden shrink-0 min-[1440px]:inline">{ashore ? 'Installation' : 'Ship'}</span><select aria-label={ashore ? 'Selected installation' : 'Selected ship'} value={ship} onChange={e=>changeShip(e.target.value)} disabled={choices.length < 2} title={choices.length < 2 ? 'Your account covers this unit only' : undefined} className="w-[14rem] min-w-[7rem] max-w-full shrink truncate rounded border border-line-strong bg-abyss-950 px-2.5 py-1.5 disabled:opacity-100 text-sm font-semibold normal-case tracking-normal text-ink">{choices.map((s: any)=><option key={s.ship_id} value={s.ship_id}>{s.name}</option>)}</select></label>
       {data && (
-        <div className="hidden min-w-0 items-center truncate border-l border-line pl-4 text-sm text-ink-muted 2xl:flex">
-          <span className="shrink-0">
+        <div className="hidden min-w-0 shrink-[8] items-center truncate border-l border-line pl-4 text-sm text-ink-muted 2xl:flex">
+          <span className="min-w-0 truncate">
             {data.ship.kind==='installation' ? 'next support in' : 'deploys in'} <span className="num font-semibold text-ink">{data.ship.deployInDays}</span> days
           </span>
         </div>
