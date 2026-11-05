@@ -30,9 +30,11 @@ function photoUV(geo: THREE.BufferGeometry, s: PhotoMeta['scene']) {
 const PHOTO_HIDES = /^(waterfront_road|quay\d|apron\d|runway|context_)/;
 export type MountPoints = Record<string, [number, number, number]>;
 
-/** Camera offsets from the view target, for the traced waterfront and for the small stylized layout. */
-const OFFSETS: Record<'outline' | 'stylized', Record<BaseView, [number, number, number]>> = {
+/** Camera offsets from the view target: the traced waterfront, a traced compound (water to its north), and the stylized layout. */
+type Frame = 'outline' | 'site' | 'stylized';
+const OFFSETS: Record<Frame, Record<BaseView, [number, number, number]>> = {
   outline: { overhead: [0, 205, 34], iso: [62, 58, 92], waterfront: [10, 24, 118] },
+  site: { overhead: [12, 82, 0], iso: [30, 30, 44], waterfront: [-64, 15, 10] }, // overhead looks north-up
   stylized: { overhead: [0, 235, 20], iso: [-105, 92, 118], waterfront: [0, 38, 165] },
 };
 const IDLE_FRAME_MS = 80; // Water and rings animate slowly; this keeps idle CPU low, especially on software WebGL.
@@ -259,6 +261,29 @@ function buildOutline(layout: BaseLayout, points: MountPoints, M: Mats) {
   return g;
 }
 
+/** A compound without a traced waterfront: ground the photo drapes over, the public site boundary, invented facilities. */
+function buildSite(boundary: [number, number][], points: MountPoints, M: Mats) {
+  const g = new THREE.Group();
+  g.name = 'base_layout';
+  const xs = boundary.map((p) => p[0]);
+  const zs = boundary.map((p) => p[1]);
+  const pad = 29.5; // just inside the photo's 30-unit surround (scripts/build_shore_imagery.py), so its edge never smears
+  const [x0, x1, z0, z1] = [Math.min(...xs) - pad, Math.max(...xs) + pad, Math.min(...zs) - pad, Math.max(...zs) + pad];
+  plate(g, 'land', M.land, [[x0, z0], [x1, z0], [x1, z1], [x0, z1]], 0.2, 0);
+  boundary.forEach(([xa, za], i) => {
+    const [xb, zb] = boundary[(i + 1) % boundary.length];
+    strip(g, `site_boundary${i}`, M.mark, xa, za, xb, zb, 0.18, 0.32, 0.12);
+  });
+  // Invented facility positions at roughly true size (10 m per unit).
+  for (const [id, [x, , z]] of Object.entries(points)) {
+    const item = facility(id, M);
+    item.position.set(x, 0.2, z);
+    item.scale.setScalar(0.12);
+    g.add(item);
+  }
+  return g;
+}
+
 function buildStylized(points: MountPoints, M: Mats) {
   const g = new THREE.Group();
   g.name = 'base_layout';
@@ -300,7 +325,8 @@ export class BaseScene {
   private lastFrame = 0;
   private animate = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   private target: THREE.Vector3;
-  /** Aerial-photo ground (Norfolk layout only): photo over the land slab plus a photo layer at water level. */
+  private frame: Frame;
+  /** Aerial-photo ground (traced layouts only): photo over the land slab plus a photo layer at water level. */
   private photo: { mat: THREE.MeshStandardMaterial; water: THREE.Mesh; land: THREE.Mesh | null; plainMat: THREE.Material | null; attribution: string } | null = null;
   private ground: Ground = 'photo';
   private disposed = false;
@@ -315,6 +341,7 @@ export class BaseScene {
     private overlay: HTMLElement,
     points: MountPoints,
     private layout: BaseLayout | null,
+    photoFile: string | null,
     private onPick: (id: string) => void,
     private onError: (error: unknown) => void,
     onPhoto?: (attribution: string) => void,
@@ -346,7 +373,8 @@ export class BaseScene {
     this.scene.background = this.sky;
     this.scene.fog = new THREE.Fog(new THREE.Color(SKY_HORIZON), layout ? 240 : 320, layout ? 760 : 1100);
     this.scene.add(new THREE.HemisphereLight(0xdfeaf5, 0x59615a, 1.35));
-    this.target = pointsCenter(points, layout);
+    this.frame = !layout ? 'stylized' : layout.boundary?.length && !layout.shoreline.length ? 'site' : 'outline';
+    this.target = pointsCenter(points, layout, this.frame);
     const sun = new THREE.DirectionalLight(0xfff0d8, 2.4);
     const reach = layout ? 150 : 180;
     sun.position.copy(this.target).add(V(-110, 150, 70));
@@ -361,7 +389,8 @@ export class BaseScene {
     this.normal = water.normal;
     water.mesh.position.set(this.target.x, 0, this.target.z);
     this.scene.add(water.mesh);
-    this.layoutGroup = layout ? buildOutline(layout, points, this.mats) : buildStylized(points, this.mats);
+    this.layoutGroup =
+      this.frame === 'site' ? buildSite(layout!.boundary!, points, this.mats) : layout ? buildOutline(layout, points, this.mats) : buildStylized(points, this.mats);
     this.layoutGroup.traverse((o) => {
       if ((o as THREE.Mesh).isMesh && o.name !== 'land') {
         o.castShadow = true;
@@ -369,7 +398,7 @@ export class BaseScene {
       } else if (o.name === 'land') o.receiveShadow = true;
     });
     this.scene.add(this.layoutGroup, this.shipGroup);
-    if (layout) void this.loadPhoto(onPhoto);
+    if (layout && photoFile) void this.loadPhoto(photoFile, onPhoto);
     for (const [id, [x, y, z]] of Object.entries(points)) this.mounts[id] = mk(x, y + 4, z, 'up', y - 0.5);
 
     this.resize();
@@ -438,9 +467,9 @@ export class BaseScene {
   }
 
   /** Public-domain aerial photo under the traced layout. Bundled with the app; absent file = plain ground. */
-  private async loadPhoto(onPhoto?: (attribution: string) => void) {
+  private async loadPhoto(file: string, onPhoto?: (attribution: string) => void) {
     try {
-      const res = await fetch(`${import.meta.env.BASE_URL}shore/norfolk_naip.json`);
+      const res = await fetch(`${import.meta.env.BASE_URL}shore/${file}`);
       if (!res.ok) return;
       const meta = (await res.json()) as PhotoMeta;
       const tex = await new THREE.TextureLoader().loadAsync(`${import.meta.env.BASE_URL}shore/${meta.image}`);
@@ -501,9 +530,9 @@ export class BaseScene {
   /** Camera pose for the current named view. Pulls back on narrow panels so the waterfront stays in frame. */
   private framePose() {
     const fit = Math.max(1, 1.45 / this.cam.aspect);
-    const [x, y, z] = OFFSETS[this.layout ? 'outline' : 'stylized'][this.currentView];
+    const [x, y, z] = OFFSETS[this.frame][this.currentView];
     // The overhead view looks further inland so the toolbar doesn't cover facilities behind the waterfront.
-    const inland = this.layout && this.currentView === 'overhead' ? -22 : 0;
+    const inland = this.frame === 'outline' && this.currentView === 'overhead' ? -22 : 0;
     return {
       pos: V(this.target.x + x * fit, this.target.y + y * fit, this.target.z + inland + z * fit),
       target: V(this.target.x, this.target.y, this.target.z + inland),
@@ -540,7 +569,7 @@ export class BaseScene {
     this.userMoved = true;
     this.selected = id;
     this.markSelected();
-    const dist = this.layout ? 40 : 72;
+    const dist = this.frame === 'site' ? 24 : this.layout ? 40 : 72;
     const bearing = this.cam.position.clone().sub(this.ctl.target).setY(0);
     if (bearing.lengthSq() < 1e-6) bearing.set(0, 0, 1);
     bearing.normalize();
@@ -651,8 +680,12 @@ export class BaseScene {
 }
 
 /** The default view centers on the unit's status-bearing facilities. */
-function pointsCenter(points: MountPoints, layout: BaseLayout | null) {
+function pointsCenter(points: MountPoints, layout: BaseLayout | null, frame: Frame) {
   if (!layout) return V(0, 2, -6);
+  if (frame === 'site') {
+    const b = layout.boundary!;
+    return V(b.reduce((sum, p) => sum + p[0], 0) / b.length, 1, b.reduce((sum, p) => sum + p[1], 0) / b.length);
+  }
   const piers = Object.entries(points).filter(([id]) => id.startsWith('pier_')).map(([, p]) => p);
   const from = piers.length ? piers : Object.values(points);
   return V(from.reduce((sum, p) => sum + p[0], 0) / from.length, 2, from.reduce((sum, p) => sum + p[2], 0) / from.length - 12);
