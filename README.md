@@ -4,6 +4,8 @@ LOCKER connects synthetic maintenance, supply, personnel, training, and event da
 
 Backend setup and architecture: [MissionTwin backend](docs/BACKEND.md). AI configuration and forecast API: [DEV 2 guide](docs/DEV2.md). Synthetic exercise dataset: [data guide](data_sources/Synthetic%20Data/README.md). Naval station support: [shore implementation](docs/SHORE.md).
 
+Planned next increment: [Captain decision assistant implementation plan](docs/CAPTAIN_DECISION_ASSISTANT_PLAN.md) — a mission-specific decision brief, an existing OpenAI-compatible LLM endpoint, and optional Keystone-style browser semantic retrieval. This is a roadmap, not shipped functionality.
+
 **Synthetic exercise only. Not an operational readiness authority.** There is no authentication or real-system connector. Do not expose this local demo to an untrusted network or load operational/personnel data into it.
 
 ## Start locally
