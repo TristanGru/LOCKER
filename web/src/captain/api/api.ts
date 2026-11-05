@@ -126,7 +126,11 @@ async function getShip():Promise<T.ShipPayload> {
     const index=Math.max(0,d.forecast.grid_dates.map((t:string)=>Date.parse(t)<=Date.parse(d.state.cursor)).lastIndexOf(true));
     const material=d.forecast.ships[ship].system_p_ok[s.eic]?.[index];
     const p=gates.length ? (gates.every((g:any)=>g.p_ok!=null)?Math.min(...gates.map((g:any)=>g.p_ok)):NaN) : probability(material ?? null);
-    return {id:gates.length?`${raw.find((m:any)=>m.gates.some((g:any)=>g.gate_id==='system:'+s.eic)).event_id}|system:${s.eic}`:'system:'+s.eic,name:s.eic==='HELO'?'Helo deck':s.name,tag:s.eic,department:(ashore?areaNames[s.mission_areas[0]]:s.mission_areas[0]) || 'Other',deck:!ashore && ['engine_p','engine_s','genset_1','genset_2','chill','sonar'].includes(s.mounts[0])?'below':'top',location:ashore?'Illustrative base layout':'Illustrative DDG mount',mount:s.mounts[0] || null,status:oddsStatus(p),reason:Number.isNaN(p)?'Insufficient evidence':gates.length?`Worst scheduled event-interval requirement: ${pct(p)}`:`Material capability (score >= 0.6), nearest forecast sample: ${pct(p)}. Not an event-interval gate.`,dataAgeHours:sourceAge(d,gates.flatMap((g:any)=>g.items.flatMap((i:any)=>i.sources || []))),stale:gates.some((g:any)=>g.items.some((i:any)=>(i.sources || []).some((r:any)=>Object.keys(d.issues.stale).some(f=>r.file.startsWith(f))))),sourceIds:sources(gates.length?gates.flatMap((g:any)=>g.items.flatMap((i:any)=>i.sources || [])):[{file:ashore?'squadron/shore_profile.json':'squadron/mission_equipment_tree.json',key:s.eic}]),isNextDomino:focus?.nextDominoId?.endsWith('system:'+s.eic) || false,dominoVia:null};
+    return {id:gates.length?`${raw.find((m:any)=>m.gates.some((g:any)=>g.gate_id==='system:'+s.eic)).event_id}|system:${s.eic}`:'system:'+s.eic,name:s.eic==='HELO'?'Helo deck':s.name,tag:s.eic,department:(ashore?areaNames[s.mission_areas[0]]:s.mission_areas[0]) || 'Other',deck:!ashore && ['engine_p','engine_s','genset_1','genset_2','chill','sonar'].includes(s.mounts[0])?'below':'top',location:ashore?'Illustrative base layout':'Illustrative DDG mount',mount:s.mounts[0] || null,status:oddsStatus(p),reason:Number.isNaN(p)?'Insufficient evidence':gates.length?`Worst scheduled event-interval requirement: ${pct(p)}`:`Material capability (score >= 0.6), nearest forecast sample: ${pct(p)}. Not an event-interval gate.`,dataAgeHours:sourceAge(d,gates.flatMap((g:any)=>g.items.flatMap((i:any)=>i.sources || []))),stale:gates.some((g:any)=>g.items.some((i:any)=>(i.sources || []).some((r:any)=>Object.keys(d.issues.stale).some(f=>r.file.startsWith(f))))),sourceIds:sources(gates.length?gates.flatMap((g:any)=>g.items.flatMap((i:any)=>i.sources || [])):[{file:ashore?'squadron/shore_profile.json':'squadron/mission_equipment_tree.json',key:s.eic}]),isNextDomino:focus?.nextDominoId?.endsWith('system:'+s.eic) || false,dominoVia:null,
+      p,
+      missions:raw.filter((m:any)=>m.gates.some((g:any)=>g.gate_id==='system:'+s.eic)).map((m:any)=>({id:m.event_id,code:code(m),p:probability(m.gates.find((g:any)=>g.gate_id==='system:'+s.eic).p_ok)})),
+      evidence:gates.flatMap((g:any)=>(g.items || []).map((i:any)=>({title:i.title,detail:(i.explain || []).join(' ') || '',p:probability(i.p_available_interval ?? (i.p_active_at_mission!=null?1-i.p_active_at_mission:g.p_ok))})))
+        .filter((e:any,k:number,all:any[])=>all.findIndex((x:any)=>x.title===e.title)===k).sort((a:any,b:any)=>(a.p||0)-(b.p||0)).slice(0,4)};
   });
   const tally=(xs:T.ShipSystem[])=>({ready:xs.filter(s=>s.status==='ready').length,watch:xs.filter(s=>s.status==='watch').length,risk:xs.filter(s=>s.status==='risk').length,unknown:xs.filter(s=>s.status==='unknown').length});
   const counts=tally(systems);
@@ -175,8 +179,22 @@ async function getFixes(missionId:string):Promise<T.FixesPayload> {
   const note=helpful.length ? ranking.note : fixes.length
     ? `None of the ${fixes.length} ranked options changes this event.${elsewhere.length ? ` They help ${elsewhere.join(', ')}; pick that event above.` : ''}`
     : ranking.note;
+  // Decisions live in the backend change log (undo removes them). The latest decision per fix wins.
+  const decisions=new Map<string,any>();
+  for(const c of d.log?.changes ?? []) if(c.kind==='fix_decision' && c.payload?.fix?.fix_id) decisions.set(c.payload.fix.fix_id,c.payload);
+  const forThis=(p:any)=>p.expected ? missionId in p.expected : true;
+  const decided=[...decisions.entries()].filter(([,p])=>forThis(p)).map(([id,p]):T.Fix=>{
+    const shown=shownFixes.get(id)?.fix;
+    return {...(shown ?? {id,missionId,rank:0,title:p.fix.title,action:p.fix.title,rationale:'',owner:'Human review required',effort:'Medium',
+      confidence:0,targets:[],recordIds:[],oddsBefore:0,oddsAfter:0,otherMissions:[]}),decision:p.decision==='approve'?'approved':'rejected'};
+  }).reverse();
+  const pending=helpful.filter((f:T.Fix)=>!decisions.has(f.id));
+  // After an approval, alternatives shown before it that no longer help are listed as covered, not silently dropped.
+  const approvedHere=decided.some((f)=>f.decision==='approved');
+  const live=new Set(helpful.map((f:T.Fix)=>f.id));
+  const superseded=approvedHere ? [...shownFixes.values()].map((s)=>s.fix).filter((f)=>f.missionId===missionId && !live.has(f.id) && !decisions.has(f.id)) : [];
   helpful.forEach((fix:T.Fix)=>shownFixes.set(fix.id,{fix,version:d.state.version}));
-  return {missionId,fixes:helpful,decided:[],note};
+  return {missionId,fixes:pending,decided,superseded,note};
 }
 const event=(e:any,i:number):T.DemoEvent=>({id:e.event_id,seq:i+1,type:({casrep:'CASREP',supply:'SUPPLY',personnel:'PERSONNEL',schedule:'SCHEDULE',facility:'FACILITY'} as any)[e.kind] || 'SCHEDULE',title:e.title,summary:e.title,recordId:e.refs[0]?sourceId({file:e.refs[0].split('#')[0]}):'',arrivedAt:e.played?e.known_at:undefined});
 export const api = {
@@ -186,6 +204,8 @@ export const api = {
   getRecord:async(id:string):Promise<T.RecordDetail>=>({record:await record(id),linkedNodes:[],contradictions:[]}),
   getEvents:async():Promise<T.EventsPayload>=>{const d=await dashboard();return {delivered:d.state.feed.map(event).filter((e:T.DemoEvent)=>e.arrivedAt).reverse(),remaining:d.state.feed.filter((e:any)=>!e.played).length,nextTitle:d.state.feed.find((e:any)=>!e.played)?.title || null};},
   nextEvent:async():Promise<T.NextEventResult>=>{const b=await dashboard();await mutate('events/play');const a=await dashboard();const i=b.state.feed.findIndex((e:any)=>!e.played);return {event:event(a.state.feed[i],i),changes:[],missionDeltas:deltas(b.forecast,a.forecast),remaining:a.state.feed.filter((e:any)=>!e.played).length};},
+  /** Withdraw the CO's approve/reject on one fix (any decision, not only the newest). The fix returns to the ranked list. */
+  undoDecision:async(fixId:string):Promise<{missionDeltas:T.MissionDelta[]}>=>{if(paused)throw new ApiError(423,'This browser is paused. Resume before making changes.','STOPPED');const b=await dashboard();await backend('fixes/undo',{base_version:b.state.version,fix_id:fixId});const a=await dashboard();return {missionDeltas:deltas(b.forecast,a.forecast)};},
   decide:async(req:T.DecisionRequest):Promise<T.DecisionResult>=>{if(req.decision==='modify')throw new ApiError(422,'Use the what-if lab to preview changes.','VALIDATION');const shown=shownFixes.get(req.fixId);if(!shown || paused)throw new ApiError(409,'Reload the comparison and resume before deciding.','STALE_VERSION');const f=shown.fix;const b=await dashboard();await backend('fixes/decide',{base_version:shown.version,fix_id:req.fixId,decision:req.decision,note:req.note || ''});const a=await dashboard();return {fix:{...f,decision:req.decision==='approve'?'approved':'rejected'},changes:[],missionDeltas:deltas(b.forecast,a.forecast)};},
   runScenario:async(req:T.ScenarioRequest):Promise<T.ScenarioResult>=>{
     const p=await backend('captain/preview',{base_version:displayedVersion,ship_id:selectedShip,changes:req.changes});

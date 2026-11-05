@@ -22,7 +22,7 @@ from .engine import CACHE_STATS, Scenario, build_world, domino_graph, forecast, 
 from .fixes import rank_fixes
 from .ingest import find_contradictions, load_baseline, read_pdf_pages
 from .llm import LLMClient, llm_brief, nl_to_action
-from .models import ACTION_TYPES, ActionAdapter, BriefBody, ChangeBody, FixDecisionBody, ParseBody, VersionBody, RefreshBody, CaptainPreviewBody, action_schema
+from .models import ACTION_TYPES, ActionAdapter, BriefBody, ChangeBody, FixDecisionBody, FixUndoBody, ParseBody, VersionBody, RefreshBody, CaptainPreviewBody, action_schema
 from .visualization import registry
 from .normalize import NORMALIZED_ROOT, REFERENCE_ROOT, normalize
 from .sources import load_snapshot, source_health, utc_now
@@ -316,7 +316,12 @@ def create_app(state: AppState | None = None) -> FastAPI:
                         raise HTTPException(422, 'Event is not assigned to the selected ship')
                     action = {'type': 'shift_mission', 'event_id': event_id, 'days': change.get('days')}
                 elif kind == 'removePerson':
-                    action.update(type='remove_person', member_id=node.split('member:')[-1], from_time=iso(candidate.cursor_dt()))
+                    # Pier-support sailors (node path ...|prereq:<shore event>|team:...) belong to the shore unit, not the ship.
+                    unit = body.ship_id
+                    if '|prereq:' in node:
+                        pre = node.split('|prereq:')[1].split('|')[0]
+                        unit = next((e['ship_id'] for e in s.baseline.events if e['event_id'] == pre), unit)
+                    action.update(ship_id=unit, type='remove_person', member_id=node.split('member:')[-1], from_time=iso(candidate.cursor_dt()))
                 elif kind == 'delayPart':
                     item = next((i for i in world.ships[body.ship_id].items if node.endswith('|' + i.key) and i.doc_number), None)
                     if item is None: raise HTTPException(422, 'This node has no linked active requisition to delay')
@@ -540,6 +545,17 @@ def create_app(state: AppState | None = None) -> FastAPI:
         with s.lock:
             s.check_version(body.base_version)
             return _decide(s, body.fix_id, body.decision, body.approval_delay_days, body.note)
+
+    @app.post("/api/fixes/undo")
+    def undo_fix_decision(body: FixUndoBody):
+        s = S()
+        with s.lock:
+            s.check_version(body.base_version)
+            mine = [c for c in s.scenario.changes if c["kind"] == "fix_decision" and c["payload"].get("fix", {}).get("fix_id") == body.fix_id]
+            if not mine:
+                raise HTTPException(404, f"no decision recorded for fix {body.fix_id}")
+            c = s.scenario.withdraw(mine[-1]["seq"])
+            return {"undone": c, "version": s.scenario.version}
 
     @app.post("/api/undo")
     def undo(body: VersionBody):

@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, CalendarClock, FlaskConical, Package, Play, Plus, RotateCcw, ShieldAlert, Sparkles, Trash2, UserRoundMinus } from 'lucide-react';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { Bar, BarChart, Cell, LabelList, ReferenceLine, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import { api } from '../api/api';
 import type { CasrepCategory, GraphNode, Mission, ScenarioChange, ScenarioResult } from '../api/types';
@@ -13,6 +13,12 @@ import { useApi } from '../state/useApi';
 import { STATUS, oddsStatus, pct, getBands } from '../theme/status';
 
 type Kind = ScenarioChange['kind'];
+/** A run plus a plain-language note when the result needs explaining. */
+type Run = ScenarioResult & { hint?: string };
+
+/** Two changes are the same if they touch the same thing (a sailor is the same person on every mission). */
+const changeKey = (c: ScenarioChange) =>
+  c.kind === 'removePerson' ? `person:${c.node.includes('|prereq:') ? 'shore:' : ''}${c.node.split('|member:')[1]}` : c.kind === 'shiftMission' ? `shift:${c.mission}` : `${c.kind}:${c.node}`;
 
 const KINDS: { kind: Kind; label: string; icon: typeof Package; hint: string }[] = [
   { kind: 'delayPart', label: 'Delay a part', icon: Package, hint: 'Push a part delivery back' },
@@ -31,8 +37,9 @@ export function WhatIf() {
   const [category, setCategory] = useState<CasrepCategory | null>('C3');
   const [changes, setChanges] = useState<ScenarioChange[]>([]);
   const [running, setRunning] = useState(false);
+  const runCount = useRef(1);
   const [error, setError] = useState<string | null>(null);
-  const [results, setResults] = useState<ScenarioResult[]>([]);
+  const [results, setResults] = useState<Run[]>([]);
   const { bump } = useStore();
 
   const nodes = graphQ.data?.nodes ?? [];
@@ -61,7 +68,14 @@ export function WhatIf() {
     setError(null);
     try {
       const r = await api.runScenario({ changes: list });
-      setResults((prev) => [r, ...prev].slice(0, 6));
+      const moved = r.missionDeltas.some((m) => Math.abs(m.after - m.before) >= 0.005);
+      const hint =
+        !moved && list.some((c) => c.kind === 'removePerson')
+          ? 'Each mission needs a minimum number of qualified sailors on a team, and most teams carry a spare. Losing one sailor is covered by the others, so the odds hold. Add a second sailor from the same team to the scenario to see the effect.'
+          : !moved
+            ? 'The model has slack here: the change does not reach anything that limits a mission. Combine it with other changes to stress the plan.'
+            : undefined;
+      setResults((prev) => [{ ...r, id: `Run ${runCount.current++}`, description: list.map((c) => describe(c, labelOf)), hint }, ...prev].slice(0, 6));
       bump(); // the run is written to the activity log
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -76,6 +90,7 @@ export function WhatIf() {
   if (graphQ.error != null && !graphQ.data) return <ErrorState error={graphQ.error} onRetry={graphQ.reload} />;
 
   const d = draft();
+  const inScenario = d ? changes.some((c) => changeKey(c) === changeKey(d)) : false;
   const latest = results[0];
 
   return (
@@ -153,12 +168,15 @@ export function WhatIf() {
               </div>
             )}
 
-            <div className="mt-5 flex flex-wrap gap-2">
-              <button className="btn-ghost" disabled={!d} onClick={() => d && setChanges((c) => [...c, d])}>
-                <Plus className="h-4 w-4" aria-hidden /> Add to scenario
+            <p className="mt-5 text-sm text-ink-muted">
+              To combine changes, press <span className="font-semibold text-ink">Add to scenario</span>, pick the next change, add it too, then run the scenario below.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button className="btn-accent" disabled={!d || inScenario} onClick={() => d && setChanges((c) => [...c, d])}>
+                <Plus className="h-4 w-4" aria-hidden /> {inScenario ? 'Already in scenario' : 'Add to scenario'}
               </button>
-              <button className="btn-accent" disabled={!d || running} onClick={() => d && run([...changes, d])}>
-                <Play className="h-4 w-4" aria-hidden /> Run {changes.length ? `all ${changes.length + 1}` : 'now'}
+              <button className="btn-ghost" disabled={!d || running} onClick={() => d && run(inScenario ? changes : [...changes, d])}>
+                <Play className="h-4 w-4" aria-hidden /> {changes.length ? `Run with the ${changes.length} in scenario` : 'Run just this one'}
               </button>
             </div>
           </Panel>
@@ -175,7 +193,7 @@ export function WhatIf() {
             }
           >
             {changes.length === 0 ? (
-              <p className="text-sm text-ink-muted">Add several changes to see how they combine, or run one directly.</p>
+              <p className="text-sm text-ink-muted">Empty. Add changes above (for example two sailors from the same team, plus a late part) and run them together to see the combined effect.</p>
             ) : (
               <ul className="space-y-2">
                 <AnimatePresence initial={false}>
@@ -193,7 +211,7 @@ export function WhatIf() {
             )}
             {changes.length > 0 && (
               <button className="btn-accent mt-4 w-full" disabled={running} onClick={() => run(changes)}>
-                <Play className="h-4 w-4" aria-hidden /> Run scenario
+                <Play className="h-4 w-4" aria-hidden /> Run scenario ({changes.length} change{changes.length === 1 ? '' : 's'})
               </button>
             )}
           </Panel>
@@ -244,14 +262,21 @@ export function WhatIf() {
   );
 }
 
-function ResultView({ result, labelOf, running }: { result: ScenarioResult; labelOf: (id: string) => string; running: boolean }) {
+function ResultView({ result, labelOf, running }: { result: Run; labelOf: (id: string) => string; running: boolean }) {
   const data = result.missionDeltas.map((m) => ({ name: m.code, before: Math.round(m.before * 100), after: Math.round(m.after * 100) }));
   const worst = [...result.missionDeltas].sort((a, b) => a.after - a.before - (b.after - b.before))[0];
   const worstPts = worst ? Math.round((worst.after - worst.before) * 100) : 0;
   return (
     <motion.div key={result.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: running ? 0.6 : 1, y: 0 }} className="space-y-5">
       <Panel title={`Result ${result.id}`} icon={<FlaskConical className="h-4 w-4" />} actions={<span className="text-xs text-ink-dim">Sandbox only · nothing changed</span>}>
-        <p className="text-lg text-ink">{result.description.join('; ')}.</p>
+        <ul className="space-y-1 text-lg text-ink">
+          {result.description.map((line, i) => (
+            <li key={i} className="flex gap-2">
+              <span className="num text-sm leading-7 text-ink-dim">{i + 1}.</span>
+              {line}
+            </li>
+          ))}
+        </ul>
         {worst && (
           <p className="mt-1 text-base text-ink-muted">
             {worstPts < 0 ? (
@@ -266,10 +291,11 @@ function ResultView({ result, labelOf, running }: { result: ScenarioResult; labe
                 .
               </>
             ) : (
-              'No mission loses readiness from this change.'
+              `No mission loses readiness from ${result.description.length > 1 ? 'these changes' : 'this change'}.`
             )}
           </p>
         )}
+        {result.hint && <p className="mt-2 rounded-xl border border-accent/40 bg-accent/[0.06] px-4 py-3 text-sm text-ink">{result.hint}</p>}
 
         <div className="mt-5 grid gap-3 md:grid-cols-3">
           {result.missionDeltas.map((m) => {
@@ -386,8 +412,23 @@ function optionsFor(kind: Kind, nodes: GraphNode[], missions: Mission[]) {
   switch (kind) {
     case 'delayPart':
       return nodes.filter((n) => n.kind === 'part' && n.id.includes('|job:')).sort(byStatus).map((n) => ({ id: n.id, label: `${tag(n)} · ${n.metric}` }));
-    case 'removePerson':
-      return nodes.filter((n) => n.kind === 'person' && n.id.includes('|member:')).sort(byStatus).map((n) => ({ id: n.id, label: tag(n) }));
+    case 'removePerson': {
+      // One entry per sailor (they appear once per mission), with role and team depth so the effect is predictable.
+      const seen = new Map<string, { id: string; label: string }>();
+      for (const n of [...nodes].sort(byStatus)) {
+        if (n.kind !== 'person' || !n.id.includes('|member:')) continue;
+        const [teamId, member] = n.id.split('|member:');
+        const shore = teamId.includes('|prereq:');
+        const key = (shore ? 'shore:' : 'ship:') + member;
+        if (seen.has(key)) continue;
+        const team = nodes.find((t) => t.id === teamId);
+        const m = team && /^(?:\w+: )?(\d+) qualified (.+?) \(\w+\) aboard/.exec(team.label);
+        const size = nodes.filter((x) => x.id.startsWith(teamId + '|member:')).length;
+        const role = m ? m[2].replace(/ \(SYNTH\)/, '').toLowerCase() : '';
+        seen.set(key, { id: n.id, label: `${shore ? 'Pier support · ' : ''}${tag(n)}${role ? ` · ${role}` : ''}${m ? ` · ${size} aboard, needs ${m[1]}` : ''}` });
+      }
+      return [...seen.values()].sort((a, b) => Number(a.label.startsWith('Pier')) - Number(b.label.startsWith('Pier')) || a.label.localeCompare(b.label));
+    }
     case 'casrep':
       return nodes.filter((n) => n.kind === 'equipment' && n.id.includes('|system:')).sort(byStatus).map((n) => ({ id: n.id, label: tag(n) }));
     case 'shiftMission':
