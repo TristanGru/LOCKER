@@ -225,3 +225,15 @@ test('Davy review and dismiss remain outside the readiness model',async({page,re
   expect((await (await request.get('/api/scenario/version')).json()).version).toBe(version);
   expect(await (await request.get('/api/forecast')).json()).toEqual(before);
 });
+
+test('every watch or at-risk system is pinned and labelled on the 3D ship',async({page})=>{
+  test.setTimeout(120000);
+  // Systems whose mount the hand-built hull lacks fall back to the dataset position, so none can vanish.
+  for (const [ship,name,status] of [['VARNELL','Close-in weapon system','At risk'],['KESSLER','Surface-to-surface missile system (notional)','At risk'],['ASHBY','5-inch gun mount','Watch']]) {
+    await page.getByLabel('Selected ship').selectOption(ship);
+    const label=page.locator('.s3-lb').filter({hasText:name});
+    await expect(label).toHaveCount(1,{timeout:60000});
+    await expect(label).toContainText(status);
+    await expect(page.getByRole('region',{name:'Systems not drawn on the model'})).toHaveCount(0);
+  }
+});

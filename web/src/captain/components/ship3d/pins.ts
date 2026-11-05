@@ -30,7 +30,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
  * HTML label in the overlay. Systems whose mount the hull lacks get no pin.
  */
 export function buildPins(
-  info: Pick<HullInfo, 'g' | 'mounts' | 'len' | 'labelAll'> & { pinAction?: string },
+  info: Pick<HullInfo, 'g' | 'mounts' | 'len' | 'labelAll' | 'quietMounts'> & { pinAction?: string },
   systems: ShipSystem[],
   overlay: HTMLElement,
   onPick: (id: string) => void,
@@ -77,8 +77,9 @@ export function buildPins(
       rings.push(r);
     }
 
-    // Surface ships label deck pins; below-deck pins get a label only when they need attention (status in text, not color alone).
-    const labelled = s.deck === 'top' || info.labelAll || s.isNextDomino || st !== 'ready';
+    // Surface ships label deck pins; below-deck and dataset-placed pins get a label only when they need attention
+    // (status in text, not color alone). Every watch or at-risk system is always labelled.
+    const labelled = (s.deck === 'top' && !info.quietMounts?.has(s.mount)) || info.labelAll || s.isNextDomino || st !== 'ready';
     let el: HTMLButtonElement | null = null;
     let ln: SVGLineElement | null = null;
     if (labelled) {

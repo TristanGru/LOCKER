@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { ShipSystem, Status } from '../../api/types';
 import { clampCut, disposeSplit, KD, makeSplit, type Split } from './cutaway';
 import { buildSea, dress } from './dress';
-import { disposeTree, V } from './geom';
+import { disposeTree, mk, V } from './geom';
 import { hullDef } from './hulls';
 import { disposeInterior, type Blocker } from './interiors/kit';
 import { buildLanding } from './interiors/rooms';
@@ -189,7 +189,11 @@ export class ShipScene {
 
   // ---------------------------------------------------------------- public API
 
-  setHull(type: HullType, hullNumber: string, systems: ShipSystem[]) {
+  /**
+   * `points` are the dataset's mount positions (model units). The hand-built hull places the mounts it
+   * knows; any other mount a system uses falls back to the dataset position, so no system loses its pin.
+   */
+  setHull(type: HullType, hullNumber: string, systems: ShipSystem[], points: Record<string, [number, number, number]> = {}) {
     this.leave(true);
     this.closeCut();
     this.clearHull();
@@ -197,6 +201,13 @@ export class ShipScene {
     const ctx: BuildCtx = { M: this.M, hc: null, lights: [] };
     const b = hullDef(type).build(ctx);
     const info: HullInfo = { ...b, type, hc: ctx.hc, lights: ctx.lights, bb: new THREE.Box3() };
+    const deck = info.deckY ?? 0;
+    info.quietMounts = new Set();
+    for (const [id, [x, y, z]] of Object.entries(points))
+      if (!info.mounts[id]) {
+        info.mounts[id] = mk(x, y, z, 'up', y > deck ? deck : y - 1);
+        info.quietMounts.add(id);
+      }
     dress(info, this.M, hullNumber);
     info.bb.setFromObject(info.g);
     this.info = info;

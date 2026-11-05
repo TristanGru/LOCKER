@@ -40,6 +40,8 @@ export type Zone = 'machinery' | 'vls' | 'rooms' | 'reactor' | 'well' | 'missile
 export interface HullBuild {
   g: THREE.Group;
   mounts: Record<string, Mount>;
+  /** Mounts placed from the dataset because the hull drawing has none: their pins are labelled only when not ready. */
+  quietMounts?: Set<string>;
   len: number;
   beam: number;
   HH: number;
