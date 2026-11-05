@@ -601,6 +601,40 @@ export class ShipScene {
     return { center: V(0, targetY, 0), dir: V(0, 0.04, 1), dist };
   }
 
+  /** The ship itself: the model's bounds trimmed to its length and beam, so wake and sea dressing don't count. */
+  private hullBox(info: HullInfo) {
+    const b = info.bb.clone();
+    b.min.x = Math.max(b.min.x, -info.len / 2 - 2);
+    b.max.x = Math.min(b.max.x, info.len / 2 + 2);
+    b.min.z = Math.max(b.min.z, -info.beam / 2 - 1);
+    b.max.z = Math.min(b.max.z, info.beam / 2 + 1);
+    return b;
+  }
+
+  /**
+   * Camera distance along `dir` (from target `c`) that keeps every corner of `bb` (widened by the split gaps)
+   * inside the view, with room left for the toolbar above and the legend below the canvas.
+   */
+  private fitBox(bb: THREE.Box3, c: THREE.Vector3, dir: THREE.Vector3, th: number, tv: number, ex: number, exz: number) {
+    const fwd = dir.clone().normalize().negate();
+    const right = new THREE.Vector3().crossVectors(fwd, V(0, 1, 0)).normalize();
+    const up = new THREE.Vector3().crossVectors(right, fwd);
+    const H = 0.92; // horizontal share of the half-width the ship may use
+    const VT = 0.72; // upper half: the toolbar overlays the top of the canvas
+    const VB = 0.84; // lower half: the legend strip overlays the bottom
+    let dist = 0;
+    for (const x of [bb.min.x - ex, bb.max.x + ex])
+      for (const y of [bb.min.y, bb.max.y])
+        for (const z of [bb.min.z - exz, bb.max.z + exz]) {
+          const p = V(x, y, z).sub(c);
+          const px = p.dot(right);
+          const py = p.dot(up);
+          const pz = p.dot(fwd);
+          dist = Math.max(dist, Math.abs(px) / (th * H) - pz, (py > 0 ? py / (tv * VT) : -py / (tv * VB)) - pz);
+        }
+    return dist;
+  }
+
   /** Frame the camera for a named view. Re-runs on resize until the user first orbits. */
   private view(kind: ViewKind) {
     const info = this.info;
@@ -621,9 +655,12 @@ export class ShipScene {
     const fit = Math.max((info.len / 2 + ex) / th, (info.beam / 2 + exz) / tv) * 1.22 + info.HH * 0.5;
     const side = this.sideFrame(info, th, tv, ex);
     if (kind === 'side') c = side.center;
+    const hb = this.hullBox(info);
+    // aim at the middle of the ship, not the waterline, so the tall mast doesn't push the camera back
+    if (kind === 'iso') c = V((hb.min.x + hb.max.x) / 2, hb.min.y + (hb.max.y - hb.min.y) * 0.4, (hb.min.z + hb.max.z) / 2);
     const dirs: Record<string, [THREE.Vector3, number]> = {
       sky: [V(0, 1, 0.001), fit],
-      iso: [V(0.45, 0.6, 0.9), Math.max(info.len * 0.95 + ex * 1.6 + exz * 2.2, fit * 1.08)],
+      iso: [V(0.45, 0.6, 0.9), this.fitBox(hb, c, V(0.45, 0.6, 0.9), th, tv, ex, exz)],
       side: [side.dir, side.dist],
     };
     if (kind === 'cut' && sp) {

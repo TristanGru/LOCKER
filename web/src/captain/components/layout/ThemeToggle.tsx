@@ -37,6 +37,8 @@ function ModeButton({
     <button
       type="button"
       aria-pressed={selected}
+      aria-label={label}
+      title={label}
       onClick={() => onChoose(value)}
       className={clsx(
         'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-semibold transition',
@@ -44,7 +46,7 @@ function ModeButton({
       )}
     >
       {icon}
-      <span className="hidden sm:inline">{label}</span>
+      <span className="hidden 2xl:inline" aria-hidden>{label}</span>
     </button>
   );
 }
