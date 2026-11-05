@@ -10,10 +10,11 @@ test.beforeEach(async ({request,page})=>{
 test('shore is a separate tab with its own units, layout and support events',async({page})=>{
   test.setTimeout(180000);
   const errors:string[]=[]; page.on('pageerror',e=>errors.push(e.message));
-  await expect(page.getByLabel('Selected ship').locator('option')).toHaveText(['USS KESSLER','USS VARNELL','USS ASHBY']);
+  await expect(page.getByLabel('Selected ship').locator('optgroup[label="Ships"] option')).toHaveText(['USS KESSLER','USS VARNELL','USS ASHBY']);
+  await expect(page.getByLabel('Selected ship').locator('optgroup[label="Installations"] option')).toHaveText(['NAVAL STATION NORFOLK (MOCK)','NSA HAMPTON ROADS (MOCK)']);
   await page.getByRole('link',{name:'Shore Overview',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Installation Overview',exact:true})).toBeVisible();
-  await expect(page.getByLabel('Selected installation').locator('option')).toHaveText(['NAVAL STATION NORFOLK (MOCK)','NSA HAMPTON ROADS (MOCK)']);
+  await expect(page.getByLabel('Selected installation').locator('optgroup[label="Installations"] option')).toHaveText(['NAVAL STATION NORFOLK (MOCK)','NSA HAMPTON ROADS (MOCK)']);
   await expect(page.getByText('Pier 12 shore power',{exact:true}).filter({visible:true}).first()).toBeVisible();
   const stage=page.getByTestId('base-canvas');
   const box=await stage.boundingBox();
@@ -34,6 +35,23 @@ test('shore is a separate tab with its own units, layout and support events',asy
   await expect(page.getByText('Helo deck',{exact:true}).filter({visible:true}).first()).toBeVisible({timeout:60000});
   await page.getByRole('link',{name:'Shore Overview',exact:true}).click();
   await expect(page.getByLabel('Selected installation')).toHaveValue('NSAHR');
+  // The shared picker can cross unit kinds and opens the matching overview.
+  await page.getByLabel('Selected installation').selectOption('VARNELL');
+  await expect(page.getByRole('heading',{name:'Ship Overview',exact:true})).toBeVisible();
+  await expect(page.getByLabel('Selected ship')).toHaveValue('VARNELL');
+  await page.getByLabel('Selected ship').selectOption('NSAHR');
+  await expect(page.getByRole('heading',{name:'Installation Overview',exact:true})).toBeVisible();
+  await expect(page.getByLabel('Selected installation')).toHaveValue('NSAHR');
+  // Non-overview tabs keep their route while switching either kind of unit.
+  await page.getByRole('link',{name:"Davy's Dominoes",exact:true}).click();
+  await expect(page.getByRole('heading',{name:"Davy's Dominoes",exact:true}).first()).toBeVisible();
+  await expect(page).toHaveURL(/\/dominoes$/);
+  await page.getByLabel('Selected installation').selectOption('ASHBY');
+  await expect(page).toHaveURL(/\/dominoes$/);
+  await expect(page.getByLabel('Selected ship')).toHaveValue('ASHBY');
+  await page.getByLabel('Selected ship').selectOption('NSNORFOLK');
+  await expect(page).toHaveURL(/\/dominoes$/);
+  await expect(page.getByLabel('Selected installation')).toHaveValue('NSNORFOLK');
   expect(errors).toEqual([]);
 });
 
