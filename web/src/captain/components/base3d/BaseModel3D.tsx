@@ -5,7 +5,7 @@ import clsx from '../../lib/clsx';
 import { STATUS, fmtAge, oddsStatus, pct } from '../../theme/status';
 import { RecordId } from '../ui/RecordId';
 import { StaleBadge } from '../ui/StaleBadge';
-import { BaseScene, type BaseView } from './BaseScene';
+import { BaseScene, type BaseView, type Ground } from './BaseScene';
 
 function hasWebGL() {
   try {
@@ -61,7 +61,10 @@ function Stage({ unit, onOpen, onFail }: { unit: ShipPayload; onOpen: (id: strin
   const barRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<BaseScene | null>(null);
   const [view, setView] = useState<BaseView>('iso');
-  const [menu, setMenu] = useState<'view' | 'facilities' | null>(null);
+  const [menu, setMenu] = useState<'view' | 'facilities' | 'ground' | null>(null);
+  const [ground, setGround] = useState<Ground>('photo');
+  /** Set once the aerial photo has loaded (only the traced Norfolk layout has one). */
+  const [photoCredit, setPhotoCredit] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
   const select = (id: string | null) => {
     setFocusId(id);
@@ -85,7 +88,7 @@ function Stage({ unit, onOpen, onFail }: { unit: ShipPayload; onOpen: (id: strin
       scene = new BaseScene(host, overlay, points, layout, (id) => live.current.select(id), (error) => {
         console.error('3D base view failed, falling back to the facility list', error);
         live.current.onFail();
-      });
+      }, (credit) => setPhotoCredit(credit));
     } catch (error) {
       console.error('3D base view could not start', error);
       live.current.onFail();
@@ -156,6 +159,31 @@ function Stage({ unit, onOpen, onFail }: { unit: ShipPayload; onOpen: (id: strin
               </button>
             ))}
           </Drop>
+          {photoCredit && (
+            <Drop label="Ground" value={ground === 'photo' ? 'Aerial photo' : 'Plain'} open={menu === 'ground'} onClick={() => setMenu(menu === 'ground' ? null : 'ground')}>
+              {(
+                [
+                  ['photo', 'Aerial photo', 'Public-domain USDA aerial photo of the base'],
+                  ['plain', 'Plain', 'Simplified ground, roads and runways'],
+                ] as const
+              ).map(([id, label, note]) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={ground === id}
+                  onClick={() => {
+                    setGround(id);
+                    setMenu(null);
+                    sceneRef.current?.setGround(id);
+                  }}
+                  className={clsx('flex w-full flex-col rounded-lg px-2.5 py-1.5 text-left text-sm hover:bg-white/10', ground === id && 'bg-white/15')}
+                >
+                  <span className="font-semibold">{label}</span>
+                  <span className="text-xs text-[#9fb0c6]">{note}</span>
+                </button>
+              ))}
+            </Drop>
+          )}
           <Drop
             label="Facilities"
             value={unit.systems.find((s) => s.id === focusId)?.name ?? 'All pins'}
@@ -206,6 +234,7 @@ function Stage({ unit, onOpen, onFail }: { unit: ShipPayload; onOpen: (id: strin
         <span className="ml-auto text-right text-[#c3d0e0]">
           {NOTICE}
           {unit.layout && <> Piers and runways: {unit.layout.attribution}.</>}
+          {photoCredit && ground === 'photo' && <> {photoCredit} (public domain).</>}
         </span>
       </div>
     </div>
