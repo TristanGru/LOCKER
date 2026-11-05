@@ -36,3 +36,24 @@ def test_unrelated_provider_errors_do_not_weaken_schema(tmp_path):
         client._post([{'role': 'user', 'content': 'Synthetic test'}], 1)
     assert len(bodies) == 2
     assert all(b['response_format'] == {'type': 'json_object'} for b in bodies)
+
+
+@pytest.mark.parametrize('code,expected_calls', [('unsupported_value', 2), ('invalid_json_schema', 2)])
+def test_strict_format_adaptation_keeps_validation(tmp_path,code,expected_calls):
+    calls=[]
+    def handler(request):
+        body=json.loads(request.content);calls.append(body)
+        if body['response_format']['type']=='json_schema':
+            return httpx.Response(400,json={'error':{'code':code,'param':'response_format'}})
+        return httpx.Response(200,json={'choices':[{'message':{'content':'{"ok":true}'}}]})
+    client=LLMClient(base_url='https://mock.test/v1',demo_mode=False,cache_dir=tmp_path,transport=httpx.MockTransport(handler))
+    schema={'type':'object','properties':{'ok':{'type':'boolean'}},'additionalProperties':False,'required':['ok']}
+    if code=='unsupported_value':
+        result,method=client.run('overview_chat',[{'role':'user','content':'Synthetic'}],b'test',lambda d:d['ok'],response_schema=schema)
+        assert result is True and method=='llm'
+        assert calls[-1]['response_format']=={'type':'json_object'}
+    else:
+        with pytest.raises(LLMUnavailable):
+            client.run('overview_chat',[{'role':'user','content':'Synthetic'}],b'test',lambda d:d['ok'],response_schema=schema)
+        assert all(c['response_format']['type']=='json_schema' for c in calls)
+    assert len(calls)==expected_calls
