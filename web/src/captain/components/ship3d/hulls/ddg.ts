@@ -158,6 +158,8 @@ export function buildDDG(ctx: BuildCtx): HullBuild {
   {
     const [x, z] = P(540, 150);
     const by = D + 13.5;
+    // mast house: carries the mast down to the deckhouse roof (D + 9) so it does not float
+    box('mast_house', M.house, 524, 134, 556, 166, by - (D + 9), D + 9);
     cyl(g, 'mast_tower', M.house, 0.9, 1.9, 16, x, by + 8, z, 4).rotation.y = Math.PI / 4;
     bx(g, 'mast_platform_low', M.dark, 5.2, 0.3, 5.2, x, by + 7, z);
     bx(g, 'mast_platform_high', M.dark, 3.6, 0.3, 3.6, x, by + 12, z);
